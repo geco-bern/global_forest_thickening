@@ -39,10 +39,21 @@ terra::writeRaster(biomes_raster, filename = here::here("data/biomes/biomes_rast
 coast <- rnaturalearth::ne_coastline(scale = 110, returnclass = "sf")
 
 # Plot map ----------------
-data_unm <- readRDS(file.path(here::here(), "/data/inputs/data_unm.rds"))
+data_unm <- readRDS(file.path(here::here(), "/data/data_unm.rds"))
 summary(data_unm$plotsize)
 data_unm_unique_plots <- data_unm |>
   distinct(plotID, lat, lon)
+
+data_unm |>
+  filter(dataset %in% "lwf")
+
+data_unm_euforia <- data_unm |>
+  filter(dataset %in% c("bnp", "czu", "forst", "iberbas", "incds", "lwf", "nbw", "uholka", 
+                        "nfr", "nwfva", "tuzvo", "ul", "unito", "urk", "wuls")) |>
+  distinct(plotID, dataset, lat, lon)
+
+# Keep only the first occurrence of each name
+df_labels <- data_unm_euforia %>% group_by(dataset) %>% slice(1) %>% ungroup()
 
 gg <- ggplot() +
   #stat_summary_hex(aes(lon, lat, z = density), data = data_biomes_fil,fun = mean, bins = 50) +
@@ -72,6 +83,7 @@ gg <- ggplot() +
       na.value = "white",
       breaks = ~ .x[!is.na(.x)]) + 
   geom_point(aes(lon, lat), data = data_unm_unique_plots, color="red",fill = "white",alpha = .7, shape=21,size=1.2) + 
+  geom_point(aes(lon, lat), data = data_unm_euforia, color="blue",fill = "white",alpha = .7, shape=21,size=1.2) +
   #geom_count(aes(lon, lat), data = data_biomes_fil_unique_plots, color="red",alpha = .6) +
   #scale_size_area() +
   #geom_hex(aes(lon, lat, color = biome), data = data_biomes_fil, bins = 50, linewidth = 1) +
@@ -87,6 +99,6 @@ gg <- ggplot() +
         legend.title = element_blank(),
         panel.border = element_rect(colour = "black", fill=NA, linewidth=.5))
 gg
-ggsave(paste0(here::here(), "/manuscript/figures/fig_S1v.png"), width = 13, height = 8, dpi=300)
+ggsave(paste0(here::here(), "/manuscript/figures/fig_S1euforia.png"), width = 13, height = 8, dpi=300)
 ggsave(paste0(here::here(), "/manuscript/figures/map.pdf"), width = 5, height = 4.5, dpi=300)
 

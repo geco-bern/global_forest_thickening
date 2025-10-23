@@ -41,6 +41,7 @@ source(here("R/calc_lqmm_byqmdbin.R"))
 
 # load data
 data_fil_biomes <- readRDS(here("data/data_fil_biomes.rds"))
+data_fil_biomes <- readRDS(here("data/75perc/data_fil_biomes.rds"))
 
 plot_map_fil <-  plot_map(data_fil_biomes)
 plot_map_fil
@@ -78,10 +79,11 @@ write_rds(mod_lmm_biome1, file = here::here("data/mod_lmm_biome1.rds"))
 #### Plot self-thinning line ----------------------------------------------------
 gg_stl_biome1 <- plot_stl_bybiome(
   data_fil_biome1, 
+  #data_unm |> filter(biomeID==1),
   mod_lmm_biome1, 
   name = bquote(bold("a") ~~ "Tropical Moist Broadleaf Forests"), 
-  years = c(1985, 2000, 2015)
-)
+  years = c(1985, 2000, 2015) 
+) 
 gg_stl_biome1
 
 #### Data over years ------------------------------------------------------------
@@ -176,6 +178,11 @@ gg_stl_biome2 <- plot_stl_bybiome(
   years = c(1985, 2000, 2015)
 )
 gg_stl_biome2
+
+ggplot(data_fil_biome2) + geom_point(aes(x=logQMD, y=logDensity, color = plotID))
+
+data_fil_biome2 <- data_fil_biome2 |>
+  filter(!(plotID %in% c("mudumalai_7_1","mudumalai_7_2", "mudumalai_7_3", "mudumalai_7_5", "mudumalai_7_6" )))
 
 #### Data over years ------------------------------------------------------------
 gg_hist_year_biome2 <- ggplot(data_fil_biome2, aes(x = year)) + 

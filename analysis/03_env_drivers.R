@@ -31,6 +31,7 @@ library(plotbiomes)
 
 # load data
 data_fil_biomes <- readRDS(here::here("data/data_fil_biomes.rds"))
+data_fil_biomes <- readRDS(here("data/75perc/data_fil_biomes.rds"))
 
 # correlation among variables
 M <- as.matrix(data_fil_biomes[,c(27,29,30,33)] %>% distinct())
@@ -337,6 +338,26 @@ mod_lqmm_env <- lqmm(
      startQR = TRUE
    )
  )
+
+set.seed(123)
+mod_lqmm_env <- lqmm(
+  logDensity ~ scale(logQMD) +
+    scale(year) * scale(ai) +
+    scale(year) * scale(ndep) +
+    scale(year) * scale(ORGC) +
+    scale(year) * scale(PBR),
+  random = ~1,
+  group = plotID,
+  tau = 0.70,
+  data = data_unm |>
+    drop_na(),
+  type = "normal",
+  control = list(
+    #LP_max_iter = 2000,
+    #LP_tol_ll = 1e-3,
+    startQR = TRUE
+  )
+)
 
 out <- summary(mod_lqmm_env)
 
