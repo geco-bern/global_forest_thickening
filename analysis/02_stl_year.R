@@ -823,9 +823,8 @@ gg_qmd_int_biome12 <- plot_model(
   theme_classic() + 
   labs(title = bquote(bold("e") ~~ "Mediterranean Forests"))
 
-
 # Quantile regression ----------------------------------------------------------
-data_unm <- readRDS(here::here("data/data_unm.rds"))
+data_unm <- readRDS(here::here("data/inputs/agg/data_unm.rds"))
 
 ## Biome 1 Tropical & Subtropical Moist Broadleaf Forests ----------------------
 data_unm_biome <- data_unm |> 
@@ -884,13 +883,18 @@ data_unm_biome <- data_unm_biome |>
 ### LQMM fit -------------------------------------------------------------------
 set.seed(123)
 fit_lqmm <- lqmm(
-  logDensity ~ logQMD_sc * year_sc,
+  logDensity ~ logQMD_sc + year_sc,
   random = ~1,
   group = plotID,
   tau = 0.9, #c(0.70, 0.90),
   data = data_unm_biome,
   type = "normal",
-  control = lqmmControl(startQR = TRUE)
+  #control = lqmmControl(startQR = TRUE)
+  control = lqmmControl(
+    LP_max_iter = 2000,   # inner loop iterations
+    LP_tol_ll   = 1e-06,  # inner loop tolerance
+    startQR     = FALSE
+    )
 )
 summary(fit_lqmm)
 
@@ -1024,7 +1028,8 @@ gg_lqmm_biome1_byqmdbin <- ggplot() +
     x = expression(ln(QMD)),
     y = expression(italic(beta)(year))
   ) +
-  scale_x_continuous(limits = c(2.4, 4.5))
+  scale_x_continuous(limits = c(2.4, 4.5), breaks = seq(3,4,1)) +
+  scale_y_continuous(breaks = seq(-0.02,0.02,0.02))
   
 gg_lqmm_biome1_both <- cowplot::plot_grid(
   gg_lqmm_biome1,
@@ -1032,7 +1037,7 @@ gg_lqmm_biome1_both <- cowplot::plot_grid(
   ncol = 1,
   rel_heights = c(1, 0.4),
   align = "v",
-  labels = c("",  "g"),
+  #labels = c("",  "g"),
   label_y = 1.1
 )
 
@@ -1207,7 +1212,8 @@ gg_lqmm_biome2_byqmdbin <- ggplot() +
     x = expression(ln(QMD)),
     y = expression(italic(beta)(year))
   ) +
-  scale_x_continuous(limits = c(2.4, 4.5))
+  scale_x_continuous(limits = c(2.4, 4.5), breaks = seq(3,4,1)) +
+  scale_y_continuous(breaks = seq(-0.01,0,0.01))
 
 gg_lqmm_biome2_both <- cowplot::plot_grid(
   gg_lqmm_biome2,
@@ -1215,7 +1221,7 @@ gg_lqmm_biome2_both <- cowplot::plot_grid(
   ncol = 1,
   rel_heights = c(1, 0.4),
   align = "v",
-  labels = c("",  "h"),
+  #labels = c("",  "h"),
   label_y = 1.1
 )
 
@@ -1385,15 +1391,15 @@ gg_lqmm_biome4_byqmdbin <- ggplot() +
     x = expression(ln(QMD)),
     y = expression(italic(beta)(year))
   ) +
-  scale_x_continuous(limits = c(2.4, 4.5)) +
-  scale_y_continuous(limits = c(-0.02, 0.04))
+  scale_x_continuous(limits = c(2.4, 4.5), breaks = seq(3,4,1)) +
+  scale_y_continuous(limits = c(-0.02, 0.04), breaks = seq(-0.02,0.02,0.02))
 
 gg_lqmm_biome4_both <- cowplot::plot_grid(
   gg_lqmm_biome4,
   gg_lqmm_biome4_byqmdbin,
   ncol = 1,
   rel_heights = c(1, 0.4),
-  labels = c("",  "i"),
+  #labels = c("",  "i"),
   align = "v",
   label_y = 1.1
 )
@@ -1564,14 +1570,15 @@ gg_lqmm_biome5_byqmdbin <- ggplot() +
     x = expression(ln(QMD)),
     y = expression(italic(beta)(year))
   ) +
-  scale_x_continuous(limits = c(2.4, 4.5))
+  scale_x_continuous(limits = c(2.4, 4.5), breaks = seq(3,4,1)) +
+  scale_y_continuous(limits = c(-0.02, 0.05), breaks = seq(-0.04,0.04,0.02))
   
 gg_lqmm_biome5_both <- cowplot::plot_grid(
   gg_lqmm_biome5,
   gg_lqmm_biome5_byqmdbin,
   ncol = 1,
   rel_heights = c(1, 0.4),
-  labels = c("",  "j"),
+  #labels = c("",  "j"),
   align = "v",
   label_y = 1.1
 )
@@ -1745,14 +1752,15 @@ gg_lqmm_biome6_byqmdbin <- ggplot() +
     x = expression(ln(QMD)),
     y = expression(italic(beta)(year))
   ) +
-  scale_x_continuous(limits = c(2.4, 4.5))
+  scale_x_continuous(limits = c(2.4, 4.5), breaks = seq(3,4,1)) +
+  scale_y_continuous(limits = c(-0.03, 0.03), breaks = seq(-0.04,0.04,0.02))
   
 gg_lqmm_biome6_both <- cowplot::plot_grid(
   gg_lqmm_biome6,
   gg_lqmm_biome6_byqmdbin,
   ncol = 1,
   rel_heights = c(1, 0.4),
-  labels = c("",  "k"),
+  #labels = c("",  "k"),
   align = "v",
   label_y = 1.1
 )
@@ -1956,14 +1964,15 @@ gg_lqmm_biome12_byqmdbin <- ggplot() +
     x = expression(ln(QMD)),
     y = expression(italic(beta)(year))
   ) +
-  scale_x_continuous(limits = c(2.4, 4.5))
+  scale_x_continuous(limits = c(2.4, 4.5), breaks = seq(3,4,1)) +
+  scale_y_continuous(limits = c(-0.03, 0.03), breaks = seq(-0.04,0.04,0.02))
   
 gg_lqmm_biome12_both <- cowplot::plot_grid(
   gg_lqmm_biome12,
   gg_lqmm_biome12_byqmdbin,
   ncol = 1,
   rel_heights = c(1, 0.4),
-  labels = c("",  "l"),
+  #labels = c("",  "l"),
   align = "v",
   label_y = 1.1
 )
@@ -2060,14 +2069,14 @@ fig1_lqmm <- cowplot::plot_grid(
   )
 
 ggsave(
-  filename = here::here("manuscript/figures/fig1_lqmm.pdf"),
+  filename = here::here("manuscript/figures/fig1_lqmm_.pdf"),
   plot = fig1_lqmm,
   width = 11, 
   height = 10
 )
 
 ggsave(
-  filename = here::here("manuscript/figures/fig1_lqmm.png"),
+  filename = here::here("manuscript/figures/fig1_lqmm_.png"),
   plot = fig1_lqmm,
   width = 11, 
   height = 10

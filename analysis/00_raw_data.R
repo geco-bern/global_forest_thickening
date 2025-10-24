@@ -27,7 +27,7 @@ library(ingestr)
 library(lubridate)
 
 # load functions ----
-source(file.path(here::here(), "/analysis/00_functions.R"))
+source(file.path(here::here(), "/R/functions.R"))
 
 # NFI Spain ----
 # Data providers: Paloma Ruiz-Benito and Veronica Cruz-Alonso
@@ -2619,7 +2619,7 @@ rbeni::plot_map_simpl() +
 # save stand-level data
 saveRDS(data_aus, file = file.path(here::here(), "/data/inputs/data_fp_aus.rds"))
 
-# Amazon Forest Inventory Network (RAINFOR) ----
+# RAINFOR Amazon Forest Inventory Network ----
 # Data from Esquivel-Muelbert, et al. 2025 data published
 # Coordinates of the sites from Bennett et al. 2023
 
@@ -2655,13 +2655,30 @@ df_rainfor <- rainfor_plots |>
   left_join(rainfor_coords, by = "plot_code") |>
   rename(plotID = plot_code)
 
+# check how many plots are missing coordinates
 df_rainfor %>%
   filter(is.na(lat) | is.na(lon)) %>%
   distinct(plotID)
 
+# keep only the alphabetic part of the plotID to join the rest of coordinates
+# since not all plot numbers are included in the coordinates info, we exclude the numeric part of the plotID
+rainfor_prefix <- rainfor_coords |>
+  mutate(plot_prefix = str_extract(plot_code, "^[^-]+")) |>
+  distinct(plot_prefix, .keep_all = TRUE) 
 
-rainfor_coords <- rainfor_bennet |>
-  mutate(plot_prefix = str_extract(plot_code, "^[^-]+"))
+df_rainfor <- df_rainfor |>
+  mutate(plot_prefix = str_extract(plotID, "^[^-]+")) |>
+  left_join(rainfor_prefix |> select(plot_prefix, lon, lat), by = "plot_prefix") |>
+  mutate(
+    lon = if_else(is.na(lon.x), lon.y, lon.x),
+    lat = if_else(is.na(lat.x), lat.y, lat.x)
+  ) |>
+  select(-lon.x, -lon.y, -lat.x, -lat.y)
+
+# check again how many plots are missing coordinates
+df_rainfor %>%
+  filter(is.na(lat) | is.na(lon)) %>%
+  distinct(plotID)
 
 # aggregate data from stand
 df_rainfor <- from_stand_data(df_rainfor) |>
@@ -2672,6 +2689,7 @@ df_rainfor <- biomes_coords_latlon(df_rainfor)
 
 # add coords and aridity index
 df_rainfor <- ai_coords_latlon(df_rainfor) 
+#df_rainfor <- ai_coords_latlon_opt(df_rainfor) 
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
 df_rainfor <- lai_coords_latlon(df_rainfor) 
