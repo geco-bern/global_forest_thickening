@@ -9,6 +9,9 @@ library(recipes)
 library(multidplyr)
 library(tictoc)
 library(tidyterra)
+library(rnaturalearth)
+library(ggplot2)
+library(scales)
 
 ## Load data -----------
 # Load and engineer data with environmental factors
@@ -263,18 +266,22 @@ toc()
 hist(df_boot_parallel$grid_predictions[[1]]$dn)
 hist(df_boot_parallel$grid_predictions[[1]]$db)
 
-library(rnaturalearth)
-library(ggplot2)
-library(scales)
+df_boot_parallel$grid_predictions[[1]] |>
+  ggplot(aes(db, ..density..)) +
+  geom_histogram(fill = "grey", color = "black", bins = 50) +
+  geom_vline(xintercept = 0, linetype = "dotted") +
+  theme_classic()
+
+ggsave(here("manuscript/figures/histogram_db.pdf"))
 
 coast <- rnaturalearth::ne_coastline(
   scale = 110,
   returnclass = "sf"
 )
 
-fig4 <- df_boot_parallel$grid_predictions[[1]] |>
+df_boot_parallel$grid_predictions[[1]] |>
   ggplot() +
-  geom_tile(
+  geom_raster(
     aes(lon, lat, fill = db),
     show.legend = TRUE
   ) +
@@ -300,5 +307,4 @@ fig4 <- df_boot_parallel$grid_predictions[[1]] |>
     #subtitle = "Global forest carbon increase per ha and year"
   )
 
-fig4
 ggsave(here("manuscript/figures/fig4.pdf"))
