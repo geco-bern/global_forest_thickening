@@ -237,7 +237,7 @@ data_rainfor
 plot_stl(data_rainfor)
 plot_map(data_rainfor)
 
-# All plots ----
+# Write data from all plots ----
 
 # join all datasets
 data_all <- bind_rows(
@@ -294,7 +294,7 @@ data_all <- data_all |>
 
 saveRDS(data_all, file = here::here("data/inputs/agg/data_all.rds"))
 
-# Unmanaged ----
+# Write unmanaged data ----
 # Select only unmanaged forests
 data_unm <- data_unm_fc(data_all)
 data_unm
@@ -303,10 +303,14 @@ data_unm |>
 plot_stl(data_unm)
 plot_map(data_unm)
 
-saveRDS(data_unm, file = here::here("data/inputs/agg/data_unm.rds"))
+# saveRDS(data_unm, file = here::here("data/inputs/agg/data_unm.rds")) # Laura
+saveRDS(data_unm, file = here::here("data/data_unm.rds")) # Beni
 
-# Filtered by biomes ----
-# The unmanaged data is divided by biomes, and then for each biome we apply the filter of the upper quantile.
+# Generate filtered by biomes ----
+# The unmanaged data is divided by biomes, and then for each biome we apply the filter of the upper quantile.d
+
+# read data written just above
+data_unm <- read_rds(here::here("data/data_unm.rds"))
 
 ## Biome 1 ----
 # Tropical & Subtropical Moist Broadleaf Forests
@@ -381,7 +385,7 @@ data_fil_biome5 <- readRDS(here::here("data/inputs/data_fil_biome5.rds"))
 data_fil_biome6 <- readRDS(here::here("data/inputs/data_fil_biome6.rds"))
 data_fil_biome12 <- readRDS(here::here("data/inputs/data_fil_biome12.rds"))
 
-# Filtered ----
+# Write filtered data ----
 # join filtered datasets
 data_fil_biomes <- bind_rows(
   data_fil_biome1,
@@ -392,7 +396,11 @@ data_fil_biomes <- bind_rows(
   data_fil_biome12
 )
 
+# write to file
 saveRDS(data_fil_biomes, file = here::here("data/inputs/data_fil_biomes.rds"))
+
+# Plot filtered data --------
+data_fil_biomes <- read_rds(here::here("data/inputs/data_fil_biomes.rds"))
 
 data_fil_biomes |>
   drop_na(years_since_management) |>

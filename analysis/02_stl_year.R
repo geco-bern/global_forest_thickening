@@ -41,7 +41,7 @@ source(here("R/calc_lqmm_byqmdbin.R"))
 
 # load data
 data_fil_biomes <- readRDS(here("data/data_fil_biomes.rds"))
-data_fil_biomes <- readRDS(here("data/75perc/data_fil_biomes.rds"))
+# data_fil_biomes <- readRDS(here("data/75perc/data_fil_biomes.rds"))
 
 plot_map_fil <- plot_map(data_fil_biomes)
 plot_map_fil
