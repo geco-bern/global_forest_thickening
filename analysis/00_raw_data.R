@@ -1,4 +1,4 @@
-# This script reads raw data from the original forest data files and process them to create the input data
+# This script reads raw data from the original forest data files and process them to create the input data.
 
 # load packages ----
 #library(renv)
@@ -27,7 +27,7 @@ library(ingestr)
 library(lubridate)
 
 # load functions ----
-source(file.path(here::here(), "/analysis/00_functions.R"))
+source(file.path(here::here(), "/R/functions.R"))
 
 # NFI Spain ----
 # Data providers: Paloma Ruiz-Benito and Veronica Cruz-Alonso
@@ -2370,10 +2370,12 @@ saveRDS(data_pasoh, file = file.path(here::here(), "/data/inputs/data_pasoh.rds"
 
 ## Mudumalai ----
 # Contact: Prof. Sukumar
-# No enough data. Not included in the analyses at this moment.
 
 # Stand-level data
 mudumalai <- read.csv("~/data/forestgeo/mudumalai/mudumalai_stand.csv",sep=",")
+mudumalai <- mudumalai |>
+  mutate(density = nindiv/plotsize) |>
+  mutate(ba = ba/plotsize)
 
 # aggregate data from stand
 data_mudumalai <- from_stand_data(mudumalai) |>
@@ -2384,8 +2386,7 @@ data_mudumalai <- from_stand_data(mudumalai) |>
   mutate(management = 0,
          country = "India",
          years_since_management = NA,
-         biomass = NA,
-         species = NA) 
+         biomass = NA) 
 
 # add coords and biomes
 data_mudumalai <- biomes_coords_latlon(data_mudumalai) 
@@ -2618,3 +2619,98 @@ rbeni::plot_map_simpl() +
 # save stand-level data
 saveRDS(data_aus, file = file.path(here::here(), "/data/inputs/data_fp_aus.rds"))
 
+# RAINFOR Amazon Forest Inventory Network ----
+# Data from Esquivel-Muelbert, et al. 2025 data published
+# Coordinates of the sites from Bennett et al. 2023
+
+# Stand-level data
+rainfor_plots <- read.csv("~/data/rainfor/esquivel_etal/full_final_dataset.csv",sep=",")
+rainfor_bennet <- read.csv("~/data/rainfor/bennett_etal/table_s3.csv",sep=",")
+rainfor_brienen <- read.csv("~/data/rainfor/brienen_etal/table_s1.csv",sep=",")
+
+# select variables from coordinates data
+rainfor_bennet <- rainfor_bennet |>
+  select(plot_code, country, lon, lat) 
+rainfor_brienen <- rainfor_brienen |>
+  select(plot_code, country, lon, lat) 
+
+rainfor_coords <- rainfor_bennet |>
+  bind_rows(rainfor_brienen) |>
+  arrange(plot_code) |>
+  distinct(plot_code, .keep_all = TRUE) 
+
+# rename variables
+df_rainfor <- rainfor_plots |>
+  rename(plot_code = Plot.Code,
+         ba = total_BA,
+         mean_ba = mean_BA,
+         plotsize = PlotArea,
+         density = number_stems,
+         plot_identi = PlotID) |>
+  mutate(year = round(census_date),
+         years_since_management = NA,
+         species = NA,
+         biomass = NA,
+         dbh = 100 * sqrt((4 * mean_ba) / pi)) |>  # DBH in centimetres
+  left_join(rainfor_coords, by = "plot_code") |>
+  rename(plotID = plot_code)
+
+# check how many plots are missing coordinates
+df_rainfor %>%
+  filter(is.na(lat) | is.na(lon)) %>%
+  distinct(plotID)
+
+# keep only the alphabetic part of the plotID to join the rest of coordinates
+# since not all plot numbers are included in the coordinates info, we exclude the numeric part of the plotID
+rainfor_prefix <- rainfor_coords |>
+  mutate(plot_prefix = str_extract(plot_code, "^[^-]+")) |>
+  distinct(plot_prefix, .keep_all = TRUE) 
+
+df_rainfor <- df_rainfor |>
+  mutate(plot_prefix = str_extract(plotID, "^[^-]+")) |>
+  left_join(rainfor_prefix |> select(plot_prefix, lon, lat), by = "plot_prefix") |>
+  mutate(
+    lon = if_else(is.na(lon.x), lon.y, lon.x),
+    lat = if_else(is.na(lat.x), lat.y, lat.x)
+  ) |>
+  select(-lon.x, -lon.y, -lat.x, -lat.y)
+
+# check again how many plots are missing coordinates
+df_rainfor %>%
+  filter(is.na(lat) | is.na(lon)) %>%
+  distinct(plotID)
+
+# aggregate data from stand
+df_rainfor <- from_stand_data(df_rainfor) |>
+  mutate(management = 0)
+
+# add coords and biomes
+df_rainfor <- biomes_coords_latlon(df_rainfor) 
+
+# add coords and aridity index
+df_rainfor <- ai_coords_latlon(df_rainfor) 
+#df_rainfor <- ai_coords_latlon_opt(df_rainfor) 
+
+# add coords and LAI Modis or NDVI (0.5 degrees)
+df_rainfor <- lai_coords_latlon(df_rainfor) 
+
+# add coords and N deposition (Lamarque 2011)
+df_rainfor <- ndep_coords_latlon(df_rainfor) 
+
+# add coords and C:N ratio (ISRIC WISE)
+df_rainfor <- cn_coords_latlon(df_rainfor) 
+
+# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
+df_rainfor <- phos_coords_latlon(df_rainfor) 
+
+# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
+df_rainfor <- orgc_coords_latlon(df_rainfor) 
+
+ggplot() + 
+  geom_point(data = df_rainfor, aes(x = logQMD, y = logDensity), alpha=0.5, size = 1.5, col="black",inherit.aes = FALSE) 
+
+rbeni::plot_map_simpl() +
+  geom_point(aes(lon, lat, color = biome), data = df_rainfor, size = 0.5, alpha=0.5)
+
+# Save stand-level data
+saveRDS(df_rainfor, file = file.path(here::here(), "/data/inputs/data_df_rainfor.rds"))

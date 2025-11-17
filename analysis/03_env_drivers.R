@@ -31,10 +31,7 @@ library(plotbiomes)
 
 # load data
 data_fil_biomes <- readRDS(here::here("data/data_fil_biomes.rds"))
-
-# XXX explain filter
-data_fil_biomes <- data_fil_biomes |>
-  filter(year >= 1980)
+data_fil_biomes <- readRDS(here("data/75perc/data_fil_biomes.rds"))
 
 # correlation among variables
 M <- as.matrix(data_fil_biomes[,c(27,29,30,33)] %>% distinct())
@@ -252,28 +249,144 @@ plot_model(mod_lmer_env)
 
 # LMM with lqmm() --------------------------------------------------------------
 
+data_unm <- readRDS(here::here("data/data_unm.rds"))
+
+data_unm <- data_unm |> 
+  mutate(year_sc = scale(year),
+         logQMD_sc = scale(logQMD),
+         ai_sc = scale(ai),
+         ndep_sc = scale(ndep),
+         orgc_sc = scale(ORGC),
+         pbr_sc = scale(PBR))
+
+### Identify disturbed plots ---------------------------------------------------
+data_unm <- data_unm |> 
+  identify_disturbed_plots()
+
+breaks <- get_breaks(data_unm$year)
+
+df_disturbed <- data_unm |> 
+  mutate(year_bin = cut(
+    year, 
+    breaks = breaks, 
+    labels = breaks[1:length(breaks)-1] + 2.5,
+    include.lowest = TRUE
+  )) |> 
+  group_by(year_bin) |> 
+  summarise(
+    nplots = length(unique(plotID)),
+    ndisturbed = sum(disturbed, na.rm = TRUE)
+  ) |> 
+  mutate(fdisturbed = ndisturbed / nplots) |> 
+  mutate(fdisturbed_logit = log(fdisturbed / (1 - fdisturbed)))
+
+### Plot disturbed plots -------------------------------------------------------
+gg_fdisturbed_biome12 <- df_disturbed |> 
+  ggplot(aes(as.numeric(as.character(year_bin)), fdisturbed_logit)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "red") +
+  theme_classic() +
+  labs(
+    x = "Year",  
+    title = bquote(bold("d") ~~ "Mediterranean Forests")
+  ) +
+  scale_y_continuous(
+    name = expression(logit(Fraction ~ disturbed)),
+    sec.axis = sec_axis(~ plogis(.), name = "Fraction disturbed")
+  )
+
+# Additional filter: remove plots with no change in ln(N)
+data_unm <- data_unm |>
+  group_by(plotID) |>
+  mutate(var_logdensity = diff(range(logDensity))) |>
+  filter(var_logdensity > 0.001)
+
+# remove disturbed plots
+data_unm_including_disturbed <- data_unm
+data_unm <- data_unm |> 
+  filter(ndisturbed == 0)
+
+### LQMM fit -------------------------------------------------------------------
+set.seed(123)
+fit_lqmm <- lqmm(
+  logDensity ~ logQMD_sc + year_sc,
+  random = ~1,
+  group = plotID,
+  tau = 0.90,
+  data = data_unm,
+  type = "normal",
+  control = lqmmControl(startQR = TRUE)
+)
+
+# with all environmental factors and their interaction with time as predictors
+set.seed(123)
+mod_lqmm_env <- lqmm(
+   logDensity ~ logQMD_sc +
+     year_sc * ai_sc +
+     year_sc * ndep_sc +
+     year_sc * orgc_sc +
+     year_sc * pbr_sc,
+   random = ~1,
+   group = plotID,
+   tau = 0.70,
+   data = data_unm |>
+     drop_na(),
+   type = "normal",
+   control = list(
+     #LP_max_iter = 2000,
+     #LP_tol_ll = 1e-3,
+     startQR = TRUE
+   )
+ )
+
+set.seed(123)
+mod_lqmm_env <- lqmm(
+  logDensity ~ scale(logQMD) +
+    scale(year) * scale(ai) +
+    scale(year) * scale(ndep) +
+    scale(year) * scale(ORGC) +
+    scale(year) * scale(PBR),
+  random = ~1,
+  group = plotID,
+  tau = 0.70,
+  data = data_unm |>
+    drop_na(),
+  type = "normal",
+  control = list(
+    #LP_max_iter = 2000,
+    #LP_tol_ll = 1e-3,
+    startQR = TRUE
+  )
+)
+
+out <- summary(mod_lqmm_env)
+
+plot_lqmm_bybiome(
+  data_unm,
+  mod_lqmm_env
+)
+
 ## Fit model -------------------------------------------------------------------
 
 # # with all environmental factors and their interaction with time as predictors
-# mod_lqmm_env <- lqmm(
-#   logDensity ~ logQMD +
-#     year * ai +
-#     year * ndep +
-#     year * ORGC +
-#     year * PBR,
-#   random = ~1,
-#   group = plotID,
-#   tau = c(0.70, 0.90),
-#   data = data_fil_biomes |>
-#     select(logQMD, logDensity, year, ai, ndep, ORGC, PBR, plotID) |>
-#     drop_na() |>
-#     slice_sample(n = 10000),
-#   type = "normal",
-#   control = list(
-#     LP_max_iter = 2000,
-#     LP_tol_ll = 1e-4
-#   )
-# )
+ mod_lqmm_env <- lqmm(
+   logDensity ~ logQMD +
+     year * ai +
+     year * ndep +
+     year * ORGC +
+     year * PBR,
+   random = ~1,
+   group = plotID,
+   tau = 0.80,
+   data = data_unm_biome |>
+     select(logQMD, logDensity, year, ai, ndep, ORGC, PBR, plotID) |>
+     drop_na(),
+   type = "normal",
+   control = list(
+     LP_max_iter = 2000,
+     LP_tol_ll = 1e-4
+   )
+ )
 #
 
 ## Visualise fixed effects -----------------------------------------------------

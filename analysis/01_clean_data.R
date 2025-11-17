@@ -24,7 +24,7 @@ library(ingestr)
 #library(DescTools)
 
 # load functions ----
-source(here::here("/analysis/00_functions.R"))
+source(file.path(here::here(), "/R/functions.R"))
 
 # NFI Spain ----
 data_nfi_spain <- readRDS(here::here("data/inputs/data_nfi_spa.rds"))
@@ -230,6 +230,12 @@ data_aus
 plot_stl(data_aus)
 plot_map(data_aus)
 
+# RAINFOR plots ----
+data_rainfor <- readRDS(file.path(here::here(), "/data/inputs/data_df_rainfor.rds"))
+data_rainfor
+plot_stl(data_rainfor)
+plot_map(data_rainfor)
+
 # All plots ----
 
 # join all datasets
@@ -264,9 +270,10 @@ data_all <- bind_rows(data_nfi_spain,
                       data_serc,
                       data_wytham,
                       data_pasoh,
-                      #data_mudumalai,
+                      data_mudumalai,
                       data_forestplots,
-                      data_aus)
+                      data_aus,
+                      data_rainfor)
 
 data_all <- data_all |>
   mutate(ndep = noy+nhx) |>
@@ -282,7 +289,7 @@ data_all <- data_all |>
   #drop_na(ORGC) |>
   #drop_na(ndep)
 
-saveRDS(data_all, file = here::here("data/inputs/data_all.rds"))
+saveRDS(data_all, file = here::here("data/inputs/agg/data_all.rds"))
 
 # Unmanaged ----
 # Select only unmanaged forests
@@ -293,7 +300,7 @@ data_unm |>
 plot_stl(data_unm)
 plot_map(data_unm)
 
-saveRDS(data_unm, file = here::here("data/inputs/data_unm.rds"))
+saveRDS(data_unm, file = here::here("data/inputs/agg/data_unm.rds"))
 
 # Filtered by biomes ----
 # The unmanaged data is divided by biomes, and then for each biome we apply the filter of the upper quantile.
