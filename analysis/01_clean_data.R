@@ -1,7 +1,7 @@
 # This script clean data and prepares them for the analyses.
 
 # load packages ----
-#library(renv)
+# library(renv)
 library(readr)
 library(dplyr)
 library(tidyverse)
@@ -21,7 +21,7 @@ library(lqmm)
 library(ggforce)
 library(MuMIn)
 library(ingestr)
-#library(DescTools)
+# library(DescTools)
 
 # load functions ----
 source(file.path(here::here(), "/R/functions.R"))
@@ -31,8 +31,9 @@ data_nfi_spain <- readRDS(here::here("data/inputs/data_nfi_spa.rds"))
 data_nfi_spain
 plot_stl(data_nfi_spain)
 plot_map(data_nfi_spain)
-ggplot(data_nfi_spain) + geom_point(aes(year, biomass)) 
-  
+ggplot(data_nfi_spain) +
+  geom_point(aes(year, biomass))
+
 # NFI Sweeden ----
 data_nfi_sweeden <- readRDS(here::here("data/inputs/data_nfi_swe.rds"))
 data_nfi_sweeden
@@ -131,9 +132,9 @@ data_nfr_swi
 plot_stl(data_nfr_swi)
 plot_map(data_nfr_swi)
 
-## nwfva ---- 
+## nwfva ----
 data_nwfva <- readRDS(here::here("data/inputs/data_euf_nwfva.rds"))
-data_nwfva 
+data_nwfva
 plot_stl(data_nwfva)
 plot_map(data_nwfva)
 
@@ -239,55 +240,57 @@ plot_map(data_rainfor)
 # All plots ----
 
 # join all datasets
-data_all <- bind_rows(data_nfi_spain,
-                      data_nfi_sweeden,
-                      data_fia_us,
-                      data_nfi_switzerland,
-                      data_nfi_norway,
-                      data_efm_swi,
-                      data_uholka,
-                      data_greece,
-                      data_france,
-                      data_bnp,
-                      data_czu,
-                      data_forst,
-                      data_iberbas,
-                      data_incds,
-                      data_lwf,
-                      data_nbw,
-                      data_nfr_swi,
-                      data_nwfva,
-                      #data_silava,
-                      data_tuzvo,
-                      data_ul,
-                      data_unito,
-                      data_urk,
-                      data_wuls,
-                      data_luquillo,
-                      #data_bci,
-                      data_scbi,
-                      data_palanam,
-                      data_serc,
-                      data_wytham,
-                      data_pasoh,
-                      data_mudumalai,
-                      data_forestplots,
-                      data_aus,
-                      data_rainfor)
+data_all <- bind_rows(
+  data_nfi_spain,
+  data_nfi_sweeden,
+  data_fia_us,
+  data_nfi_switzerland,
+  data_nfi_norway,
+  data_efm_swi,
+  data_uholka,
+  data_greece,
+  data_france,
+  data_bnp,
+  data_czu,
+  data_forst,
+  data_iberbas,
+  data_incds,
+  data_lwf,
+  data_nbw,
+  data_nfr_swi,
+  data_nwfva,
+  # data_silava,
+  data_tuzvo,
+  data_ul,
+  data_unito,
+  data_urk,
+  data_wuls,
+  data_luquillo,
+  # data_bci,
+  data_scbi,
+  data_palanam,
+  data_serc,
+  data_wytham,
+  data_pasoh,
+  data_mudumalai,
+  data_forestplots,
+  data_aus,
+  data_rainfor
+)
 
 data_all <- data_all |>
-  mutate(ndep = noy+nhx) |>
+  mutate(ndep = noy + nhx) |>
   # unite plotID and dataset to ensure there are not matches form different sources
   rename(plotIDD = plotID) |>
   unite(plotID, dataset, plotIDD, sep = "_", remove = FALSE) |>
-  select(-plotIDD) 
-  #drop_na(density) |>
-  #drop_na(QMD) |>
-  #drop_na(logQMD) |>
-  #drop_na(CNrt) |>
-  #drop_na(PBR) |>
-  #drop_na(ORGC) |>
-  #drop_na(ndep)
+  select(-plotIDD)
+# drop_na(density) |>
+# drop_na(QMD) |>
+# drop_na(logQMD) |>
+# drop_na(CNrt) |>
+# drop_na(PBR) |>
+# drop_na(ORGC) |>
+# drop_na(ndep)
 
 saveRDS(data_all, file = here::here("data/inputs/agg/data_all.rds"))
 
@@ -295,7 +298,7 @@ saveRDS(data_all, file = here::here("data/inputs/agg/data_all.rds"))
 # Select only unmanaged forests
 data_unm <- data_unm_fc(data_all)
 data_unm
-data_unm |> 
+data_unm |>
   nrow()
 plot_stl(data_unm)
 plot_map(data_unm)
@@ -307,19 +310,19 @@ saveRDS(data_unm, file = here::here("data/inputs/agg/data_unm.rds"))
 
 ## Biome 1 ----
 # Tropical & Subtropical Moist Broadleaf Forests
-data_unm_biome1 <- data_unm |> 
-  filter(biomeID==1)
-data_unm_biome1 |> 
+data_unm_biome1 <- data_unm |>
+  filter(biomeID == 1)
+data_unm_biome1 |>
   nrow()
 plot_stl(data_unm_biome1)
 
 # filter data with upper quantile
-data_fil_biome1 <- data_filter_fc(data_unm_biome1) 
+data_fil_biome1 <- data_filter_fc(data_unm_biome1)
 plot_stl(data_fil_biome1)
 saveRDS(data_fil_biome1, file = here::here("data/inputs/data_fil_biome1.rds"))
 
 ## Biome 2 ----
-# Tropical & Subtropical Dry Broadleaf Forests Forest 
+# Tropical & Subtropical Dry Broadleaf Forests Forest
 # NOTE: There are no enough data (but see Mudumalai)
 
 ## Biome 3 ----
@@ -328,45 +331,45 @@ saveRDS(data_fil_biome1, file = here::here("data/inputs/data_fil_biome1.rds"))
 
 ## Biome 4 ----
 # Temperate Broadleaf & Mixed Forests Forest
-data_unm_biome4 <- data_unm |> 
-  filter(biomeID==4)
+data_unm_biome4 <- data_unm |>
+  filter(biomeID == 4)
 plot_stl(data_unm_biome4)
 
 # filter data with upper quantile
-data_fil_biome4 <- data_filter_fc(data_unm_biome4) 
+data_fil_biome4 <- data_filter_fc(data_unm_biome4)
 plot_stl(data_fil_biome4)
 saveRDS(data_fil_biome4, file = here::here("data/inputs/data_fil_biome4.rds"))
 
 ## Biome 5 ----
 # Temperate Conifer Forests Forest
-data_unm_biome5 <- data_unm |> 
-  filter(biomeID==5)
+data_unm_biome5 <- data_unm |>
+  filter(biomeID == 5)
 plot_stl(data_unm_biome5)
 
 # filter data with upper quantile
-data_fil_biome5 <- data_filter_fc(data_unm_biome5) 
+data_fil_biome5 <- data_filter_fc(data_unm_biome5)
 plot_stl(data_fil_biome5)
 saveRDS(data_fil_biome5, file = here::here("data/inputs/data_fil_biome5.rds"))
 
 ## Biome 6 ----
 # Boreal Forests/Taiga Forest
-data_unm_biome6 <- data_unm |> 
-  filter(biomeID==6)
+data_unm_biome6 <- data_unm |>
+  filter(biomeID == 6)
 plot_stl(data_unm_biome6)
 
 # filter data with upper quantile
-data_fil_biome6 <- data_filter_fc(data_unm_biome6) 
+data_fil_biome6 <- data_filter_fc(data_unm_biome6)
 plot_stl(data_fil_biome6)
 saveRDS(data_fil_biome6, file = here::here("data/inputs/data_fil_biome6.rds"))
 
 ## Biome 12 ----
 # Mediterranean Forests
-data_unm_biome12 <- data_unm |> 
-  filter(biomeID==12)
+data_unm_biome12 <- data_unm |>
+  filter(biomeID == 12)
 plot_stl(data_unm_biome12)
 
 # filter data with upper quantile
-data_fil_biome12 <- data_filter_fc(data_unm_biome12) 
+data_fil_biome12 <- data_filter_fc(data_unm_biome12)
 plot_stl(data_fil_biome12)
 saveRDS(data_fil_biome12, file = here::here("data/inputs/data_fil_biome12.rds"))
 
@@ -380,37 +383,43 @@ data_fil_biome12 <- readRDS(here::here("data/inputs/data_fil_biome12.rds"))
 
 # Filtered ----
 # join filtered datasets
-data_fil_biomes <- bind_rows(data_fil_biome1,
-                             data_fil_biome2,
-                             data_fil_biome4,
-                             data_fil_biome5,
-                             data_fil_biome6,
-                             data_fil_biome12)
+data_fil_biomes <- bind_rows(
+  data_fil_biome1,
+  data_fil_biome2,
+  data_fil_biome4,
+  data_fil_biome5,
+  data_fil_biome6,
+  data_fil_biome12
+)
 
 saveRDS(data_fil_biomes, file = here::here("data/inputs/data_fil_biomes.rds"))
 
-data_fil_biomes |> 
+data_fil_biomes |>
   drop_na(years_since_management) |>
-  distinct(dataset) 
+  distinct(dataset)
 
-mean(data_fil_biomes$years_since_management, na.rm=T)
+mean(data_fil_biomes$years_since_management, na.rm = T)
 
 # Check DBH distributions
 ggplot() +
-  geom_density(data = data_fil_biomes, aes(QMD, ..density.., col=factor(biome), fill=factor(biome)), alpha= 0.7) +
+  geom_density(data = data_fil_biomes, aes(QMD, ..density.., col = factor(biome), fill = factor(biome)), alpha = 0.7) +
   theme_classic() +
-  scale_fill_manual(name = "Biome", values = c("Tropical & Subtropical Moist Broadleaf Forests" = "#E69F00", 
-                                               "Temperate Broadleaf & Mixed Forests" = "#56B4E9",
-                                               "Temperate Conifer Forests" = "#009E73", 
-                                               "Boreal Forests/Taiga" = "#F5C710", 
-                                               "Mediterranean Forests, Woodlands & Scrub" = "#0072B2")) +
-  scale_color_manual(name = "Biome", values = c("Tropical & Subtropical Moist Broadleaf Forests" = "#E69F00", 
-                                                "Temperate Broadleaf & Mixed Forests" = "#56B4E9",
-                                                "Temperate Conifer Forests" = "#009E73", 
-                                                "Boreal Forests/Taiga" = "#F5C710", 
-                                                "Mediterranean Forests, Woodlands & Scrub" = "#0072B2")) +
+  scale_fill_manual(name = "Biome", values = c(
+    "Tropical & Subtropical Moist Broadleaf Forests" = "#E69F00",
+    "Temperate Broadleaf & Mixed Forests" = "#56B4E9",
+    "Temperate Conifer Forests" = "#009E73",
+    "Boreal Forests/Taiga" = "#F5C710",
+    "Mediterranean Forests, Woodlands & Scrub" = "#0072B2"
+  )) +
+  scale_color_manual(name = "Biome", values = c(
+    "Tropical & Subtropical Moist Broadleaf Forests" = "#E69F00",
+    "Temperate Broadleaf & Mixed Forests" = "#56B4E9",
+    "Temperate Conifer Forests" = "#009E73",
+    "Boreal Forests/Taiga" = "#F5C710",
+    "Mediterranean Forests, Woodlands & Scrub" = "#0072B2"
+  )) +
   theme(legend.position = "bottom") +
-  scale_x_continuous(limits = c(0,80))   
+  scale_x_continuous(limits = c(0, 80))
 
 # Table S1 ----
 data <- readRDS(here::here("data/inputs/data_unm.rds"))
@@ -419,42 +428,48 @@ summary(data)
 
 data |>
   filter(years_since_management != 999) |>
-  summarise(mean=mean(years_since_management))
-mean(data$plotsize,na.rm=T)
+  summarise(mean = mean(years_since_management))
+mean(data$plotsize, na.rm = T)
 species <- as.data.frame(sort(unique(data_unm$species)))
 length(unique(data_unm$plotID))
 length(unique(data_unm$species))
 summary(data_unm)
-table_s1 <- data %>% group_by(country,dataset) %>% 
-  summarise(n_plots=n_distinct(plotID),
-            min_lon = min(lon),
-            max_lon = max(lon),
-            min_lat = min(lat),
-            max_lat = max(lat),
-            min_year = min(year),
-            max_year = max(year),
-            timespan=max_year-min_year,
-            n_census_mean = as.integer(mean(n_census,na.rm=T)),
-            interval=as.integer(mean(period,na.rm=T)),
-            interval_sd =sd(period,na.rm=T),
-            qmd_mean=mean(QMD,na.rm=T),
-            QMD_sd=sd(QMD,na.rm=T),
-            density_mean=mean(density,na.rm=T),
-            density_sd=sd(density,na.rm=T),
-            biomass_mean=mean(biomass,na.rm=T),
-            biomass_sd=sd(biomass,na.rm=T))
+table_s1 <- data %>%
+  group_by(country, dataset) %>%
+  summarise(
+    n_plots = n_distinct(plotID),
+    min_lon = min(lon),
+    max_lon = max(lon),
+    min_lat = min(lat),
+    max_lat = max(lat),
+    min_year = min(year),
+    max_year = max(year),
+    timespan = max_year - min_year,
+    n_census_mean = as.integer(mean(n_census, na.rm = T)),
+    interval = as.integer(mean(period, na.rm = T)),
+    interval_sd = sd(period, na.rm = T),
+    qmd_mean = mean(QMD, na.rm = T),
+    QMD_sd = sd(QMD, na.rm = T),
+    density_mean = mean(density, na.rm = T),
+    density_sd = sd(density, na.rm = T),
+    biomass_mean = mean(biomass, na.rm = T),
+    biomass_sd = sd(biomass, na.rm = T)
+  )
 summary(table_s1)
 write.csv(table_s1, file = here::here("data/outputs/tableS1.csv"))
 
 # Table S2 ----
-table_s2 <- data %>% group_by(biome) %>% 
-  summarise(n_plots=n_distinct(plotID),
-            min_year = min(year),
-            max_year = max(year),
-            timespan=mean(period,na.rm=T),
-            timespan_sd =sd(period,na.rm=T),
-            qmd_mean=mean(QMD,na.rm=T),
-            QMD_sd=sd(QMD,na.rm=T),
-            density_mean=mean(density,na.rm=T),
-            density_sd=sd(density,na.rm=T))
+table_s2 <- data %>%
+  group_by(biome) %>%
+  summarise(
+    n_plots = n_distinct(plotID),
+    min_year = min(year),
+    max_year = max(year),
+    timespan = mean(period, na.rm = T),
+    timespan_sd = sd(period, na.rm = T),
+    qmd_mean = mean(QMD, na.rm = T),
+    QMD_sd = sd(QMD, na.rm = T),
+    density_mean = mean(density, na.rm = T),
+    density_sd = sd(density, na.rm = T)
+  )
 write.csv(table_s2, file = here::here("data/outputs/tableS2.csv"))
