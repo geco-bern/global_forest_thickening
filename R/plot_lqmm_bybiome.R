@@ -99,7 +99,74 @@ plot_lqmm_bybiome <- function(data, mod, name, plot_legend = FALSE){
       plot.title.position = "plot"
     ) +
     #guides(color = guide_legend(direction = "horizontal")) +
-    scale_x_continuous(limits = c(2.4, 4.5), breaks = seq(3,4,1)) +
+    scale_x_continuous(limits = c(2.2, 4.5), breaks = seq(3,4,1)) +
     scale_y_continuous(limits = c(2.9,9.3), breaks = seq(4,8,2))
   
+}
+
+plot_lqmm_byqmdbin <- function(df_lqmm_byqmdbin, df_lqmm_byqmdbin_including_disturbed,
+                               x_limits = c(2.2, 4.5),
+                               y_limits = c(-0.5, 0.5),
+                               x_breaks = seq(3, 4, 1),
+                               y_breaks = seq(-0.4, 0.4, 0.2)) {
+  
+  ggplot() +
+    
+    # Dirty model (e.g., including disturbed plots) — grey
+    geom_point(
+      aes(
+        as.numeric(as.character(bin_lqmm)),
+        coef_year
+      ),
+      data = df_lqmm_byqmdbin_including_disturbed,
+      size = 1.5,
+      color = "grey"
+    ) +
+    geom_errorbar(
+      aes(
+        as.numeric(as.character(bin_lqmm)),
+        coef_year,
+        ymin = coef_year_lower,
+        ymax = coef_year_upper
+      ),
+      data = df_lqmm_byqmdbin_including_disturbed,
+      width = 0,
+      color = "grey"
+    ) +
+    
+    # Clean model (e.g., excluding disturbed plots) — black
+    geom_point(
+      aes(
+        as.numeric(as.character(bin_lqmm)),
+        coef_year
+      ),
+      data = df_lqmm_byqmdbin,
+      size = 1.5
+    ) +
+    geom_errorbar(
+      aes(
+        as.numeric(as.character(bin_lqmm)),
+        coef_year,
+        ymin = coef_year_lower,
+        ymax = coef_year_upper
+      ),
+      data = df_lqmm_byqmdbin,
+      width = 0
+    ) +
+    
+    # Theme + labels
+    theme_classic() +
+    theme(
+      axis.text = element_text(size = 12), 
+      axis.title = element_text(size = 12)
+    ) +
+    geom_hline(yintercept = 0, linetype = "dotted") +
+    labs(
+      x = expression(ln(QMD)),
+      y = expression(italic(beta)(year))
+    ) +
+    
+    # Scales
+    scale_x_continuous(limits = x_limits, breaks = x_breaks) +
+    scale_y_continuous(limits = y_limits, breaks = y_breaks)
 }

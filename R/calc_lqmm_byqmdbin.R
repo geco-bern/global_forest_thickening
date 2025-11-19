@@ -45,7 +45,11 @@ calc_lqmm_byqmdbin <- function(df, binwidth = 0.25, breaks = NA){
       tau = 0.90,
       type = "normal",
       data = .,
-      control = lqmmControl(startQR = TRUE)
+      control = lqmmControl(
+        LP_max_iter = 5000, # inner loop iterations
+        LP_tol_ll   = 1e-05, # inner loop tolerance
+        startQR     = TRUE
+      )
     ))) |>
     
     # extract summaries safely

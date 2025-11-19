@@ -317,12 +317,18 @@ data_unm <- data_unm |>
   group_by(plotID) |>               # group before computing per-plot stats
   # remove plots with no change in ln(N)
   mutate(var_logdensity = var(logDensity)) |> 
-  filter(var_logdensity > 0.001) |> 
   # remove plots with declining logQMD
-  # compute change in logQMD per plot
   mutate(delta_logQMD = last(logQMD) - first(logQMD)) |> 
   # keep only plots with stable or increasing logQMD
-  filter(delta_logQMD >= 0) |>
+  filter(var_logdensity > 0.001) |> 
+  #filter(delta_logQMD >= 0) |>
+  ungroup()
+
+# Additional filter: remove plots with no change in ln(N)
+data_unm <- data_unm |>
+  group_by(plotID) |>
+  mutate(var_logdensity = diff(range(logDensity))) |>
+  filter(var_logdensity > 0.001) |> 
   ungroup()
 
 # Generate filtered by biomes ----

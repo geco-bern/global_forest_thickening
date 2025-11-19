@@ -107,7 +107,6 @@ fit_lqmm <- lqmm(
   tau = 0.9, # c(0.75, 0.90),
   data = data_unm_biome,
   type = "normal",
-  # control = lqmmControl(startQR = TRUE)
   control = lqmmControl(
     LP_max_iter = 5000, # inner loop iterations
     LP_tol_ll   = 1e-05, # inner loop tolerance
@@ -203,53 +202,7 @@ df_lqmm_byqmdbin_including_disturbed <- calc_lqmm_byqmdbin(
 )
 
 # Build the plot to access internal structure
-gg_lqmm_biome1_byqmdbin <- ggplot() +
-  geom_point(
-    aes(
-      as.numeric(as.character(bin_lqmm)),
-      coef_year
-    ),
-    data = df_lqmm_byqmdbin_including_disturbed$df,
-    size = 1.5,
-    color = "grey"
-  ) +
-  geom_errorbar(
-    aes(
-      as.numeric(as.character(bin_lqmm)),
-      coef_year,
-      ymin = coef_year_lower,
-      ymax = coef_year_upper
-    ),
-    data = df_lqmm_byqmdbin_including_disturbed$df,
-    width = 0,
-    color = "grey"
-  ) +
-  geom_point(
-    aes(
-      as.numeric(as.character(bin_lqmm)),
-      coef_year
-    ),
-    data = df_lqmm_byqmdbin$df,
-    size = 1.5
-  ) +
-  geom_errorbar(
-    aes(
-      as.numeric(as.character(bin_lqmm)),
-      coef_year,
-      ymin = coef_year_lower,
-      ymax = coef_year_upper
-    ),
-    data = df_lqmm_byqmdbin$df,
-    width = 0
-  ) +
-  theme_classic() +
-  geom_hline(yintercept = 0, linetype = "dotted") +
-  labs(
-    x = expression(ln(QMD)),
-    y = expression(italic(beta)(year))
-  ) +
-  scale_x_continuous(limits = c(2.4, 4.5), breaks = seq(3, 4, 1)) +
-  scale_y_continuous(breaks = seq(-0.02, 0.02, 0.02))
+gg_lqmm_biome1_byqmdbin <- plot_lqmm_byqmdbin(df_lqmm_byqmdbin$df, df_lqmm_byqmdbin_including_disturbed$df)
 
 gg_lqmm_biome1_both <- cowplot::plot_grid(
   gg_lqmm_biome1,
@@ -328,7 +281,11 @@ fit_lqmm <- lqmm(
   tau = 0.90,
   data = data_unm_biome,
   type = "normal",
-  control = lqmmControl(startQR = TRUE)
+  control = lqmmControl(
+    LP_max_iter = 5000, # inner loop iterations
+    LP_tol_ll   = 1e-05, # inner loop tolerance
+    startQR     = TRUE
+  )
 )
 summary(fit_lqmm)
 
@@ -336,41 +293,6 @@ write_rds(fit_lqmm, file = here::here("data/fit_lqmm_biome2.rds"))
 
 #### STL shift ------------------------------------------------------------------
 # Estimated change in N per unit increase in year
-
-
-
-### Bootstrapping LQMM fit -----------------------------------------------------
-boot_data <- rsample::bootstraps(
-  data_unm_biome %>%
-    group_by(plotID),
-  times = 5000,
-  apparent = FALSE
-)
-
-# Apply model to each bootstrap sample
-boot_results <- boot_data %>%
-  mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
-  filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
-  unnest(coefs) |>
-  dplyr::select(-splits)
-
-write_rds(boot_results, file = here::here("data/boot_results_biome1.rds"))
-
-boot_results |>
-  ggplot(aes(estimate)) +
-  geom_density() +
-  facet_wrap(~term, scales = "free", ncol = 1)
-
-# summarise across bootstraps
-summary_stats <- boot_results %>%
-  group_by(term) %>%
-  summarise(
-    estimate = mean(estimate),
-    std.error = sd(estimate),
-    ci_low = quantile(estimate, 0.025),
-    ci_high = quantile(estimate, 0.975),
-    .groups = "drop"
-  )
 
 ### Plot STL from LQMM ---------------------------------------------------------
 gg_lqmm_biome2 <- plot_lqmm_bybiome(
@@ -391,53 +313,7 @@ df_lqmm_byqmdbin_including_disturbed <- calc_lqmm_byqmdbin(
 )
 
 # Build the plot to access internal structure
-gg_lqmm_biome2_byqmdbin <- ggplot() +
-  geom_point(
-    aes(
-      as.numeric(as.character(bin_lqmm)),
-      coef_year
-    ),
-    data = df_lqmm_byqmdbin_including_disturbed$df,
-    size = 1.5,
-    color = "grey"
-  ) +
-  geom_errorbar(
-    aes(
-      as.numeric(as.character(bin_lqmm)),
-      coef_year,
-      ymin = coef_year_lower,
-      ymax = coef_year_upper
-    ),
-    data = df_lqmm_byqmdbin_including_disturbed$df,
-    width = 0,
-    color = "grey"
-  ) +
-  geom_point(
-    aes(
-      as.numeric(as.character(bin_lqmm)),
-      coef_year
-    ),
-    data = df_lqmm_byqmdbin$df,
-    size = 1.5
-  ) +
-  geom_errorbar(
-    aes(
-      as.numeric(as.character(bin_lqmm)),
-      coef_year,
-      ymin = coef_year_lower,
-      ymax = coef_year_upper
-    ),
-    data = df_lqmm_byqmdbin$df,
-    width = 0
-  ) +
-  theme_classic() +
-  geom_hline(yintercept = 0, linetype = "dotted") +
-  labs(
-    x = expression(ln(QMD)),
-    y = expression(italic(beta)(year))
-  ) +
-  scale_x_continuous(limits = c(2.4, 4.5), breaks = seq(3, 4, 1)) +
-  scale_y_continuous(breaks = seq(-0.01, 0, 0.01))
+gg_lqmm_biome2_byqmdbin <- plot_lqmm_byqmdbin(df_lqmm_byqmdbin$df, df_lqmm_byqmdbin_including_disturbed$df)
 
 gg_lqmm_biome2_both <- cowplot::plot_grid(
   gg_lqmm_biome2,
@@ -578,53 +454,7 @@ df_lqmm_byqmdbin_including_disturbed <- calc_lqmm_byqmdbin(
 )
 
 # Build the plot to access internal structure
-gg_lqmm_biome4_byqmdbin <- ggplot() +
-  geom_point(
-    aes(
-      as.numeric(as.character(bin_lqmm)),
-      coef_year
-    ),
-    data = df_lqmm_byqmdbin_including_disturbed$df,
-    size = 1.5,
-    color = "grey"
-  ) +
-  geom_errorbar(
-    aes(
-      as.numeric(as.character(bin_lqmm)),
-      coef_year,
-      ymin = coef_year_lower,
-      ymax = coef_year_upper
-    ),
-    data = df_lqmm_byqmdbin_including_disturbed$df,
-    width = 0,
-    color = "grey"
-  ) +
-  geom_point(
-    aes(
-      as.numeric(as.character(bin_lqmm)),
-      coef_year
-    ),
-    data = df_lqmm_byqmdbin$df,
-    size = 1.5
-  ) +
-  geom_errorbar(
-    aes(
-      as.numeric(as.character(bin_lqmm)),
-      coef_year,
-      ymin = coef_year_lower,
-      ymax = coef_year_upper
-    ),
-    data = df_lqmm_byqmdbin$df,
-    width = 0
-  ) +
-  theme_classic() +
-  geom_hline(yintercept = 0, linetype = "dotted") +
-  labs(
-    x = expression(ln(QMD)),
-    y = expression(italic(beta)(year))
-  ) +
-  scale_x_continuous(limits = c(2.4, 4.5), breaks = seq(3, 4, 1)) +
-  scale_y_continuous(limits = c(-0.02, 0.04), breaks = seq(-0.02, 0.02, 0.02))
+gg_lqmm_biome4_byqmdbin <- plot_lqmm_byqmdbin(df_lqmm_byqmdbin$df, df_lqmm_byqmdbin_including_disturbed$df)
 
 gg_lqmm_biome4_both <- cowplot::plot_grid(
   gg_lqmm_biome4,
@@ -762,6 +592,8 @@ df_lqmm_byqmdbin_including_disturbed <- calc_lqmm_byqmdbin(
 )
 
 # Build the plot to access internal structure
+gg_lqmm_biome5_byqmdbin <- plot_lqmm_byqmdbin(df_lqmm_byqmdbin$df, df_lqmm_byqmdbin_including_disturbed$df)
+
 gg_lqmm_biome5_byqmdbin <- ggplot() +
   geom_point(
     aes(
@@ -802,6 +634,10 @@ gg_lqmm_biome5_byqmdbin <- ggplot() +
     width = 0
   ) +
   theme_classic() +
+  theme(
+    axis.text = element_text(size = 12), 
+    axis.title = element_text(size = 12),
+  ) +
   geom_hline(yintercept = 0, linetype = "dotted") +
   labs(
     x = expression(ln(QMD)),
@@ -886,7 +722,7 @@ fit_lqmm <- lqmm(
   data = data_unm_biome,
   type = "normal",
   control = lqmmControl(
-    LP_max_iter = 1000, # increase max iterations
+    LP_max_iter = 5000, # increase max iterations
     LP_tol_ll = 1e-4, # relax tolerance slightly (default is 1e-5)
     startQR = TRUE # good to keep this TRUE
   )
@@ -948,6 +784,8 @@ df_lqmm_byqmdbin_including_disturbed <- calc_lqmm_byqmdbin(
 )
 
 # Build the plot to access internal structure
+gg_lqmm_biome6_byqmdbin <- plot_lqmm_byqmdbin(df_lqmm_byqmdbin$df, df_lqmm_byqmdbin_including_disturbed$df)
+
 gg_lqmm_biome6_byqmdbin <- ggplot() +
   geom_point(
     aes(
@@ -988,6 +826,10 @@ gg_lqmm_biome6_byqmdbin <- ggplot() +
     width = 0
   ) +
   theme_classic() +
+  theme(
+    axis.text = element_text(size = 12), 
+    axis.title = element_text(size = 12),
+  ) +
   geom_hline(yintercept = 0, linetype = "dotted") +
   labs(
     x = expression(ln(QMD)),
@@ -1164,6 +1006,8 @@ df_lqmm_byqmdbin_including_disturbed <- calc_lqmm_byqmdbin(
 )
 
 # Build the plot to access internal structure
+gg_lqmm_biome12_byqmdbin <- plot_lqmm_byqmdbin(df_lqmm_byqmdbin$df, df_lqmm_byqmdbin_including_disturbed$df)
+
 gg_lqmm_biome12_byqmdbin <- ggplot() +
   geom_point(
     aes(
@@ -1204,6 +1048,10 @@ gg_lqmm_biome12_byqmdbin <- ggplot() +
     width = 0
   ) +
   theme_classic() +
+  theme(
+    axis.text = element_text(size = 12), 
+    axis.title = element_text(size = 12),
+  ) +
   geom_hline(yintercept = 0, linetype = "dotted") +
   labs(
     x = expression(ln(QMD)),
