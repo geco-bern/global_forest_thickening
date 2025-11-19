@@ -31,7 +31,7 @@ library(plotbiomes)
 
 # load data
 data_fil_biomes <- readRDS(here::here("data/data_fil_biomes.rds"))
-data_fil_biomes <- readRDS(here("data/75perc/data_fil_biomes.rds"))
+data_fil_biomes <- readRDS(here::here("data/75perc/data_fil_biomes.rds"))
 
 # correlation among variables
 M <- as.matrix(data_fil_biomes[, c(27, 29, 30, 33)] %>% distinct())
