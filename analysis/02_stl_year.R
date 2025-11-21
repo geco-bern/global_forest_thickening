@@ -38,6 +38,7 @@ source(here("R/identify_disturbed_plots.R"))
 source(here("R/get_breaks.R"))
 source(here("R/plot_lqmm_bybiome.R"))
 source(here("R/calc_lqmm_byqmdbin.R"))
+source(here("R/wrap_fit_lqmm.R"))
 
 # load data
 data_fil_biomes <- readRDS(here("data/data_fil_biomes.rds"))
@@ -830,7 +831,8 @@ gg_qmd_int_biome12 <- plot_model(
   labs(title = bquote(bold("e") ~ ~"Mediterranean Forests"))
 
 # Quantile regression ----------------------------------------------------------
-data_unm <- readRDS(here::here("data/inputs/agg/data_unm.rds"))
+# data_unm <- readRDS(here::here("data/inputs/agg/data_unm.rds")) # Laura
+data_unm <- readRDS(here::here("data/data_unm.rds")) # Beni
 
 ## Biome 1 Tropical & Subtropical Moist Broadleaf Forests ----------------------
 data_unm_biome <- data_unm |>
