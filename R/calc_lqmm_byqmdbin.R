@@ -46,7 +46,8 @@ calc_lqmm_byqmdbin <- function(df, binwidth = 0.25, breaks = NA){
       type = "normal",
       data = .,
       control = lqmmControl(
-        LP_max_iter = 5000, # inner loop iterations
+        LP_max_iter = 6000, # inner loop iterations
+        UP_max_iter = 6000,
         LP_tol_ll   = 1e-05, # inner loop tolerance
         startQR     = TRUE
       )
