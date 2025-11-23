@@ -639,14 +639,14 @@ fig1_lqmm <- cowplot::plot_grid(
 )
 
 ggsave(
-  filename = here::here("manuscript/figures/fig1_lqmm_.pdf"),
+  filename = here::here("manuscript/figures/fig1_lqmm.pdf"),
   plot = fig1_lqmm,
   width = 11,
   height = 10
 )
 
 ggsave(
-  filename = here::here("manuscript/figures/fig1_lqmm_.png"),
+  filename = here::here("manuscript/figures/fig1_lqmm.png"),
   plot = fig1_lqmm,
   width = 11,
   height = 10
@@ -664,23 +664,15 @@ fig_hist_year <- cowplot::plot_grid(
 )
 fig_hist_year
 
-# Figure 1 ####
-gg_hist_year_biome1,
-gg_hist_year_biome2,
-gg_hist_year_biome4,
-gg_hist_year_biome5,
-gg_hist_year_biome6,
-gg_hist_year_biome12,
-
-fig_1 <- plot75Year + inset_element(hist_Year, left = 0.6, bottom = 0.6, right = 0.99, top = 0.99, ignore_tag = TRUE) +
-  plot75Res + inset_element(hist_Res, left = 0.6, bottom = 0.6, right = 0.99, top = 0.99, ignore_tag = TRUE) + 
-  plot_layout(ncol = 2) + 
-  #plot_annotation(tag_levels = list(c('a)', 'b)')))
+fig_hist_year <- gg_hist_year_biome1 +
+gg_hist_year_biome2 +
+gg_hist_year_biome4 +
+gg_hist_year_biome5 +
+gg_hist_year_biome6 +
+gg_hist_year_biome12 +
+  plot_layout(ncol = 3) + 
   plot_annotation(tag_levels = 'a', tag_suffix = ")") & 
-  theme(plot.tag = element_text(size = 12)) #& 
-#theme(plot.margin = unit(rep(0.13,4), "cm"))#+
-#plot_layout(guides = "collect") & theme(legend.position = 'bottom')
-fig_1
+  theme(plot.tag = element_text(size = 10)) 
 
 ggsave(
   filename = here::here("manuscript/figures/fig_hist_year.pdf"),

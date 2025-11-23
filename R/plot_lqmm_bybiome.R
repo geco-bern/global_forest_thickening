@@ -112,7 +112,7 @@ plot_lqmm_byqmdbin <- function(df_lqmm_byqmdbin, df_lqmm_byqmdbin_including_dist
   
   ggplot() +
     
-    # Dirty model (e.g., including disturbed plots) — grey
+    # including disturbed plots — grey
     geom_point(
       aes(
         as.numeric(as.character(bin_lqmm)),
@@ -134,7 +134,7 @@ plot_lqmm_byqmdbin <- function(df_lqmm_byqmdbin, df_lqmm_byqmdbin_including_dist
       color = "grey"
     ) +
     
-    # Clean model (e.g., excluding disturbed plots) — black
+    # excluding disturbed plots — black
     geom_point(
       aes(
         as.numeric(as.character(bin_lqmm)),
