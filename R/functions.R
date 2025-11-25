@@ -36,18 +36,17 @@ data_unm_fc <- function(data) {
 }
 
 # filter the upper quantile data points and remove the outliers
-data_filter_fc <- function(data_unm) {
+data_filter75_fc <- function(data_unm) {
   data_fil <- data_unm |>
-    # filter by upper 70th percentile
     # create QMD bins
     # mutate(QMD_bins = cut(QMD, breaks = 600, include.lowest = TRUE))  |>
     mutate(QMD_bins = cut(QMD, breaks = seq(0, max(QMD), by = 0.25), include.lowest = TRUE)) |>
     # calculate the 75th percentile of density for each qmd
     group_by(QMD_bins) |>
-    mutate(upper70 = quantile(density, c(0.70))) |>
+    mutate(upper75 = quantile(density, c(0.75))) |>
     ungroup() |>
     # select upper quantile by QMD bins, i.e., those plots with higher density
-    filter(density >= upper70) |>
+    filter(density >= upper75) |>
     # filter removing outliers
     mutate(
       q25_density = quantile(logDensity, c(0.25), na.rm = FALSE),
@@ -64,6 +63,66 @@ data_filter_fc <- function(data_unm) {
     filter(logDensity > low_density & logDensity < upp_density) |>
     filter(logQMD > low_QMD & logQMD < upp_QMD)
 
+  return(data_fil)
+}
+
+data_filter90_fc <- function(data_unm) {
+  data_fil <- data_unm |>
+    # create QMD bins
+    # mutate(QMD_bins = cut(QMD, breaks = 600, include.lowest = TRUE))  |>
+    mutate(QMD_bins = cut(QMD, breaks = seq(0, max(QMD), by = 0.25), include.lowest = TRUE)) |>
+    # calculate the 90th percentile of density for each qmd
+    group_by(QMD_bins) |>
+    mutate(upper90 = quantile(density, c(0.90))) |>
+    ungroup() |>
+    # select upper quantile by QMD bins, i.e., those plots with higher density
+    filter(density >= upper90) |>
+    # filter removing outliers
+    mutate(
+      q25_density = quantile(logDensity, c(0.25), na.rm = FALSE),
+      q75_density = quantile(logDensity, c(0.75), na.rm = FALSE),
+      IQR_density = IQR(logDensity),
+      low_density = q25_density - 1.5 * IQR_density,
+      upp_density = q75_density + 1.5 * IQR_density,
+      q25_QMD = quantile(logQMD, c(0.25), na.rm = FALSE),
+      q75_QMD = quantile(logQMD, c(0.75), na.rm = FALSE),
+      IQR_QMD = IQR(logQMD),
+      low_QMD = q25_QMD - 1.5 * IQR_QMD,
+      upp_QMD = q75_QMD + 1.5 * IQR_QMD
+    ) |>
+    filter(logDensity > low_density & logDensity < upp_density) |>
+    filter(logQMD > low_QMD & logQMD < upp_QMD)
+  
+  return(data_fil)
+}
+
+data_filter55_fc <- function(data_unm) {
+  data_fil <- data_unm |>
+    # create QMD bins
+    # mutate(QMD_bins = cut(QMD, breaks = 600, include.lowest = TRUE))  |>
+    mutate(QMD_bins = cut(QMD, breaks = seq(0, max(QMD), by = 0.25), include.lowest = TRUE)) |>
+    # calculate the 90th percentile of density for each qmd
+    group_by(QMD_bins) |>
+    mutate(upper55 = quantile(density, c(0.55))) |>
+    ungroup() |>
+    # select upper quantile by QMD bins, i.e., those plots with higher density
+    filter(density >= upper55) |>
+    # filter removing outliers
+    mutate(
+      q25_density = quantile(logDensity, c(0.25), na.rm = FALSE),
+      q75_density = quantile(logDensity, c(0.75), na.rm = FALSE),
+      IQR_density = IQR(logDensity),
+      low_density = q25_density - 1.5 * IQR_density,
+      upp_density = q75_density + 1.5 * IQR_density,
+      q25_QMD = quantile(logQMD, c(0.25), na.rm = FALSE),
+      q75_QMD = quantile(logQMD, c(0.75), na.rm = FALSE),
+      IQR_QMD = IQR(logQMD),
+      low_QMD = q25_QMD - 1.5 * IQR_QMD,
+      upp_QMD = q75_QMD + 1.5 * IQR_QMD
+    ) |>
+    filter(logDensity > low_density & logDensity < upp_density) |>
+    filter(logQMD > low_QMD & logQMD < upp_QMD)
+  
   return(data_fil)
 }
 
@@ -525,6 +584,33 @@ ai_coords_latlon <- function(data) {
   return(data_agg)
 }
 
+ai_coords_latlon_optim <- function(data){
+  
+  # read raster
+  rasta <- rast("~/data/aridityindex_zomer_2022/Global-AI_ET0_v3_annual/ai_v3_yr.tif")
+  values(rasta) <- values(rasta) * 1e-4
+  
+  # aggregate to 0.1 deg
+  fact_val <- round(res(rasta)[1]^-1 * 0.1)
+  rasta_agg <- aggregate(rasta, fact = fact_val, fun = "mean", filename = "~/data/tmp_ai_agg.tif", overwrite = TRUE)
+  rasta_agg <- rast("~/data/tmp_ai_agg.tif")  # reload smaller raster
+  
+  # extract coordinates
+  coords <- data[, c("lon", "lat")]
+  
+  # extract in chunks
+  chunk_size <- 10000
+  ai_values <- numeric(nrow(coords))
+  for(i in seq(1, nrow(coords), by = chunk_size)){
+    idx <- i:min(i+chunk_size-1, nrow(coords))
+    ai_values[idx] <- terra::extract(rasta_agg, coords[idx,], xy=FALSE, ID=FALSE)[,1]
+  }
+  
+  # add AI to data
+  data$ai <- ai_values
+  return(data)
+}
+
 # add coords and LAI
 
 lai_coords_latlon <- function(data) {
@@ -687,6 +773,38 @@ orgc_coords_latlon <- function(data) {
   data_agg <- data |>
     left_join(df_wise)
 
+  return(data_agg)
+}
+
+# add coords and MAT - Mean Anual Temperature (tavg, °C) from WorldClim
+# (averaged over 1970-2000) at 30 seconds spatial resolution 
+tavg_coords_latlon <- function(data){
+  
+  siteinfo <- data |>
+    select(plotID, lon, lat) |>
+    rename(sitename = plotID) |>
+    distinct()
+  
+  settings_worldclim <- list(varnam = c("tavg"))
+  
+  df_worldclim <- ingest(
+    siteinfo,
+    source    = "worldclim",
+    settings  = settings_worldclim,
+    dir       = "~/data/worldclim_fick_2017"
+  )
+  
+  df_worldclim <- df_worldclim |>
+    unnest(cols = data) |>
+    rename(plotID = sitename) |>
+    group_by(plotID) |>
+    summarise(tavg = mean(tavg, na.rm = T)) |>
+    ungroup()
+  
+  # Join CN ratio to data
+  data_agg <- data |> 
+    left_join(df_worldclim) 
+  
   return(data_agg)
 }
 
