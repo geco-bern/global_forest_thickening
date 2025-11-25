@@ -285,18 +285,13 @@ data_all <- data_all |>
   # unite plotID and dataset to ensure there are not matches form different sources
   rename(plotIDD = plotID) |>
   unite(plotID, dataset, plotIDD, sep = "_", remove = FALSE) |>
-  select(-plotIDD)|>
+  select(-plotIDD) |>
   # Unify Forestplots and RAINFOR datasets
   # Since Forestplots are deta provided by Y. Mahli and RAINFOR are taken from Esquivel et al., some plots can 
   # be duplicated. We need to check the plots and years that are present in both datasets and keep the most updated ones.
   distinct(country, plotID, year, .keep_all = TRUE)
 #drop_na(density) |>
-#drop_na(QMD) |>
-#drop_na(logQMD) |>
-#drop_na(CNrt) |>
-#drop_na(PBR) |>
-#drop_na(ORGC) |>
-#drop_na(ndep)
+#drop_na(QMD) 
 
 saveRDS(data_all, file = here::here("data/inputs/data_all.rds"))
 
@@ -310,26 +305,6 @@ plot_stl(data_unm)
 plot_map(data_unm)
 
 saveRDS(data_unm, file = here::here("data/inputs/data_unm.rds"))
-
-# Additional filters 
-data_unm <- data_unm |> 
-  arrange(plotID, year) |>          # ensure time order
-  group_by(plotID) |>               # group before computing per-plot stats
-  # remove plots with no change in ln(N)
-  mutate(var_logdensity = var(logDensity)) |> 
-  # remove plots with declining logQMD
-  mutate(delta_logQMD = last(logQMD) - first(logQMD)) |> 
-  # keep only plots with stable or increasing logQMD
-  filter(var_logdensity > 0.001) |> 
-  #filter(delta_logQMD >= 0) |>
-  ungroup()
-
-# Additional filter: remove plots with no change in ln(N)
-data_unm <- data_unm |>
-  group_by(plotID) |>
-  mutate(var_logdensity = diff(range(logDensity))) |>
-  filter(var_logdensity > 0.001) |> 
-  ungroup()
 
 # Generate filtered by biomes ----
 # The unmanaged data is divided by biomes, and then for each biome we apply the filter of the upper quantile.d

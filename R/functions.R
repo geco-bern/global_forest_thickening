@@ -28,9 +28,12 @@ data_unm_fc <- function(data) {
     # Filter by min 3 censuses
     group_by(dataset, plotID) |>
     mutate(n_census_unm = n()) |>
+    # remove plots with no change in ln(N)
+    mutate(var_logdensity = diff(range(logDensity))) |>
     ungroup() |>
     relocate(n_census_unm, .after = n_census) |>
-    filter(n_census_unm >= 3)
+    filter(n_census_unm >= 3) |>
+    filter(var_logdensity > 0.001)
 
   return(data_unm)
 }

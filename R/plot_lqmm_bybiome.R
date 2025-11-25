@@ -99,20 +99,20 @@ plot_lqmm_bybiome <- function(data, mod, name, plot_legend = FALSE){
       plot.title.position = "plot"
     ) +
     #guides(color = guide_legend(direction = "horizontal")) +
-    scale_x_continuous(limits = c(2.2, 4.5), breaks = seq(3,4,1)) +
+    scale_x_continuous(limits = c(2.2, 4.7), breaks = seq(3,4,1)) +
     scale_y_continuous(limits = c(2.9,9.3), breaks = seq(4,8,2))
   
 }
 
 plot_lqmm_byqmdbin <- function(df_lqmm_byqmdbin, df_lqmm_byqmdbin_including_disturbed,
-                               x_limits = c(2.2, 4.5),
-                               y_limits = c(-0.5, 0.5),
+                               x_limits = c(2.2, 4.7),
+                               y_limits = c(-0.56, 0.56),
                                x_breaks = seq(3, 4, 1),
-                               y_breaks = seq(-0.4, 0.4, 0.2)) {
+                               y_breaks = seq(-0.4, 0.4, 0.4)) {
   
   ggplot() +
     
-    # Dirty model (e.g., including disturbed plots) — grey
+    # including disturbed plots — grey
     geom_point(
       aes(
         as.numeric(as.character(bin_lqmm)),
@@ -134,7 +134,7 @@ plot_lqmm_byqmdbin <- function(df_lqmm_byqmdbin, df_lqmm_byqmdbin_including_dist
       color = "grey"
     ) +
     
-    # Clean model (e.g., excluding disturbed plots) — black
+    # excluding disturbed plots — black
     geom_point(
       aes(
         as.numeric(as.character(bin_lqmm)),
