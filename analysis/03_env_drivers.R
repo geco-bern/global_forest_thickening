@@ -30,7 +30,7 @@ remotes::install_github("https://github.com/valentinitnelav/plotbiomes")
 library(plotbiomes)
 
 # load data
-data_fil_biomes <- readRDS(here("data/75perc/data_fil_biomes.rds"))
+data_fil_biomes <- read_rds(here::here("data/inputs/data_fil75_biomes.rds"))
 
 # correlation among variables
 M <- as.matrix(data_fil_biomes[,c(26,28,29,30,33)] %>% distinct())
