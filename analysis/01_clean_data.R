@@ -446,17 +446,6 @@ data_fil75_biomes <- bind_rows(
 )
 saveRDS(data_fil75_biomes, file = here::here("data/inputs/data_fil75_biomes.rds"))
 
-# join filtered datasets
-data_fil75_biomes <- bind_rows(
-  data_fil75_biome1,
-  data_fil75_biome2,
-  data_fil75_biome4,
-  data_fil75_biome5,
-  data_fil75_biome6,
-  data_fil75_biome12
-)
-saveRDS(data_fil75_biomes, file = here::here("data/inputs/data_fil75_biomes.rds"))
-
 data_fil90_biomes <- bind_rows(
   data_fil90_biome1,
   data_fil90_biome2,
