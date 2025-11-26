@@ -60,6 +60,16 @@ data_unm_biome_including_disturbed <- data_unm_biome
 data_unm_biome <- data_unm_biome |>
   filter(ndisturbed == 0)
 
+### Histogram of data over years -----------------------------------------------
+gg_hist_year_biome1 <- ggplot(data = data_unm_biome, aes(x = year)) +
+  geom_histogram(fill = "grey80", color = "black", binwidth = 1) +
+  theme_bw() +
+  labs(title = "Tropical Moist Broadleaf Forests") +
+  xlim(1960, 2024) +
+  labs(x = "Year", y = "Count")
+
+gg_hist_year_biome1
+
 ### Plot disturbed plots -------------------------------------------------------
 breaks <- get_breaks(data_unm_biome$year)
 
@@ -102,7 +112,7 @@ fit_lqmm <- lqmm(
   data = data_unm_biome,
   type = "normal",
   control = lqmmControl(
-    LP_max_iter = 5000, # inner loop iterations
+    LP_max_iter = 500, # inner loop iterations
     LP_tol_ll   = 1e-05, # inner loop tolerance
     startQR     = TRUE
   )
@@ -113,7 +123,6 @@ write_rds(fit_lqmm, file = here::here("data/outputs/fit_lqmm_biome1.rds"))
 
 #### STL shift -----------------------------------------------------------------
 # Estimated change in N per unit increase in year
-
 out <- summary(fit_lqmm)
 
 # Extract model coefficient
@@ -148,7 +157,7 @@ percent_change <- (exp(delta_logDensity) - 1) * 100
 boot_data <- rsample::bootstraps(
   data_unm_biome %>%
     group_by(plotID),
-  times = 5000,
+  times = 500,
   apparent = FALSE
 )
 
@@ -159,7 +168,7 @@ boot_results <- boot_data %>%
   unnest(coefs) |>
   dplyr::select(-splits)
 
-#write_rds(boot_results, file = here::here("data/boot_results_biome1.rds"))
+# write_rds(boot_results, file = here::here("data/boot_results_biome1.rds"))
 
 boot_results |>
   ggplot(aes(estimate)) +
@@ -202,24 +211,12 @@ gg_lqmm_biome1_both <- cowplot::plot_grid(
   gg_lqmm_biome1,
   gg_lqmm_biome1_byqmdbin,
   ncol = 1,
-  rel_heights = c(1, 0.4),
+  rel_heights = c(1, 0.6),
   align = "v",
   # labels = c("",  "g"),
   label_y = 1.1
 )
 gg_lqmm_biome1_both
-
-### Histogram of data over years -----------------------------------------------
-gg_hist_year_biome1 <- ggplot(data_unm_biome, aes(x=year)) + 
-  geom_histogram(color="#FFDB6D", fill="#FFDB6D") + theme_bw() + 
-  labs(title = "Tropical Moist Broadleaf Forests") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        axis.text = element_text(size = 8),
-        axis.title = element_text(size = 8),
-        plot.title = element_text(size = 10)) + 
-  scale_x_continuous("Year", limits = c(1960,2024), breaks = seq(1940,2020,20)) +
-  scale_y_continuous("Frequency", limits = c(0,650), breaks = seq(0,600,200))
-gg_hist_year_biome1
 
 ## Biome 2 Tropical & Subtropical Dry Broadleaf Forests ------------------------
 data_unm_biome <- data_unm |>
@@ -238,6 +235,16 @@ data_unm_biome_including_disturbed <- data_unm_biome
 data_unm_biome <- data_unm_biome |>
   filter(ndisturbed == 0)
 
+### Histogram of data over years -----------------------------------------------
+gg_hist_year_biome2 <- ggplot(data = data_unm_biome, aes(x = year)) +
+  geom_histogram(fill = "grey80", color = "black", binwidth = 1) +
+  theme_bw() +
+  labs(title = "Tropical Dry Broadleaf Forests") +
+  xlim(1980, 2024) +
+  labs(x = "Year", y = "Count")
+
+gg_hist_year_biome2
+
 ### LQMM fit -------------------------------------------------------------------
 set.seed(123)
 fit_lqmm <- lqmm(
@@ -248,7 +255,7 @@ fit_lqmm <- lqmm(
   data = data_unm_biome,
   type = "normal",
   control = lqmmControl(
-    LP_max_iter = 5000, # inner loop iterations
+    LP_max_iter = 500, # inner loop iterations
     LP_tol_ll   = 1e-05, # inner loop tolerance
     startQR     = TRUE
   )
@@ -282,24 +289,12 @@ gg_lqmm_biome2_both <- cowplot::plot_grid(
   gg_lqmm_biome2,
   gg_lqmm_biome2_byqmdbin,
   ncol = 1,
-  rel_heights = c(1, 0.4),
+  rel_heights = c(1, 0.6),
   align = "v",
   # labels = c("",  "h"),
   label_y = 1.1
 )
 gg_lqmm_biome2_both
-
-### Histogram of data over years -----------------------------------------------
-gg_hist_year_biome2 <- ggplot(data_unm_biome, aes(x=year)) + 
-  geom_histogram(color="#FFDB6D", fill="#FFDB6D") + theme_bw() + 
-  labs(title = "Tropical Dry Broadleaf Forests") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        axis.text = element_text(size = 8),
-        axis.title = element_text(size = 8),
-        plot.title = element_text(size = 10)) + 
-  scale_x_continuous("Year", limits = c(1980,2024), breaks = seq(1940,2020,20)) +
-  scale_y_continuous("Frequency", limits = c(0,60), breaks = seq(0,100,20))
-gg_hist_year_biome2
 
 ## Biome 4 Temperate Broadleaf & Mixed Forests ---------------------------------
 data_unm_biome <- data_unm |>
@@ -317,6 +312,16 @@ data_unm_biome <- data_unm_biome |>
 data_unm_biome_including_disturbed <- data_unm_biome
 data_unm_biome <- data_unm_biome |>
   filter(ndisturbed == 0)
+
+### Histogram of data over years -----------------------------------------------
+gg_hist_year_biome4 <- ggplot(data = data_unm_biome, aes(x = year)) +
+  geom_histogram(fill = "grey80", color = "black", binwidth = 1) +
+  theme_bw() +
+  labs(title = "Temperate Broadleaf & Mixed Forests") +
+  xlim(1930, 2024) +
+  labs(x = "Year", y = "Count")
+
+gg_hist_year_biome4
 
 ### LQMM fit -------------------------------------------------------------------
 set.seed(123)
@@ -358,24 +363,12 @@ gg_lqmm_biome4_both <- cowplot::plot_grid(
   gg_lqmm_biome4,
   gg_lqmm_biome4_byqmdbin,
   ncol = 1,
-  rel_heights = c(1, 0.4),
+  rel_heights = c(1, 0.6),
   # labels = c("",  "i"),
   align = "v",
   label_y = 1.1
 )
 gg_lqmm_biome4_both
-
-### Histogram of data over years -----------------------------------------------
-gg_hist_year_biome4 <- ggplot(data_unm_biome, aes(x=year)) + 
-  geom_histogram(color="#FFDB6D", fill="#FFDB6D") + theme_bw() + 
-  labs(title = "Temperate Broadleaf & Mixed Forests") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        axis.text = element_text(size = 8),
-        axis.title = element_text(size = 8),
-        plot.title = element_text(size = 10)) + 
-  scale_x_continuous("Year", limits = c(1930,2024), breaks = seq(1940,2020,20)) +
-  scale_y_continuous("Frequency", limits = c(0,4100), breaks = seq(0,4000,1000))
-gg_hist_year_biome4
 
 ## Biome 5  Temperate Conifer Forests Forest -----------------------------------
 data_unm_biome <- data_unm |>
@@ -393,6 +386,16 @@ data_unm_biome <- data_unm_biome |>
 data_unm_biome_including_disturbed <- data_unm_biome
 data_unm_biome <- data_unm_biome |>
   filter(ndisturbed == 0)
+
+### Histogram of data over years -----------------------------------------------
+gg_hist_year_biome5 <- ggplot(data = data_unm_biome, aes(x = year)) +
+  geom_histogram(fill = "grey80", color = "black", binwidth = 1) +
+  theme_bw() +
+  labs(title = "Temperate Conifer Forests") +
+  xlim(1960, 2024) +
+  labs(x = "Year", y = "Count")
+
+gg_hist_year_biome5
 
 ### LQMM fit -------------------------------------------------------------------
 set.seed(123)
@@ -434,24 +437,12 @@ gg_lqmm_biome5_both <- cowplot::plot_grid(
   gg_lqmm_biome5,
   gg_lqmm_biome5_byqmdbin,
   ncol = 1,
-  rel_heights = c(1, 0.4),
+  rel_heights = c(1, 0.6),
   # labels = c("",  "j"),
   align = "v",
   label_y = 1.1
 )
 gg_lqmm_biome5_both
-
-### Histogram of data over years -----------------------------------------------
-gg_hist_year_biome5 <- ggplot(data_unm_biome, aes(x=year)) + 
-  geom_histogram(color="#FFDB6D", fill="#FFDB6D") + theme_bw() + 
-  labs(title = "Temperate Conifer Forests") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        axis.text = element_text(size = 8),
-        axis.title = element_text(size = 8),
-        plot.title = element_text(size = 10)) + 
-  scale_x_continuous("Year", limits = c(1960,2024), breaks = seq(1940,2020,20)) +
-  scale_y_continuous("Frequency", limits = c(0,4100), breaks = seq(0,4000,1000))
-gg_hist_year_biome5
 
 ## Biome 6 Boreal Forests/Taiga ------------------------------------------------
 data_unm_biome <- data_unm |>
@@ -470,6 +461,16 @@ data_unm_biome_including_disturbed <- data_unm_biome
 data_unm_biome <- data_unm_biome |>
   filter(ndisturbed == 0)
 
+### Histogram of data over years -----------------------------------------------
+gg_hist_year_biome6 <- ggplot(data = data_unm_biome, aes(x = year)) +
+  geom_histogram(fill = "grey80", color = "black", binwidth = 1) +
+  theme_bw() +
+  labs(title = "Boreal Forests/Taiga") +
+  xlim(1980, 2024) +
+  labs(x = "Year", y = "Count")
+
+gg_hist_year_biome6
+
 ### LQMM fit -------------------------------------------------------------------
 set.seed(123)
 fit_lqmm <- lqmm(
@@ -480,7 +481,7 @@ fit_lqmm <- lqmm(
   data = data_unm_biome,
   type = "normal",
   control = lqmmControl(
-    LP_max_iter = 5000, # increase max iterations
+    LP_max_iter = 500, # increase max iterations
     LP_tol_ll = 1e-4, # relax tolerance slightly (default is 1e-5)
     startQR = TRUE # good to keep this TRUE
   )
@@ -514,24 +515,12 @@ gg_lqmm_biome6_both <- cowplot::plot_grid(
   gg_lqmm_biome6,
   gg_lqmm_biome6_byqmdbin,
   ncol = 1,
-  rel_heights = c(1, 0.4),
+  rel_heights = c(1, 0.6),
   # labels = c("",  "k"),
   align = "v",
   label_y = 1.1
 )
 gg_lqmm_biome6_both
-
-### Histogram of data over years -----------------------------------------------
-gg_hist_year_biome6 <- ggplot(data_unm_biome, aes(x=year)) + 
-  geom_histogram(color="#FFDB6D", fill="#FFDB6D") + theme_bw() + 
-  labs(title = "Boreal Forests/Taiga") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        axis.text = element_text(size = 8),
-        axis.title = element_text(size = 8),
-        plot.title = element_text(size = 10)) + 
-  scale_x_continuous("Year", limits = c(1980,2024), breaks = seq(1940,2020,20)) +
-  scale_y_continuous("Frequency", limits = c(0,2100), breaks = seq(0,2000,500))
-gg_hist_year_biome6
 
 ## Biome 12 Mediterranean Forests ----------------------
 data_unm_biome <- data_unm |>
@@ -549,6 +538,16 @@ data_unm_biome <- data_unm_biome |>
 data_unm_biome_including_disturbed <- data_unm_biome
 data_unm_biome <- data_unm_biome |>
   filter(ndisturbed == 0)
+
+### Histogram of data over years -----------------------------------------------
+gg_hist_year_biome12 <- ggplot(data = data_unm_biome, aes(x = year)) +
+  geom_histogram(color = "black", fill = "grey80", binwidth = 1) +
+  theme_bw() +
+  labs(title = "Mediterranean Forests") +
+  xlim(1960, 2024) +
+  labs(x = "Year", y = "Count")
+
+gg_hist_year_biome12
 
 ### LQMM fit -------------------------------------------------------------------
 set.seed(123)
@@ -590,24 +589,12 @@ gg_lqmm_biome12_both <- cowplot::plot_grid(
   gg_lqmm_biome12,
   gg_lqmm_biome12_byqmdbin,
   ncol = 1,
-  rel_heights = c(1, 0.4),
+  rel_heights = c(1, 0.6),
   # labels = c("",  "l"),
   align = "v",
   label_y = 1.1
 )
 gg_lqmm_biome12_both
-
-### Histogram of data over years -----------------------------------------------
-gg_hist_year_biome12 <- ggplot(data_unm_biome, aes(x=year)) + 
-  geom_histogram(color="#FFDB6D", fill="#FFDB6D") + theme_bw() + 
-  labs(title = "Mediterranean Forests") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        axis.text = element_text(size = 8),
-        axis.title = element_text(size = 8),
-        plot.title = element_text(size = 10)) + 
-  scale_x_continuous("Year", limits = c(1960,2024), breaks = seq(1940,2020,20)) +
-  scale_y_continuous("Frequency", limits = c(0,4500), breaks = seq(0,5000,1000))
-gg_hist_year_biome12
 
 # Publication figures ----------------------------------------------------------
 
@@ -642,14 +629,14 @@ ggsave(
   filename = here::here("manuscript/figures/fig1_lqmm.pdf"),
   plot = fig1_lqmm,
   width = 11,
-  height = 10
+  height = 12
 )
 
 ggsave(
   filename = here::here("manuscript/figures/fig1_lqmm.png"),
   plot = fig1_lqmm,
   width = 11,
-  height = 10
+  height = 12
 )
 
 ## SI Figure histogram over years ----------------------------------------------
@@ -665,14 +652,14 @@ fig_hist_year <- cowplot::plot_grid(
 fig_hist_year
 
 fig_hist_year <- gg_hist_year_biome1 +
-gg_hist_year_biome2 +
-gg_hist_year_biome4 +
-gg_hist_year_biome5 +
-gg_hist_year_biome6 +
-gg_hist_year_biome12 +
-  plot_layout(ncol = 3) + 
-  plot_annotation(tag_levels = 'a', tag_suffix = ")") & 
-  theme(plot.tag = element_text(size = 10)) 
+  gg_hist_year_biome2 +
+  gg_hist_year_biome4 +
+  gg_hist_year_biome5 +
+  gg_hist_year_biome6 +
+  gg_hist_year_biome12 +
+  plot_layout(ncol = 3) +
+  plot_annotation(tag_levels = "a", tag_suffix = ")") &
+  theme(plot.tag = element_text(size = 10))
 
 ggsave(
   filename = here::here("manuscript/figures/fig_hist_year.pdf"),
