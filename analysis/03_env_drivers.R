@@ -250,7 +250,7 @@ fig2a <- df_coef_plot |>
       x = varnew,
       y = est
     ),
-    size = 3
+    size = 2
   ) +
   geom_errorbar(
     aes(
@@ -272,6 +272,11 @@ fig2a <- df_coef_plot |>
       "PBR" = "Phosporus\n availability"
     )
   ) +
+  theme(
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 10),
+    plot.title = element_text(size = 12),
+  ) +
   coord_flip()
 fig2a
 
@@ -283,7 +288,7 @@ fig2b <- df_coef_plot |>
       x = varnew,
       y = est
     ),
-    size = 3
+    size = 2
   ) +
   geom_errorbar(
     aes(
@@ -298,6 +303,10 @@ fig2b <- df_coef_plot |>
   theme_classic() +
   scale_x_discrete(
     labels = NULL
+  ) + theme(
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 10),
+    plot.title = element_text(size = 12),
   ) +
   coord_flip()
 fig2b

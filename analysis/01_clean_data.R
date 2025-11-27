@@ -464,7 +464,7 @@ data_fil55_biomes <- bind_rows(
   data_fil55_biome6,
   data_fil55_biome12
 )
-saveRDS(data_fil55_biomes, file = here::here("data/inputs/data_fil55biomes.rds"))
+saveRDS(data_fil55_biomes, file = here::here("data/inputs/data_fil55_biomes.rds"))
 
 # Plot filtered data --------
 data_fil75_biomes <- read_rds(here::here("data/inputs/data_fil75_biomes.rds"))

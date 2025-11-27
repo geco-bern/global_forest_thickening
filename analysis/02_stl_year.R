@@ -1016,7 +1016,6 @@ ggsave(
   height = 15
 )
 
-
 ## SI Figure: Bootstrapped percent change of N per year ------------------------
 write_rds(df_boot, file = here("data/df_boot.rds"))
 
