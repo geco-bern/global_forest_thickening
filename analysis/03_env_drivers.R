@@ -96,7 +96,20 @@ data_fil_biomes <- read_rds(here::here("data/inputs/data_fil75_biomes.rds"))
 # LMM with lmer() --------------------------------------------------------------
 ## Fit model -------------------------------------------------------------------
 # with all environmental factors and their interaction with time as predictors
-mod_lmer_env <- lmer(
+mod_lmer_env_complete <- lmer(
+  logDensity ~ scale(logQMD) +
+    scale(year) * scale(tavg) +
+    scale(year) * scale(ai) +
+    scale(year) * scale(ndep) +
+    scale(year) * scale(ORGC) +
+    scale(year) * scale(PBR) +
+    scale(year) * scale(CNrt) +
+    (1 | plotID) + (1 | species),
+  data = data_fil_biomes,
+  na.action = "na.exclude"
+)
+
+mod_lmer_env_nopbr <- lmer(
   logDensity ~ scale(logQMD) +
     scale(year) * scale(tavg) +
     scale(year) * scale(ai) +
@@ -108,6 +121,54 @@ mod_lmer_env <- lmer(
   data = data_fil_biomes,
   na.action = "na.exclude"
 )
+
+mod_lmer_env_nopbr_noorgc <- lmer(
+  logDensity ~ scale(logQMD) +
+    scale(year) * scale(tavg) +
+    scale(year) * scale(ai) +
+    scale(year) * scale(ndep) +
+    # scale(year) * scale(ORGC) +
+    # scale(year) * scale(PBR) + # excluded because neither fixed nor interactive effect is significant
+    scale(year) * scale(CNrt) +
+    (1 | plotID) + (1 | species),
+  data = data_fil_biomes,
+  na.action = "na.exclude"
+)
+
+mod_lmer_env_nopbr_nocn <- lmer(
+  logDensity ~ scale(logQMD) +
+    scale(year) * scale(tavg) +
+    scale(year) * scale(ai) +
+    scale(year) * scale(ndep) +
+    scale(year) * scale(ORGC) +
+    # scale(year) * scale(PBR) + # excluded because neither fixed nor interactive effect is significant
+    # scale(year) * scale(CNrt) +
+    (1 | plotID) + (1 | species),
+  data = data_fil_biomes,
+  na.action = "na.exclude"
+)
+
+## Write summary of model fit to table
+options("modelsummary_format_numeric_latex" = "plain")
+
+modelsummary(
+  list(
+    "Complete" = mod_lmer_env_complete,
+    "No PBR" = mod_lmer_env_nopbr,
+    "No PBR, ORGC" = mod_lmer_env_nopbr_noorgc,
+    "No PBR, C:N" =mod_lmer_env_nopbr_nocn
+  ),
+  output = here("manuscript/tables/mods_env.tex"),
+  # estimate  = "p.value",
+  estimate  = "{estimate}{stars}",
+  # estimate  = "{estimate} [{conf.low}, {conf.high}], {p.value}",
+  title = "Regression Results",
+  statistic = "std.error",
+  coef_omit = "Intercept"
+)
+
+# use this as best based on AIC and BIC
+mod_lmer_env <- mod_lmer_env_nopbr
 
 # data_unm <- readRDS(here("data/inputs/data_unm.rds")) |>
 #   tidyr::drop_na(
@@ -194,14 +255,6 @@ df_coef_plot <- df_coef |>
 ## Save model object and coefficients table ------------------------------------
 saveRDS(mod_lmer_env, file = here::here("data/mod_lmer_env.rds"))
 saveRDS(df_coef_plot, file = here::here("data/df_coef_plot.rds"))
-
-## Write summary of model fit to table
-modelsummary(
-  mod_lmer_env,
-  output = "latex",
-  title = "Regression Results",
-  statistic = "std.error"
-  )
 
 # # Figure 2 (OLD VERSION)
 # fig2 <- ggplot(df_coef_plot) +

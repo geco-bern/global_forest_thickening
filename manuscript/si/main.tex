@@ -1,5 +1,11 @@
 \documentclass{myreport}
 
+\usepackage{tabularray}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{codehigh}
+\usepackage[normalem]{ulem}
+
 % References
 \bibliographystyle{copernicus.bst}
 
@@ -28,6 +34,7 @@ Global forest thickening}
 \section{Self-thinning trends}
 
 \begin{table}
+  % \label{tab:datasets}
 \centering
 \begin{tabular}{lllll}
   \toprule
@@ -67,16 +74,17 @@ Dataset & N & Description & Filter & Reference \\
   urk &  12 &  &  & \\
   nbw &   7 &  &  & \\
   \bottomrule
-  \label{tab:datasets}
   \end{tabular}
 \caption{Constituent forest dataset sizes and descriptions.}
 \end{table}
 
-\begin{figure}[h]
+\begin{figure}
 \centering
-\includegraphics[width=\textwidth]{../figures/fig_hist_year.pdf}
-\caption{Distribution of forest census data over time, grouped by biome (a-f). Dataset names are explained in Tab. \ref{tab:datasets}.}
+\includegraphics[width=0.9\textwidth]{../figures/fig_hist_year.pdf}
+\caption{Distribution of forest census data over time, grouped by biome (a-f). Dataset names are explained in Tab. xxxx.}
 \end{figure}
+
+\clearpage
 
 % Example for how to include a table, generated externally
 % Uses library xtable.
@@ -124,18 +132,24 @@ Biome & Mean & SE \\
 \end{table}
 
 
-\begin{figure}[h]
+\begin{figure}
 \centering
 \includegraphics[width=\textwidth]{../figures/hist_percent_change.pdf}
 \caption{Distribution of percentage change (\%/yr) in stand density (number of trees per ha) by biome.}
 \end{figure}
 
 
-\begin{figure}[h]
+\begin{figure}
 \centering
 \includegraphics[width=\textwidth]{../figures/fdisturbed.pdf}
 \caption{Trends in the fraction of disturbed forest plots, by biome. Fraction values are logit-transformed. The corresponding un-transformed values are indicated by the right y-axis in each plot. No regression fit is shown for tropical dry broadleaf forests (b) as only two points are available with non-zero values for the disturbed fraction.}
 \end{figure}
+
+\clearpage
+
+\section{Environmental drivers}
+
+\input{../tables/mods_env.tex}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
