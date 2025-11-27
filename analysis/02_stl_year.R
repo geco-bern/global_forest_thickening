@@ -146,24 +146,7 @@ df_boot <- boot_results |>
   filter(term == "year") |>
   mutate(biome = "Tropical & Subtropical Moist Broadleaf Forests")
 
-# boot_results |>
-#   filter(term == "year") |>
-#   mutate(percent_change = 100*(exp(estimate) - 1)) |>
-#   ggplot(aes(x = percent_change)) +
-#   geom_density()
-
-# # summarise across bootstraps
-# summary_stats <- boot_results |>
-#   filter(term == "year") %>%
-#   group_by(term) %>%
-#   summarise(
-#     estimate = mean(estimate),
-#     std.error = sd(estimate),
-#     ci_low = quantile(estimate, 0.025),
-#     ci_high = quantile(estimate, 0.975),
-#     .groups = "drop"
-#   ) |>
-#   mutate(biome = "Tropical & Subtropical Moist Broadleaf Forests")
+boot_results <- read_rds(file = here::here("data/boot_results_biome1.rds"))
 
 ### Plot STL from LQMM ---------------------------------------------------------
 gg_lqmm_biome1 <- plot_lqmm_bybiome(
@@ -364,6 +347,7 @@ df_boot <- bind_rows(
     filter(term == "year") |>
     mutate(biome = "Temperate Broadleaf & Mixed Forests")
 )
+
 ### Plot STL from LQMM ---------------------------------------------------------
 gg_lqmm_biome4 <- plot_lqmm_bybiome(
   data_unm_biome,
@@ -694,10 +678,9 @@ gg_lqmm_biome12_both <- cowplot::plot_grid(
 )
 gg_lqmm_biome12_both
 
-# Publication figures ----------------------------------------------------------
+# Publication figures and tables  ----------------------------------------------
 
 ## Figure 1 --------------------------------------------------------------------
-
 legend <- get_legend(
   gg_lqmm_biome1 +
     theme(legend.position = "right")
@@ -765,9 +748,49 @@ ggsave(
 )
 
 ## SI Figure: Bootstrapped percent change of N per year ------------------------
-boot_results |>
-  filter(term == "year") |>
+write_rds(df_boot, file = here::here("data/df_boot.rds"))
+
+df_boot |>
   mutate(percent_change = 100*(exp(estimate) - 1)) |>
-  ggplot(aes(x = percent_change, group = biome, color = biome)) +
-  geom_density()
+  ggplot(aes(x = percent_change, group = biome, color = biome, fill = biome)) +
+  geom_density(alpha = 0.5) +
+  scale_color_okabe_ito() +
+  scale_fill_okabe_ito() +
+  theme_classic() +
+  labs(
+    x = expression(paste("Change in density (%"^{-yr}, ")")),
+    y = "Density",
+    color = "",
+    fill = ""
+    ) +
+  theme(
+    legend.position = "bottom"
+  )
+
+ggsave(
+  filename = here::here("manuscript/figures/hist_percent_change.pdf"),
+  width = 8,
+  height = 4
+)
+
+# table of bootstrapped estimates for coefficient and percent change
+summary_stats <- df_boot |>
+  mutate(percent_change = 100*(exp(estimate) - 1)) |>
+  ungroup() |>
+  group_by(biome) %>%
+  summarise(
+    estimate_mean = mean(estimate),
+    estimate_sd = sd(estimate),
+    estimate_ci_low = quantile(estimate, 0.025),
+    estimate_ci_high = quantile(estimate, 0.975),
+
+    percent_change_mean = mean(percent_change),
+    percent_change_sd = sd(percent_change),
+    percent_change_ci_low = quantile(percent_change, 0.025),
+    percent_change_ci_high = quantile(percent_change, 0.975),
+
+    .groups = "drop"
+  )
+
+write_rds(summary_stats, file = here::here("data/summary_stats.rds"))
 
