@@ -218,6 +218,11 @@ fig2a <- df_coef_plot |>
       "Ndep" = "Nitrogen\n deposition",
       "PBR" = "Phosporus\n availability")
   ) +
+  theme(
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 10),
+    plot.title = element_text(size = 12),
+  ) +
   coord_flip()
 fig2a
 
@@ -244,6 +249,10 @@ fig2b <- df_coef_plot |>
   theme_classic()  +
   scale_x_discrete(
     labels = NULL
+  ) + theme(
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 10),
+    plot.title = element_text(size = 12),
   ) +
   coord_flip()
 fig2b
