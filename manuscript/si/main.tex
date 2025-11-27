@@ -27,10 +27,55 @@ Global forest thickening}
 
 \section{Self-thinning trends}
 
+\begin{table}
+\centering
+\begin{tabular}{lllll}
+  \toprule
+Dataset & N & Description & Filter & Reference \\
+  \midrule
+  nfi\_spain & 27642 &  &  & \\
+  nfi\_norway & 25156 &  &  & \\
+  nfi\_sweeden & 15954 &  &  & \\
+  bnp & 9423 &  &  & \\
+  fia\_us & 7022 &  &  & \\
+  aus\_plots & 6259 &  &  & \\
+  luquillo & 1993 &  &  & \\
+  nfi\_switzerland & 1972 &  &  & \\
+  scbi & 1572 &  &  & \\
+  wuls & 1416 &  &  & \\
+  wytham & 1200 &  &  & \\
+  serc & 1026 &  &  & \\
+  pasoh & 1007 &  &  & \\
+  df\_rainfor & 988 &  &  & \\
+  nfr\_swi & 729 &  &  & \\
+  forst & 537 &  &  & \\
+  palanam & 484 &  &  & \\
+  unito & 311 &  &  & \\
+  uholka & 200 &  &  & \\
+  df\_forestplots & 149 &  &  & \\
+  mudumalai & 126 &  &  & \\
+  lwf\_tree & 114 &  &  & \\
+  nwfva\_tree &  84 &  &  & \\
+  incds &  75 &  &  & \\
+  tuzvo\_tree &  63 &  &  & \\
+  iberbas &  57 &  &  & \\
+  efm\_swi &  51 &  &  & \\
+  france &  47 &  &  & \\
+  greece\_stand &  40 &  &  & \\
+  czu &  24 &  &  & \\
+  ul\_tree &  23 &  &  & \\
+  urk &  12 &  &  & \\
+  nbw &   7 &  &  & \\
+  \bottomrule
+  \label{tab:datasets}
+  \end{tabular}
+\caption{Constituent forest dataset sizes and descriptions.}
+\end{table}
+
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{../figures/fig_hist_year.pdf}
-\caption{Distribution of forest census data over time, grouped by biome (a-f).}
+\caption{Distribution of forest census data over time, grouped by biome (a-f). Dataset names are explained in Tab. \ref{tab:datasets}.}
 \end{figure}
 
 % Example for how to include a table, generated externally
@@ -65,9 +110,9 @@ Global forest thickening}
 \centering
 \begin{tabular}{lll}
   \toprule
-Biome & Mean & SD \\
+Biome & Mean & SE \\
   \midrule
-Boreal Forests/Taiga & 0.30 & 0.06 \\
+  Boreal Forests/Taiga & 0.30 & 0.06 \\
   Mediterranean Forests & 2.35 & 0.06 \\
   Temperate Broadleaf \& Mixed Forests & 0.91 & 0.03 \\
   Temperate Conifer Forests & 1.18 & 0.06 \\
@@ -75,14 +120,14 @@ Boreal Forests/Taiga & 0.30 & 0.06 \\
   Tropical Dry Broadleaf Forests & -0.38 & 0.46 \\
   \bottomrule
   \end{tabular}
-\caption{Percentage change of forest stand density.}
+\caption{Mean estimate and standard error (SE) of percentage change (\%/yr) of forest stand density (number of trees per ha) by biome, determined from quantile regressions on bootstrapped data samples.}
 \end{table}
 
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{../figures/hist_percent_change.pdf}
-\caption{Distribution of percentage change (\%/yr) in stand density by biome.}
+\caption{Distribution of percentage change (\%/yr) in stand density (number of trees per ha) by biome.}
 \end{figure}
 
 

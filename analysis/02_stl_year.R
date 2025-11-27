@@ -1012,7 +1012,7 @@ fig_hist_year
 ggsave(
   filename = here("manuscript/figures/fig_hist_year.pdf"),
   plot = fig_hist_year,
-  width = 12,
+  width = 9,
   height = 15
 )
 
@@ -1092,4 +1092,19 @@ ggsave(
   filename = here("manuscript/figures/fdisturbed.pdf"),
   width = 9,
   height = 9
+)
+
+## Table: datasets
+df_datasets <- data_unm |>
+  group_by(dataset) |>
+  summarise(count = n()) |>
+  arrange(-count) |>
+  rename(Dataset = dataset, N = count) |>
+  mutate(Description = "", Reference = "")
+
+create_table_latex(
+  df_datasets,
+  caption = "Constituent forest dataset sizes and descriptions.",
+  filn = here("manuscript/tables/datasets.tex")
+  # align = c("p{0.1cm}", "p{5cm}", "p{7cm}")
 )

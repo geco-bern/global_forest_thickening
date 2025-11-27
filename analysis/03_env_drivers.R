@@ -68,13 +68,13 @@ ggplot() +
                colour = "gray98",
                linewidth   = 0.5) +
   theme_bw() +
-  
+
   # fill the polygons with predefined colors
   scale_fill_manual(name   = "Whittaker biomes",
                     breaks = names(Ricklefs_colors),
                     labels = names(Ricklefs_colors),
                     values = Ricklefs_colors) +
-  
+
   # add the temperature - precipitation data points
   geom_point(
     data = df_worldclim_mean,
@@ -103,6 +103,21 @@ mod_lmer_env = lmer(
     (1|plotID) + (1|species),
   data = data_fil_biomes,
   na.action = "na.exclude"
+)
+
+mod_lqmm_env <- lqmm(
+  logDensity ~ logQMD_sc +
+    year_sc,
+  random = ~1,
+  group = plotID,
+  tau = 0.9, # c(0.75, 0.90),
+  data = data_unm_biome,
+  type = "normal",
+  control = lqmmControl(
+    LP_max_iter = 500, # inner loop iterations
+    LP_tol_ll   = 1e-05, # inner loop tolerance
+    startQR     = TRUE
+  )
 )
 
 ## Visualise fixed effects -----------------------------------------------------
@@ -144,10 +159,10 @@ saveRDS(mod_lmer_env, file = here::here("data/mod_lmer_env.rds"))
 saveRDS(df_coef_plot, file = here::here("data/df_coef_plot.rds"))
 
 # Figure 2 ----
-fig2 <- ggplot(df_coef_plot) + 
+fig2 <- ggplot(df_coef_plot) +
   geom_bar(aes(y = varnew, weight= est,fill = eff), position = position_stack(reverse = TRUE), width=.5) +
   geom_text(aes(y = varnew,  x= est, label = pvalue), color = "white", size = 5,
-            position = position_stack(vjust = 0.5), vjust = 0.75) + 
+            position = position_stack(vjust = 0.5), vjust = 0.75) +
   xlab("Coefficients") + ylab("Environmental drivers") + labs(fill = "Predictors") +
   geom_vline(xintercept = 0,color = "black", linetype = "dashed", size = .8) +
   theme_classic() +  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
@@ -163,10 +178,10 @@ fig2 <- ggplot(df_coef_plot) +
                            legend.key.size = unit(.6, 'cm'),
                            legend.box.margin = margin(1, 1, 1, 1)) +
   scale_x_continuous(limits = c(-0.04,0.055), breaks = seq(-0.05,0.05,0.025)) +
-  scale_y_discrete(labels = c("MI" = "Moisture \nIndex", 
-                              "Tavg" = "Mean \nTemperature", 
-                              "ORGC" = "Organic \ncarbon", 
-                              "Ndep" = "Nitrogen \ndeposition", 
+  scale_y_discrete(labels = c("MI" = "Moisture \nIndex",
+                              "Tavg" = "Mean \nTemperature",
+                              "ORGC" = "Organic \ncarbon",
+                              "Ndep" = "Nitrogen \ndeposition",
                               "PBR" = "Phosporus \navailability")) +
   scale_fill_okabe_ito()
 fig2
@@ -287,7 +302,7 @@ plot_model(mod_lmer_env)
 
 data_unm <- readRDS(here::here("data/inputs/data_unm.rds"))
 
-data_unm <- data_unm |> 
+data_unm <- data_unm |>
   mutate(year_sc = scale(year),
          logQMD_sc = scale(logQMD),
          tavg_sc = scale(tavg),
@@ -297,34 +312,34 @@ data_unm <- data_unm |>
          pbr_sc = scale(PBR))
 
 ### Identify disturbed plots ---------------------------------------------------
-data_unm <- data_unm |> 
+data_unm <- data_unm |>
   identify_disturbed_plots()
 
 breaks <- get_breaks(data_unm$year)
 
-df_disturbed <- data_unm |> 
+df_disturbed <- data_unm |>
   mutate(year_bin = cut(
-    year, 
-    breaks = breaks, 
+    year,
+    breaks = breaks,
     labels = breaks[1:length(breaks)-1] + 2.5,
     include.lowest = TRUE
-  )) |> 
-  group_by(year_bin) |> 
+  )) |>
+  group_by(year_bin) |>
   summarise(
     nplots = length(unique(plotID)),
     ndisturbed = sum(disturbed, na.rm = TRUE)
-  ) |> 
-  mutate(fdisturbed = ndisturbed / nplots) |> 
+  ) |>
+  mutate(fdisturbed = ndisturbed / nplots) |>
   mutate(fdisturbed_logit = log(fdisturbed / (1 - fdisturbed)))
 
 ### Plot disturbed plots -------------------------------------------------------
-gg_fdisturbed_biome12 <- df_disturbed |> 
+gg_fdisturbed_biome12 <- df_disturbed |>
   ggplot(aes(as.numeric(as.character(year_bin)), fdisturbed_logit)) +
   geom_point() +
   geom_smooth(method = "lm", color = "red") +
   theme_classic() +
   labs(
-    x = "Year",  
+    x = "Year",
     title = bquote(bold("d") ~~ "Mediterranean Forests")
   ) +
   scale_y_continuous(
@@ -340,7 +355,7 @@ data_unm <- data_unm |>
 
 # remove disturbed plots
 data_unm_including_disturbed <- data_unm
-data_unm <- data_unm |> 
+data_unm <- data_unm |>
   filter(ndisturbed == 0)
 
 ### LQMM fit -------------------------------------------------------------------
