@@ -37,11 +37,13 @@ source(here("R/identify_disturbed_plots.R"))
 source(here("R/get_breaks.R"))
 source(here("R/plot_lqmm_bybiome.R"))
 source(here("R/calc_lqmm_byqmdbin.R"))
+source(here("R/create_table_latex.R"))
+source(here("R/process_cite_lines.R"))
 
 # Quantile regression ----------------------------------------------------------
 
 # load data
-data_unm <- readRDS(here::here("data/inputs/data_unm.rds"))
+data_unm <- readRDS(here("data/inputs/data_unm.rds"))
 
 ## Biome 1 Tropical & Subtropical Moist Broadleaf Forests ----------------------
 data_unm_biome <- data_unm |>
@@ -55,18 +57,25 @@ data_unm_biome <- data_unm |>
 data_unm_biome <- data_unm_biome |>
   identify_disturbed_plots()
 
-# remove disturbed plots
-data_unm_biome_including_disturbed <- data_unm_biome
-data_unm_biome <- data_unm_biome |>
-  filter(ndisturbed == 0)
-
 ### Histogram of data over years -----------------------------------------------
-gg_hist_year_biome1 <- ggplot(data = data_unm_biome, aes(x = year)) +
-  geom_histogram(fill = "grey80", color = "black", binwidth = 1) +
+# gg_hist_year_biome1 <- ggplot(data = data_unm_biome, aes(x = year)) +
+#   geom_histogram(fill = "grey80", color = "black", binwidth = 1) +
+#   theme_bw() +
+#   labs(title = "Tropical Moist Broadleaf Forests") +
+#   xlim(1970, 2024) +
+#   labs(x = "Year", y = "Count")
+
+# distinguishing datasets
+gg_hist_year_biome1 <- ggplot(data = data_unm_biome, aes(x = year, fill = dataset)) +
+  geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
   theme_bw() +
   labs(title = "Tropical Moist Broadleaf Forests") +
-  xlim(1960, 2024) +
-  labs(x = "Year", y = "Count")
+  xlim(1970, 2024) +
+  labs(x = "Year", y = "Count", fill = "") +
+  scale_fill_okabe_ito() +
+  theme(
+    legend.position = "right"
+  )
 
 gg_hist_year_biome1
 
@@ -85,6 +94,7 @@ df_disturbed <- data_unm_biome |>
     nplots = length(unique(plotID)),
     ndisturbed = sum(disturbed, na.rm = TRUE)
   ) |>
+  filter(nplots > 30) |>
   mutate(fdisturbed = ndisturbed / nplots) |>
   mutate(fdisturbed_logit = log(fdisturbed / (1 - fdisturbed)))
 
@@ -95,12 +105,19 @@ gg_fdisturbed_biome1 <- df_disturbed |>
   theme_classic() +
   labs(
     x = "Year",
-    title = bquote(bold("a") ~ ~"Tropical & Subtropical Moist Broadleaf Forests")
+    title = "Tropical & Subtropical Moist Broadleaf Forests"
   ) +
   scale_y_continuous(
     name = expression(logit(Fraction ~ disturbed)),
     sec.axis = sec_axis(~ plogis(.), name = "Fraction disturbed")
   )
+
+gg_fdisturbed_biome1
+
+### Remove disturbed plots -----------------------------------------------------
+data_unm_biome_including_disturbed <- data_unm_biome
+data_unm_biome <- data_unm_biome |>
+  filter(ndisturbed == 0)
 
 ### LQMM fit -------------------------------------------------------------------
 set.seed(123)
@@ -119,7 +136,7 @@ fit_lqmm <- lqmm(
 )
 summary(fit_lqmm)
 
-write_rds(fit_lqmm, file = here::here("data/outputs/fit_lqmm_biome1.rds"))
+write_rds(fit_lqmm, file = here("data/outputs/fit_lqmm_biome1.rds"))
 
 #### STL shift -----------------------------------------------------------------
 # Opt 2: predicted logDensity at two years differing by one year (in scaled units)
@@ -140,13 +157,13 @@ boot_results <- boot_data %>%
   unnest(coefs) |>
   dplyr::select(-splits)
 
-write_rds(boot_results, file = here::here("data/boot_results_biome1.rds"))
+write_rds(boot_results, file = here("data/boot_results_biome1.rds"))
 
 df_boot <- boot_results |>
   filter(term == "year") |>
   mutate(biome = "Tropical & Subtropical Moist Broadleaf Forests")
 
-boot_results <- read_rds(file = here::here("data/boot_results_biome1.rds"))
+boot_results <- read_rds(file = here("data/boot_results_biome1.rds"))
 
 ### Plot STL from LQMM ---------------------------------------------------------
 gg_lqmm_biome1 <- plot_lqmm_bybiome(
@@ -192,20 +209,67 @@ data_unm_biome <- data_unm |>
 data_unm_biome <- data_unm_biome |>
   identify_disturbed_plots()
 
-# remove disturbed plots
+### Histogram of data over years -----------------------------------------------
+# gg_hist_year_biome2 <- ggplot(data = data_unm_biome, aes(x = year)) +
+#   geom_histogram(fill = "grey80", color = "black", binwidth = 1) +
+#   theme_bw() +
+#   labs(title = "Tropical Dry Broadleaf Forests") +
+#   xlim(1990, 2024) +
+#   labs(x = "Year", y = "Count")
+
+# distinguishing datasets
+gg_hist_year_biome2 <- ggplot(data = data_unm_biome, aes(x = year, fill = dataset)) +
+  geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
+  theme_bw() +
+  labs(title = "Tropical Dry Broadleaf Forests") +
+  xlim(1990, 2024) +
+  labs(x = "Year", y = "Count", fill = "") +
+  scale_fill_okabe_ito() +
+  theme(
+    legend.position = "right"
+  )
+
+gg_hist_year_biome2
+
+### Plot disturbed plots -------------------------------------------------------
+breaks <- get_breaks(data_unm_biome$year)
+
+df_disturbed <- data_unm_biome |>
+  mutate(year_bin = cut(
+    year,
+    breaks = breaks,
+    labels = breaks[1:length(breaks) - 1] + 2.5,
+    include.lowest = TRUE
+  )) |>
+  group_by(year_bin) |>
+  summarise(
+    nplots = length(unique(plotID)),
+    ndisturbed = sum(disturbed, na.rm = TRUE)
+  ) |>
+  filter(nplots > 30) |>
+  mutate(fdisturbed = ndisturbed / nplots) |>
+  mutate(fdisturbed_logit = log(fdisturbed / (1 - fdisturbed)))
+
+gg_fdisturbed_biome2 <- df_disturbed |>
+  ggplot(aes(as.numeric(as.character(year_bin)), fdisturbed_logit)) +
+  geom_point() +
+  # geom_smooth(method = "lm", color = "red") + # only two points
+  theme_classic() +
+  labs(
+    x = "Year",
+    title = "Tropical Dry Broadleaf Forests"
+  ) +
+  scale_y_continuous(
+    name = expression(logit(Fraction ~ disturbed)),
+    sec.axis = sec_axis(~ plogis(.), name = "Fraction disturbed")
+  )
+
+gg_fdisturbed_biome2
+
+### Remove disturbed plots -----------------------------------------------------
 data_unm_biome_including_disturbed <- data_unm_biome
 data_unm_biome <- data_unm_biome |>
   filter(ndisturbed == 0)
-
-### Histogram of data over years -----------------------------------------------
-gg_hist_year_biome2 <- ggplot(data = data_unm_biome, aes(x = year)) +
-  geom_histogram(fill = "grey80", color = "black", binwidth = 1) +
-  theme_bw() +
-  labs(title = "Tropical Dry Broadleaf Forests") +
-  xlim(1980, 2024) +
-  labs(x = "Year", y = "Count")
-
-gg_hist_year_biome2
 
 ### LQMM fit -------------------------------------------------------------------
 set.seed(123)
@@ -224,7 +288,7 @@ fit_lqmm <- lqmm(
 )
 summary(fit_lqmm)
 
-write_rds(fit_lqmm, file = here::here("data/outputs/fit_lqmm_biome2.rds"))
+write_rds(fit_lqmm, file = here("data/outputs/fit_lqmm_biome2.rds"))
 
 #### Bootstrapping LQMM fit -----------------------------------------------------
 boot_data <- rsample::bootstraps(
@@ -241,7 +305,7 @@ boot_results <- boot_data %>%
   unnest(coefs) |>
   dplyr::select(-splits)
 
-write_rds(boot_results, file = here::here("data/boot_results_biome2.rds"))
+write_rds(boot_results, file = here("data/boot_results_biome2.rds"))
 
 df_boot <- bind_rows(
   df_boot,
@@ -294,20 +358,67 @@ data_unm_biome <- data_unm |>
 data_unm_biome <- data_unm_biome |>
   identify_disturbed_plots()
 
-# remove disturbed plots
+### Histogram of data over years -----------------------------------------------
+# gg_hist_year_biome4 <- ggplot(data = data_unm_biome, aes(x = year)) +
+#   geom_histogram(fill = "grey80", color = "black", binwidth = 1) +
+#   theme_bw() +
+#   labs(title = "Temperate Broadleaf & Mixed Forests") +
+#   xlim(1930, 2024) +
+#   labs(x = "Year", y = "Count")
+
+# distinguishing datasets
+gg_hist_year_biome4 <- ggplot(data = data_unm_biome, aes(x = year, fill = dataset)) +
+  geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
+  theme_bw() +
+  labs(title = "Temperate Broadleaf & Mixed Forests") +
+  xlim(1960, 2024) +
+  labs(x = "Year", y = "Count", fill = "") +
+  viridis::scale_fill_viridis(discrete = TRUE) +
+  theme(
+    legend.position = "right"
+  )
+
+gg_hist_year_biome4
+
+### Plot disturbed plots -------------------------------------------------------
+breaks <- get_breaks(data_unm_biome$year)
+
+df_disturbed <- data_unm_biome |>
+  mutate(year_bin = cut(
+    year,
+    breaks = breaks,
+    labels = breaks[1:length(breaks) - 1] + 2.5,
+    include.lowest = TRUE
+  )) |>
+  group_by(year_bin) |>
+  summarise(
+    nplots = length(unique(plotID)),
+    ndisturbed = sum(disturbed, na.rm = TRUE)
+  ) |>
+  filter(nplots > 30) |>
+  mutate(fdisturbed = ndisturbed / nplots) |>
+  mutate(fdisturbed_logit = log(fdisturbed / (1 - fdisturbed)))
+
+gg_fdisturbed_biome4 <- df_disturbed |>
+  ggplot(aes(as.numeric(as.character(year_bin)), fdisturbed_logit)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "red") +
+  theme_classic() +
+  labs(
+    x = "Year",
+    title = "Temperate Broadleaf & Mixed Forests"
+  ) +
+  scale_y_continuous(
+    name = expression(logit(Fraction ~ disturbed)),
+    sec.axis = sec_axis(~ plogis(.), name = "Fraction disturbed")
+  )
+
+gg_fdisturbed_biome4
+
+### Remove disturbed plots -----------------------------------------------------
 data_unm_biome_including_disturbed <- data_unm_biome
 data_unm_biome <- data_unm_biome |>
   filter(ndisturbed == 0)
-
-### Histogram of data over years -----------------------------------------------
-gg_hist_year_biome4 <- ggplot(data = data_unm_biome, aes(x = year)) +
-  geom_histogram(fill = "grey80", color = "black", binwidth = 1) +
-  theme_bw() +
-  labs(title = "Temperate Broadleaf & Mixed Forests") +
-  xlim(1930, 2024) +
-  labs(x = "Year", y = "Count")
-
-gg_hist_year_biome4
 
 ### LQMM fit -------------------------------------------------------------------
 set.seed(123)
@@ -322,7 +433,7 @@ fit_lqmm <- lqmm(
 )
 summary(fit_lqmm)
 
-write_rds(fit_lqmm, file = here::here("data/outputs/fit_lqmm_biome4.rds"))
+write_rds(fit_lqmm, file = here("data/outputs/fit_lqmm_biome4.rds"))
 
 #### Bootstrapping LQMM fit -----------------------------------------------------
 boot_data <- rsample::bootstraps(
@@ -339,7 +450,7 @@ boot_results <- boot_data %>%
   unnest(coefs) |>
   dplyr::select(-splits)
 
-write_rds(boot_results, file = here::here("data/boot_results_biome4.rds"))
+write_rds(boot_results, file = here("data/boot_results_biome4.rds"))
 
 df_boot <- bind_rows(
   df_boot,
@@ -392,20 +503,67 @@ data_unm_biome <- data_unm |>
 data_unm_biome <- data_unm_biome |>
   identify_disturbed_plots()
 
-# remove disturbed plots
+### Histogram of data over years -----------------------------------------------
+# gg_hist_year_biome5 <- ggplot(data = data_unm_biome, aes(x = year)) +
+#   geom_histogram(fill = "grey80", color = "black", binwidth = 1) +
+#   theme_bw() +
+#   labs(title = "Temperate Conifer Forests") +
+#   xlim(1960, 2024) +
+#   labs(x = "Year", y = "Count")
+
+# distinguishing datasets
+gg_hist_year_biome5 <- ggplot(data = data_unm_biome, aes(x = year, fill = dataset)) +
+  geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
+  theme_bw() +
+  labs(title = "Temperate Conifer Forests") +
+  xlim(1970, 2024) +
+  labs(x = "Year", y = "Count", fill = "") +
+  viridis::scale_fill_viridis(discrete = TRUE) +
+  theme(
+    legend.position = "right"
+  )
+
+gg_hist_year_biome5
+
+### Plot disturbed plots -------------------------------------------------------
+breaks <- get_breaks(data_unm_biome$year)
+
+df_disturbed <- data_unm_biome |>
+  mutate(year_bin = cut(
+    year,
+    breaks = breaks,
+    labels = breaks[1:length(breaks) - 1] + 2.5,
+    include.lowest = TRUE
+  )) |>
+  group_by(year_bin) |>
+  summarise(
+    nplots = length(unique(plotID)),
+    ndisturbed = sum(disturbed, na.rm = TRUE)
+  ) |>
+  filter(nplots > 30) |>
+  mutate(fdisturbed = ndisturbed / nplots) |>
+  mutate(fdisturbed_logit = log(fdisturbed / (1 - fdisturbed)))
+
+gg_fdisturbed_biome5 <- df_disturbed |>
+  ggplot(aes(as.numeric(as.character(year_bin)), fdisturbed_logit)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "red") +
+  theme_classic() +
+  labs(
+    x = "Year",
+    title = "Temperate Conifer Forests"
+  ) +
+  scale_y_continuous(
+    name = expression(logit(Fraction ~ disturbed)),
+    sec.axis = sec_axis(~ plogis(.), name = "Fraction disturbed")
+  )
+
+gg_fdisturbed_biome5
+
+### Remove disturbed plots -----------------------------------------------------
 data_unm_biome_including_disturbed <- data_unm_biome
 data_unm_biome <- data_unm_biome |>
   filter(ndisturbed == 0)
-
-### Histogram of data over years -----------------------------------------------
-gg_hist_year_biome5 <- ggplot(data = data_unm_biome, aes(x = year)) +
-  geom_histogram(fill = "grey80", color = "black", binwidth = 1) +
-  theme_bw() +
-  labs(title = "Temperate Conifer Forests") +
-  xlim(1960, 2024) +
-  labs(x = "Year", y = "Count")
-
-gg_hist_year_biome5
 
 ### LQMM fit -------------------------------------------------------------------
 set.seed(123)
@@ -420,7 +578,7 @@ fit_lqmm <- lqmm(
 )
 summary(fit_lqmm)
 
-write_rds(fit_lqmm, file = here::here("data/outputs/fit_lqmm_biome5.rds"))
+write_rds(fit_lqmm, file = here("data/outputs/fit_lqmm_biome5.rds"))
 
 #### Bootstrapping LQMM fit -----------------------------------------------------
 boot_data <- rsample::bootstraps(
@@ -437,7 +595,7 @@ boot_results <- boot_data %>%
   unnest(coefs) |>
   dplyr::select(-splits)
 
-write_rds(boot_results, file = here::here("data/boot_results_biome5.rds"))
+write_rds(boot_results, file = here("data/boot_results_biome5.rds"))
 
 df_boot <- bind_rows(
   df_boot,
@@ -490,20 +648,67 @@ data_unm_biome <- data_unm |>
 data_unm_biome <- data_unm_biome |>
   identify_disturbed_plots()
 
-# remove disturbed plots
-data_unm_biome_including_disturbed <- data_unm_biome
-data_unm_biome <- data_unm_biome |>
-  filter(ndisturbed == 0)
-
 ### Histogram of data over years -----------------------------------------------
-gg_hist_year_biome6 <- ggplot(data = data_unm_biome, aes(x = year)) +
-  geom_histogram(fill = "grey80", color = "black", binwidth = 1) +
+# gg_hist_year_biome6 <- ggplot(data = data_unm_biome, aes(x = year)) +
+#   geom_histogram(fill = "grey80", color = "black", binwidth = 1) +
+#   theme_bw() +
+#   labs(title = "Boreal Forests/Taiga") +
+#   xlim(1980, 2024) +
+#   labs(x = "Year", y = "Count")
+
+# distinguishing datasets
+gg_hist_year_biome6 <- ggplot(data = data_unm_biome, aes(x = year, fill = dataset)) +
+  geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
   theme_bw() +
   labs(title = "Boreal Forests/Taiga") +
   xlim(1980, 2024) +
-  labs(x = "Year", y = "Count")
+  labs(x = "Year", y = "Count", fill = "") +
+  scale_fill_okabe_ito() +
+  theme(
+    legend.position = "right"
+  )
 
 gg_hist_year_biome6
+
+### Plot disturbed plots -------------------------------------------------------
+breaks <- get_breaks(data_unm_biome$year)
+
+df_disturbed <- data_unm_biome |>
+  mutate(year_bin = cut(
+    year,
+    breaks = breaks,
+    labels = breaks[1:length(breaks) - 1] + 2.5,
+    include.lowest = TRUE
+  )) |>
+  group_by(year_bin) |>
+  summarise(
+    nplots = length(unique(plotID)),
+    ndisturbed = sum(disturbed, na.rm = TRUE)
+  ) |>
+  filter(nplots > 30) |>
+  mutate(fdisturbed = ndisturbed / nplots) |>
+  mutate(fdisturbed_logit = log(fdisturbed / (1 - fdisturbed)))
+
+gg_fdisturbed_biome6 <- df_disturbed |>
+  ggplot(aes(as.numeric(as.character(year_bin)), fdisturbed_logit)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "red") +
+  theme_classic() +
+  labs(
+    x = "Year",
+    title = "Boreal Forests/Taiga"
+  ) +
+  scale_y_continuous(
+    name = expression(logit(Fraction ~ disturbed)),
+    sec.axis = sec_axis(~ plogis(.), name = "Fraction disturbed")
+  )
+
+gg_fdisturbed_biome6
+
+### Remove disturbed plots -----------------------------------------------------
+data_unm_biome_including_disturbed <- data_unm_biome
+data_unm_biome <- data_unm_biome |>
+  filter(ndisturbed == 0)
 
 ### LQMM fit -------------------------------------------------------------------
 set.seed(123)
@@ -522,7 +727,7 @@ fit_lqmm <- lqmm(
 )
 summary(fit_lqmm)
 
-write_rds(fit_lqmm, file = here::here("data/outputs/fit_lqmm_biome6.rds"))
+write_rds(fit_lqmm, file = here("data/outputs/fit_lqmm_biome6.rds"))
 
 #### Bootstrapping LQMM fit -----------------------------------------------------
 boot_data <- rsample::bootstraps(
@@ -539,7 +744,7 @@ boot_results <- boot_data %>%
   unnest(coefs) |>
   dplyr::select(-splits)
 
-write_rds(boot_results, file = here::here("data/boot_results_biome6.rds"))
+write_rds(boot_results, file = here("data/boot_results_biome6.rds"))
 
 df_boot <- bind_rows(
   df_boot,
@@ -592,20 +797,67 @@ data_unm_biome <- data_unm |>
 data_unm_biome <- data_unm_biome |>
   identify_disturbed_plots()
 
-# remove disturbed plots
+### Histogram of data over years -----------------------------------------------
+# gg_hist_year_biome12 <- ggplot(data = data_unm_biome, aes(x = year)) +
+#   geom_histogram(color = "black", fill = "grey80", binwidth = 1) +
+#   theme_bw() +
+#   labs(title = "Mediterranean Forests") +
+#   xlim(1980, 2024) +
+#   labs(x = "Year", y = "Count")
+
+# distinguishing datasets
+gg_hist_year_biome12 <- ggplot(data = data_unm_biome, aes(x = year, fill = dataset)) +
+  geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
+  theme_bw() +
+  labs(title = "Mediterranean Forests") +
+  xlim(1980, 2024) +
+  labs(x = "Year", y = "Count", fill = "") +
+  scale_fill_okabe_ito() +
+  theme(
+    legend.position = "right"
+  )
+
+gg_hist_year_biome12
+
+### Plot disturbed plots -------------------------------------------------------
+breaks <- get_breaks(data_unm_biome$year)
+
+df_disturbed <- data_unm_biome |>
+  mutate(year_bin = cut(
+    year,
+    breaks = breaks,
+    labels = breaks[1:length(breaks) - 1] + 2.5,
+    include.lowest = TRUE
+  )) |>
+  group_by(year_bin) |>
+  summarise(
+    nplots = length(unique(plotID)),
+    ndisturbed = sum(disturbed, na.rm = TRUE)
+  ) |>
+  filter(nplots > 30) |>
+  mutate(fdisturbed = ndisturbed / nplots) |>
+  mutate(fdisturbed_logit = log(fdisturbed / (1 - fdisturbed)))
+
+gg_fdisturbed_biome12 <- df_disturbed |>
+  ggplot(aes(as.numeric(as.character(year_bin)), fdisturbed_logit)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "red") +
+  theme_classic() +
+  labs(
+    x = "Year",
+    title = "Mediterranean Forests"
+  ) +
+  scale_y_continuous(
+    name = expression(logit(Fraction ~ disturbed)),
+    sec.axis = sec_axis(~ plogis(.), name = "Fraction disturbed")
+  )
+
+gg_fdisturbed_biome12
+
+### Remove disturbed plots -----------------------------------------------------
 data_unm_biome_including_disturbed <- data_unm_biome
 data_unm_biome <- data_unm_biome |>
   filter(ndisturbed == 0)
-
-### Histogram of data over years -----------------------------------------------
-gg_hist_year_biome12 <- ggplot(data = data_unm_biome, aes(x = year)) +
-  geom_histogram(color = "black", fill = "grey80", binwidth = 1) +
-  theme_bw() +
-  labs(title = "Mediterranean Forests") +
-  xlim(1960, 2024) +
-  labs(x = "Year", y = "Count")
-
-gg_hist_year_biome12
 
 ### LQMM fit -------------------------------------------------------------------
 set.seed(123)
@@ -620,7 +872,7 @@ fit_lqmm <- lqmm(
 )
 summary(fit_lqmm)
 
-write_rds(fit_lqmm, file = here::here("data/outputs/fit_lqmm_biome12.rds"))
+write_rds(fit_lqmm, file = here("data/outputs/fit_lqmm_biome12.rds"))
 
 #### Bootstrapping LQMM fit -----------------------------------------------------
 boot_data <- rsample::bootstraps(
@@ -637,7 +889,7 @@ boot_results <- boot_data %>%
   unnest(coefs) |>
   dplyr::select(-splits)
 
-write_rds(boot_results, file = here::here("data/boot_results_biome12.rds"))
+write_rds(boot_results, file = here("data/boot_results_biome12.rds"))
 
 df_boot <- bind_rows(
   df_boot,
@@ -707,48 +959,66 @@ fig1_lqmm <- cowplot::plot_grid(
 )
 
 ggsave(
-  filename = here::here("manuscript/figures/fig1_lqmm.pdf"),
+  filename = here("manuscript/figures/fig1_lqmm.pdf"),
   plot = fig1_lqmm,
   width = 11,
   height = 12
 )
 
 ggsave(
-  filename = here::here("manuscript/figures/fig1_lqmm.png"),
+  filename = here("manuscript/figures/fig1_lqmm.png"),
   plot = fig1_lqmm,
   width = 11,
   height = 12
 )
 
-## SI Figure: histogram over years ---------------------------------------------
-fig_hist_year <- cowplot::plot_grid(
+## SI Figure: Histogram over years ---------------------------------------------
+row1 <- cowplot::plot_grid(
   gg_hist_year_biome1,
   gg_hist_year_biome2,
+  ncol = 2,
+  rel_widths = c(1, 0.7),
+  labels = letters[1:2]
+)
+
+row2 <- cowplot::plot_grid(
   gg_hist_year_biome4,
+  ncol = 1,
+  labels = letters[3]
+)
+
+row3 <- cowplot::plot_grid(
   gg_hist_year_biome5,
+  ncol = 1,
+  labels = letters[4]
+)
+
+row4 <- cowplot::plot_grid(
   gg_hist_year_biome6,
   gg_hist_year_biome12,
-  ncol = 3,
-  labels = letters
+  ncol = 2,
+  labels = letters[5:6]
+)
+
+fig_hist_year <- cowplot::plot_grid(
+  row1,
+  row2,
+  row3,
+  row4,
+  ncol = 1
 )
 fig_hist_year
 
 ggsave(
-  filename = here::here("manuscript/figures/fig_hist_year.pdf"),
+  filename = here("manuscript/figures/fig_hist_year.pdf"),
   plot = fig_hist_year,
-  width = 11,
-  height = 6
+  width = 12,
+  height = 15
 )
 
-ggsave(
-  filename = here::here("manuscript/figures/fig_hist_year.png"),
-  plot = fig_hist_year,
-  width = 11,
-  height = 6
-)
 
 ## SI Figure: Bootstrapped percent change of N per year ------------------------
-write_rds(df_boot, file = here::here("data/df_boot.rds"))
+write_rds(df_boot, file = here("data/df_boot.rds"))
 
 df_boot |>
   mutate(percent_change = 100*(exp(estimate) - 1)) |>
@@ -768,7 +1038,7 @@ df_boot |>
   )
 
 ggsave(
-  filename = here::here("manuscript/figures/hist_percent_change.pdf"),
+  filename = here("manuscript/figures/distribution_percent_change.pdf"),
   width = 8,
   height = 4
 )
@@ -792,5 +1062,34 @@ summary_stats <- df_boot |>
     .groups = "drop"
   )
 
-write_rds(summary_stats, file = here::here("data/summary_stats.rds"))
+write_rds(summary_stats, file = here("data/summary_stats.csv"))
 
+create_table_latex(
+  summary_stats |>
+    select(
+      Biome = biome,
+      Mean = percent_change_mean,
+      SD = percent_change_sd
+      ),
+    caption = "Percentage change of forest stand density.",
+    filn = here("manuscript/tables/table_percentage_change.tex")
+    # align = c("p{0.1cm}", "p{5cm}", "p{7cm}")
+    )
+
+## SI Figure: Disturbed plots --------------------------------------------------
+cowplot::plot_grid(
+  gg_fdisturbed_biome1,
+  gg_fdisturbed_biome2,
+  gg_fdisturbed_biome4,
+  gg_fdisturbed_biome5,
+  gg_fdisturbed_biome6,
+  gg_fdisturbed_biome12,
+  ncol = 2,
+  labels = letters
+)
+
+ggsave(
+  filename = here("manuscript/figures/fdisturbed.pdf"),
+  width = 9,
+  height = 9
+)
