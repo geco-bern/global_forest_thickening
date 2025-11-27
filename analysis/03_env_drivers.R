@@ -132,6 +132,7 @@ df_coef <- round(out$coefficients[,c(1,2,5)],4) |>
   ) |>
   rownames_to_column(var = "var") |>
   mutate(pvalue = ifelse(pval>0.1,"", pval),
+         pvalue = ifelse(pval<0.1,".", pvalue),
          pvalue = ifelse(pval<0.05,"*", pvalue),
          pvalue = ifelse(pval<0.01,"**", pvalue),
          pvalue = ifelse(pval<0.001,"***",pvalue))
@@ -196,7 +197,7 @@ fig2a <- df_coef_plot |>
       x = varnew,
       y = est
     ),
-    size = 3
+    size = 2
   ) +
   geom_errorbar(
     aes(
@@ -228,7 +229,7 @@ fig2b <- df_coef_plot |>
       x = varnew,
       y = est
     ),
-    size = 3
+    size = 2
   ) +
   geom_errorbar(
     aes(
