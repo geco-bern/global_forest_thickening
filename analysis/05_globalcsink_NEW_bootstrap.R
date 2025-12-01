@@ -17,7 +17,7 @@ library(scales)
 # Load and engineer data with environmental factors
 # plot-level data for model fitting
 data_forest_plots <- read_rds(here::here("data/data_fil_biomes.rds")) |>
-  filter(year > 1980) |> # XXX why this filter?
+  # filter(year > 1980) |> # XXX why this filter?
   mutate(NQMD2 = density * QMD^2)
 
 # Load data for upscaling: maps of environmental factors
