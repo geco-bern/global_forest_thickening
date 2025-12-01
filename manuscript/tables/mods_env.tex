@@ -5,12 +5,14 @@ caption={Regression Results},
 ]                     %% tabularray outer close
 {                     %% tabularray inner open
 colspec={Q[]Q[]Q[]Q[]Q[]},
-column{2,3,4,5}={}{halign=c,},
-column{1}={}{halign=l,},
-hline{31}={1,2,3,4,5}{solid, black, 0.05em},
+hline{2}={1-5}{solid, black, 0.05em},
+hline{31}={1-5}{solid, black, 0.05em},
+hline{1}={1-5}{solid, black, 0.1em},
+hline{38}={1-5}{solid, black, 0.1em},
+column{2-5}={}{halign=c},
+column{1}={}{halign=l},
 }                     %% tabularray inner close
-\toprule
-& Complete & No PBR & No PBR, ORGC & No PBR, C:N \\ \midrule %% TinyTableHeader
+& Complete & No PBR & No PBR, ORGC & No PBR, C:N \\
 scale(logQMD) & -0.646*** & -0.645*** & -0.645*** & -0.645*** \\
 & (0.002) & (0.002) & (0.002) & (0.002) \\
 scale(year) & 0.064*** & 0.064*** & 0.065*** & 0.065*** \\
@@ -47,6 +49,5 @@ AIC & -13634.4 & -13910.0 & -13889.1 & -13732.0 \\
 BIC & -13490.0 & -13780.9 & -13776.1 & -13619.0 \\
 ICC & 0.9 & 0.9 & 0.9 & 0.9 \\
 RMSE & 0.09 & 0.09 & 0.09 & 0.09 \\
-\bottomrule
 \end{talltblr}
 \end{table}
