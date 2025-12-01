@@ -431,6 +431,9 @@ data_unm <- data_unm |>
   )
 
 ### Identify disturbed plots ---------------------------------------------------
+source(here("R/identify_disturbed_plots.R"))
+source(here("R/get_breaks.R"))
+
 data_unm <- data_unm |>
   identify_disturbed_plots()
 
@@ -448,23 +451,25 @@ df_disturbed <- data_unm |>
     nplots = length(unique(plotID)),
     ndisturbed = sum(disturbed, na.rm = TRUE)
   ) |>
+  filter(nplots > 30) |>
   mutate(fdisturbed = ndisturbed / nplots) |>
   mutate(fdisturbed_logit = log(fdisturbed / (1 - fdisturbed)))
 
 ### Plot disturbed plots -------------------------------------------------------
-gg_fdisturbed_biome12 <- df_disturbed |>
+gg_fdisturbed <- df_disturbed |>
   ggplot(aes(as.numeric(as.character(year_bin)), fdisturbed_logit)) +
   geom_point() +
   geom_smooth(method = "lm", color = "red") +
   theme_classic() +
   labs(
-    x = "Year",
-    title = bquote(bold("d") ~ ~"Mediterranean Forests")
+    x = "Year"
   ) +
   scale_y_continuous(
     name = expression(logit(Fraction ~ disturbed)),
     sec.axis = sec_axis(~ plogis(.), name = "Fraction disturbed")
   )
+
+gg_fdisturbed
 
 # Additional filter: remove plots with no change in ln(N)
 data_unm <- data_unm |>
@@ -518,26 +523,4 @@ out <- summary(mod_lqmm_env)
 plot_lqmm_bybiome(
   data_unm,
   mod_lqmm_env
-)
-
-## Fit model -------------------------------------------------------------------
-
-# # with all environmental factors and their interaction with time as predictors
-mod_lqmm_env <- lqmm(
-  logDensity ~ logQMD +
-    year * ai +
-    year * ndep +
-    year * ORGC +
-    year * PBR,
-  random = ~1,
-  group = plotID,
-  tau = 0.80,
-  data = data_unm_biome |>
-    select(logQMD, logDensity, year, ai, ndep, ORGC, PBR, plotID) |>
-    drop_na(),
-  type = "normal",
-  control = list(
-    LP_max_iter = 2000,
-    LP_tol_ll = 1e-4
-  )
 )
