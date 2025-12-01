@@ -1,3 +1,8 @@
+# Global C sink ----------------------------------------------------------------
+# Calculates the global C sink as a consequence of the STL change, scaled up to
+# global forests with environmental covariates. Uncertainty estimation with
+# bootstrapping
+
 library(dplyr)
 library(readr)
 library(lme4)
@@ -271,6 +276,30 @@ df_boot_parallel <- df_boot_parallel |>
 # distribution of mean changes across bootstrap samples
 hist(df_boot_parallel$grid_predictions[[1]]$dn)
 hist(df_boot_parallel$grid_predictions[[1]]$db)
+
+## Global C sink calculation ---------------------------------------------------
+### Forest cover fraction weighing ---------------------------------------------
+
+# load modis fraction forest cover raster
+# r_fcf <- terra::rast("/home/laura/data/forest_fraction/MODIS_ForestCoverFraction.nc")
+r_fcf <- terra::rast(
+  "/data/archive/forestcovermodis_dimiceli_2015/data/MODIS-C006_MOD44B_ForestCoverFraction/MODIS-TERRA_C6__MOD44B__ForestCoverFraction__LPDAAC__GLOBAL__0.5degree__UHAM-ICDC__20100306__fv0.02.nc",
+  lyrs = "forestcoverfraction")
+
+plot(r_fcf)
+
+# Convert df to SpatVector
+points <- vect(results, geom = c("lon", "lat"), crs = crs(r_fcf))
+
+# Extract raster values at given points
+extracted <- extract(r_fcf, points, fun = NULL, na.rm = TRUE, touches = TRUE)
+
+# Combine extracted values with polygon attributes
+results$fcf <- extracted$forestcoverfraction  # Assuming 'layer' contains the raster values
+
+db_Pg_yr = dB_Mg_ha*1e-9*area_ha*fcf*1e-2
+
+## Visualisations --------------------------------------------------------------
 
 df_boot_parallel$grid_predictions[[1]] |>
   ggplot(aes(dC_Mg_ha, ..density..)) +
