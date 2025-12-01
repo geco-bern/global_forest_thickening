@@ -16,7 +16,7 @@ library(scales)
 ## Load data -----------
 # Load and engineer data with environmental factors
 # plot-level data for model fitting
-data_forest_plots <- read_rds(here::here("data/data_fil_biomes.rds")) |>
+data_forest_plots <- read_rds(here::here("data/inputs/data_fil_biomes.rds")) |>
   # filter(year > 1980) |> # XXX why this filter?
   mutate(NQMD2 = density * QMD^2)
 
@@ -60,7 +60,11 @@ fit_stl_byboot <- function(df) {
 
   # fit your model using these preprocessed columns
   model <- lmer(
-    logDensity ~ logQMD + year * ai + year * ndep + year * ORGC + year * PBR +
+    logDensity ~ logQMD +
+      year * ai +
+      year * ndep +
+      year * ORGC +
+      year * PBR +
       (1 | dataset / plotID) + (1 | species),
     data = df_scaled
   )
@@ -169,7 +173,7 @@ predict_db <- function(df, model) {
 }
 
 ## Create bootstraps ------------
-n_boot <- 300 # Will have to increase this
+n_boot <- 500 # Will have to increase this
 boot_resamples <- bootstraps(data_forest_plots, times = n_boot)
 
 ### Single-core version --------------------------

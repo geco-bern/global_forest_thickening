@@ -49,7 +49,7 @@ mod_lmer_env_complete <- lmer(
 
 write_rds(mod_lmer_env_complete, file = here("data/mod_lmer_env_complete.rds"))
 
-# fit model without PBR
+# fit model without PBR - this turns out as the best one
 mod_lmer_env_nopbr <- lmer(
   logDensity ~ scale(logQMD) +
     scale(year) * scale(tavg) +
