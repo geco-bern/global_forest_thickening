@@ -121,14 +121,17 @@ mod_lmer_env <- mod_lmer_env_nopbr
 ## Visualise fixed effects -----------------------------------------------------
 out <- summary(mod_lmer_env)
 
-df_coef <- round(out$coefficients[, c(1, 2, 5)], 4) |>
+df_coef <- out$coefficients |>
   as.data.frame() |>
+  rownames_to_column(var = "var") |>
+  as_tibble() |>
   rename(
     pval = `Pr(>|t|)`,
     std = `Std. Error`,
+    tval = `t value`,
     est = Estimate
   ) |>
-  rownames_to_column(var = "var") |>
+  select(var, est, std, pval) |>
   mutate(
     pvalue = ifelse(pval > 0.1, "", pval),
     pvalue = ifelse(pval < 0.05, "*", pvalue),
