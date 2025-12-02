@@ -21,7 +21,7 @@ library(scales)
 ## Load data -----------
 # Load and engineer data with environmental factors
 # plot-level data for model fitting
-data_forest_plots <- read_rds(here::here("data/inputs/data_fil_biomes.rds")) |>
+data_forest_plots <- read_rds(here::here("data/inputs/data_fil75_biomes.rds")) |>
   # filter(year > 1980) |> # XXX why this filter?
   mutate(NQMD2 = density * QMD^2)
 
@@ -57,7 +57,7 @@ fit_stl_byboot <- function(df) {
     step_center(all_of(vars_to_scale)) %>%
     step_scale(all_of(vars_to_scale))
 
-  # fit the recipe (stores the means and sds)
+  # fit the recipe (stores the sds and sds)
   rec_prep <- prep(rec)
 
   # get the preprocessed training data
@@ -277,39 +277,42 @@ df_boot_parallel <- df_boot_parallel |>
 hist(df_boot_parallel$grid_predictions[[1]]$dn)
 hist(df_boot_parallel$grid_predictions[[1]]$db)
 
-## Global C sink calculation ---------------------------------------------------
-### Forest cover fraction weighing ---------------------------------------------
+write_rds(df_boot_parallel, file = here("data/df_boot_parallel.rds"))
 
-# load modis fraction forest cover raster
-# r_fcf <- terra::rast("/home/laura/data/forest_fraction/MODIS_ForestCoverFraction.nc")
-r_fcf <- terra::rast(
-  "/data/archive/forestcovermodis_dimiceli_2015/data/MODIS-C006_MOD44B_ForestCoverFraction/MODIS-TERRA_C6__MOD44B__ForestCoverFraction__LPDAAC__GLOBAL__0.5degree__UHAM-ICDC__20100306__fv0.02.nc",
-  lyrs = "forestcoverfraction")
+### Summarise across bootstraps ------------------------------------------------
+# stack predictions from all bootstrap samples into (very) long vector
+df_boot_unnested <- df_boot_parallel |> 
+  select(id, grid_predictions) |> 
+  unnest(grid_predictions)
 
-plot(r_fcf)
+df_summ <- df_boot_unnested |> 
+  mutate(lon_i = round(lon * 4), lat_i = round(lat * 4)) |> 
+  group_by(lon_i, lat_i) |> 
+  summarise(
+    db_mean = mean(db, na.rm = TRUE),
+    db_median = median(db, na.rm = TRUE),
+    db_sd = sd(db, na.rm = TRUE)
+  ) |> 
+  ungroup() |> 
+  mutate(lon = lon_i/4, lat = lat_i/4) |> 
+  drop_na()
 
-# Convert df to SpatVector
-points <- vect(results, geom = c("lon", "lat"), crs = crs(r_fcf))
-
-# Extract raster values at given points
-extracted <- extract(r_fcf, points, fun = NULL, na.rm = TRUE, touches = TRUE)
-
-# Combine extracted values with polygon attributes
-results$fcf <- extracted$forestcoverfraction  # Assuming 'layer' contains the raster values
-
-db_Pg_yr = dB_Mg_ha*1e-9*area_ha*fcf*1e-2
+write_rds(df_summ, file = here("data/df_summ.rds"))
 
 ## Visualisations --------------------------------------------------------------
-
-df_boot_parallel$grid_predictions[[1]] |>
+### Distribution ---------------------------------------------------------------
+df_boot_unnested |>
   ggplot(aes(dC_Mg_ha, ..density..)) +
   geom_histogram(fill = "grey", color = "black", bins = 50) +
   geom_vline(xintercept = 0, linetype = "dotted") +
   # theme_classic() +
-  labs(x = expression(paste("Mg C ", ha^-1, " ", yr^-1)))
+  labs(x = expression(paste("Mg C ", ha^-1, " ", yr^-1))) +
+  theme_bw() +
+  xlim(-3, 3)
 
 ggsave(here("manuscript/figures/histogram_db.pdf"))
 
+### Map ---------------------------------------------------------------
 coast <- rnaturalearth::ne_coastline(
   scale = 110,
   returnclass = "sf"
@@ -323,7 +326,11 @@ layer_ocean <- rnaturalearth::ne_download( # ne_load(
   destdir = here("data/")
 )
 
-df_boot_parallel$grid_predictions[[1]] |>
+df_summ |>
+  mutate(
+    dB_Mg_ha = db_median * 10^-3,
+    dC_Mg_ha = dB_Mg_ha * 0.5
+  ) |> 
   ggplot() +
   geom_raster(
     aes(lon, lat, fill = dC_Mg_ha),
@@ -360,3 +367,28 @@ df_boot_parallel$grid_predictions[[1]] |>
 # )
 
 ggsave(here("manuscript/figures/fig4.pdf"))
+
+## Global C sink calculation ---------------------------------------------------
+### Forest cover fraction weighing ---------------------------------------------
+
+# load modis fraction forest cover raster
+# r_fcf <- terra::rast("/home/laura/data/forest_fraction/MODIS_ForestCoverFraction.nc")
+r_fcf <- terra::rast(
+  "/data/archive/forestcovermodis_dimiceli_2015/data/MODIS-C006_MOD44B_ForestCoverFraction/MODIS-TERRA_C6__MOD44B__ForestCoverFraction__LPDAAC__GLOBAL__0.5degree__UHAM-ICDC__20100306__fv0.02.nc",
+  lyrs = "forestcoverfraction")
+
+df_fcf <- as.data.frame(r_fcf, xy = TRUE, na.rm = FALSE)
+
+plot(r_fcf)
+
+# Convert df to SpatVector
+points <- vect(results, geom = c("lon", "lat"), crs = crs(r_fcf))
+
+# Extract raster values at given points
+extracted <- extract(r_fcf, points, fun = NULL, na.rm = TRUE, touches = TRUE)
+
+# Combine extracted values with polygon attributes
+results$fcf <- extracted$forestcoverfraction  # Assuming 'layer' contains the raster values
+
+db_Pg_yr = dB_Mg_ha*1e-9*area_ha*fcf*1e-2
+
