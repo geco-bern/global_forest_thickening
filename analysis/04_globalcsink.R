@@ -281,26 +281,30 @@ write_rds(df_boot_parallel, file = here("data/df_boot_parallel.rds"))
 
 ### Summarise across bootstraps ------------------------------------------------
 # stack predictions from all bootstrap samples into (very) long vector
-df_boot_unnested <- df_boot_parallel |> 
-  select(id, grid_predictions) |> 
+df_boot_unnested <- df_boot_parallel |>
+  select(id, grid_predictions) |>
   unnest(grid_predictions)
 
-df_summ <- df_boot_unnested |> 
-  mutate(lon_i = round(lon * 4), lat_i = round(lat * 4)) |> 
-  group_by(lon_i, lat_i) |> 
+write_rds(df_boot_unnested, file = here("data/df_boot_unnested.rds"))
+
+df_summ <- df_boot_unnested |>
+  mutate(lon_i = round(lon * 4), lat_i = round(lat * 4)) |>
+  group_by(lon_i, lat_i) |>
   summarise(
     db_mean = mean(db, na.rm = TRUE),
     db_median = median(db, na.rm = TRUE),
     db_sd = sd(db, na.rm = TRUE)
-  ) |> 
-  ungroup() |> 
-  mutate(lon = lon_i/4, lat = lat_i/4) |> 
+  ) |>
+  ungroup() |>
+  mutate(lon = lon_i/4, lat = lat_i/4) |>
   drop_na()
 
 write_rds(df_summ, file = here("data/df_summ.rds"))
 
 ## Visualisations --------------------------------------------------------------
 ### Distribution ---------------------------------------------------------------
+df_boot_unnested <- read_rds(file = here("data/df_boot_unnested.rds"))
+
 df_boot_unnested |>
   ggplot(aes(dC_Mg_ha, ..density..)) +
   geom_histogram(fill = "grey", color = "black", bins = 50) +
@@ -313,6 +317,8 @@ df_boot_unnested |>
 ggsave(here("manuscript/figures/histogram_db.pdf"))
 
 ### Map ---------------------------------------------------------------
+df_summ <- read_rds(file = here("data/df_summ.rds"))
+
 coast <- rnaturalearth::ne_coastline(
   scale = 110,
   returnclass = "sf"
@@ -330,7 +336,7 @@ df_summ |>
   mutate(
     dB_Mg_ha = db_median * 10^-3,
     dC_Mg_ha = dB_Mg_ha * 0.5
-  ) |> 
+  ) |>
   ggplot() +
   geom_raster(
     aes(lon, lat, fill = dC_Mg_ha),
