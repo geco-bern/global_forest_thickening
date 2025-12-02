@@ -207,35 +207,30 @@ predict_db <- function(df, model) {
 }
 
 ## Create bootstraps ------------
-n_boot <- 500 # Will have to increase this
+n_boot <- 300 # Will have to increase this
 boot_resamples <- bootstraps(data_forest_plots, times = n_boot)
 
 ### Un-parallel version --------------------------
-# tic()
-# df_boot <- boot_resamples %>%
-#   slice(1:3) |>
-#   mutate(id = row_number()) |>
-#   mutate(
-#     bundle_stl = map(splits, ~ fit_stl_byboot(analysis(.x))),
-#     model_biomass = map(splits, ~ fit_biomass_byboot(analysis(.x)))
-#   ) |>
-#   mutate(
-#     grid_predictions = map(
-#       bundle_stl,
-#       ~ predict_dn(., vec_qmd = data_forest_plots$QMD, df = grid_drivers)
-#     ),
-#     grid_predictions = map2(
-#       grid_predictions,
-#       model_biomass,
-#       ~ predict_db(.x, .y)
-#     )
-#   ) |>
-#   # mean across gridcells within bootstraps
-#   mutate(
-#     dn_mean = map_dbl(grid_predictions, ~ mean(.$dn, na.rm = TRUE)),
-#     db_mean = map_dbl(grid_predictions, ~ mean(.$db, na.rm = TRUE))
-#   )
-# toc()
+tic()
+df_boot <- boot_resamples %>%
+  slice(1:30) |>
+  mutate(id = row_number()) |>
+  mutate(
+    bundle_stl = map(splits, ~ fit_stl_byboot(analysis(.x))),
+    model_biomass = map(splits, ~ fit_biomass_byboot(analysis(.x)))
+  ) |>
+  mutate(
+    grid_predictions = map(
+      bundle_stl,
+      ~ predict_dn(., vec_qmd = data_forest_plots$QMD, df = grid_drivers)
+    ),
+    grid_predictions = map2(
+      grid_predictions,
+      model_biomass,
+      ~ predict_db(.x, .y)
+    )
+  )
+toc()
 
 ### Parallel version --------------------------
 ncores <- 4 # parallel::detectCores() - 2
