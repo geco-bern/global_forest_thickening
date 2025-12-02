@@ -18,16 +18,44 @@ library(rnaturalearth)
 library(ggplot2)
 library(scales)
 
-## Load data -----------
+## Load data -------------------------------------------------------------------
+### Plot data, filtered upper edge ---------------------------------------------
 # Load and engineer data with environmental factors
 # plot-level data for model fitting
 data_forest_plots <- read_rds(here::here("data/inputs/data_fil75_biomes.rds")) |>
   # filter(year > 1980) |> # XXX why this filter?
   mutate(NQMD2 = density * QMD^2)
 
+### Maps of environmental covariates -------------------------------------------
 # Load data for upscaling: maps of environmental factors
 grid_drivers <- read_rds(here::here("data/global_drivers.rds")) |>
-  as_tibble()
+  as_tibble() |>
+  mutate(lon_i = round(lon * 4), lat_i = round(lat * 4))
+
+### Forest cover fraction ------------------------------------------------------
+# load modis fraction forest cover raster
+# r_fcf <- terra::rast("/home/laura/data/forest_fraction/MODIS_ForestCoverFraction.nc")
+r_fcf <- terra::rast(
+  "~/data/archive/forestcovermodis_dimiceli_2015/data/MODIS-C006_MOD44B_ForestCoverFraction/MODIS-TERRA_C6__MOD44B__ForestCoverFraction__LPDAAC__GLOBAL__0.5degree__UHAM-ICDC__20100306__fv0.02.nc",
+  lyrs = "forestcoverfraction")
+
+df_fcf <- as.data.frame(r_fcf, xy = TRUE, na.rm = FALSE) |>
+  as_tibble() |>
+  rename(lon = x, lat = y) |>
+  mutate(
+    lon_i = round(lon * 4),
+    lat_i = round(lat * 4),
+    forestcoverfraction = forestcoverfraction * 1e-2
+    )
+
+# combine with environmental covariates df
+grid_drivers <- grid_drivers |>
+  left_join(
+    df_fcf |>
+      select(-lon, -lat),
+    by = join_by(lon_i, lat_i)
+  ) |>
+  rename(fcf = forestcoverfraction)
 
 ## Function definitions --------------
 ### Fit LMM for STL per bootstrap --------
@@ -82,6 +110,7 @@ fit_stl_byboot <- function(df) {
 
 ### Fit LMM for biomass per bootstrap --------
 fit_biomass_byboot <- function(df) {
+  # biomass data is in kg-DM/ha
   df <- df |>
     drop_na(
       all_of(
@@ -144,7 +173,7 @@ predict_dn <- function(bundle_stl, vec_qmd, df) {
   df <- df |>
     mutate(dn = exp(logDensity_1) - exp(logDensity_0)) |>
     mutate(dnqmd2 = dn * qmd^2) |>
-    select(lon, lat, area_ha, dn, dnqmd2)
+    select(lon_i, lat_i, dn, dnqmd2)
 
   return(df)
 }
@@ -181,36 +210,32 @@ predict_db <- function(df, model) {
 n_boot <- 500 # Will have to increase this
 boot_resamples <- bootstraps(data_forest_plots, times = n_boot)
 
-### Single-core version --------------------------
-# Bootstrap STL and biomass model fitting
-tic()
-df_boot <- boot_resamples %>%
-  slice(1:3) |>
-  mutate(
-    bundle_stl = map(splits, ~ fit_stl_byboot(analysis(.x))),
-    model_biomass = map(splits, ~ fit_biomass_byboot(analysis(.x)))
-  ) |>
-  mutate(
-    grid_predictions = map(
-      bundle_stl,
-      ~ predict_dn(., vec_qmd = data_forest_plots$QMD, df = grid_drivers)
-    ),
-    grid_predictions = map2(
-      grid_predictions,
-      model_biomass,
-      ~ predict_db(.x, .y)
-    )
-  ) |>
-  mutate(
-    dn_mean = map_dbl(grid_predictions, ~ mean(.$dn, na.rm = TRUE)),
-    db_mean = map_dbl(grid_predictions, ~ mean(.$db, na.rm = TRUE))
-  )
-toc()
-
-#### Plot ---------------------
-# distribution of mean changes across bootstrap samples
-hist(df_boot$grid_predictions[[1]]$dn)
-hist(df_boot$grid_predictions[[1]]$db)
+### Un-parallel version --------------------------
+# tic()
+# df_boot <- boot_resamples %>%
+#   slice(1:3) |>
+#   mutate(id = row_number()) |>
+#   mutate(
+#     bundle_stl = map(splits, ~ fit_stl_byboot(analysis(.x))),
+#     model_biomass = map(splits, ~ fit_biomass_byboot(analysis(.x)))
+#   ) |>
+#   mutate(
+#     grid_predictions = map(
+#       bundle_stl,
+#       ~ predict_dn(., vec_qmd = data_forest_plots$QMD, df = grid_drivers)
+#     ),
+#     grid_predictions = map2(
+#       grid_predictions,
+#       model_biomass,
+#       ~ predict_db(.x, .y)
+#     )
+#   ) |>
+#   # mean across gridcells within bootstraps
+#   mutate(
+#     dn_mean = map_dbl(grid_predictions, ~ mean(.$dn, na.rm = TRUE)),
+#     db_mean = map_dbl(grid_predictions, ~ mean(.$db, na.rm = TRUE))
+#   )
+# toc()
 
 ### Parallel version --------------------------
 ncores <- 4 # parallel::detectCores() - 2
@@ -236,7 +261,7 @@ cl <- new_cluster(n = ncores) |>
   )
 
 tic()
-df_boot_parallel <- boot_resamples %>%
+df_boot <- boot_resamples %>%
   mutate(id = row_number()) |>
   partition(cl) |>
   mutate(
@@ -254,6 +279,7 @@ df_boot_parallel <- boot_resamples %>%
       ~ predict_db(.x, .y)
     )
   ) |>
+  # mean across gridcells within bootstraps
   mutate(
     dn_mean = map_dbl(grid_predictions, ~ mean(.$dn, na.rm = TRUE)),
     db_mean = map_dbl(grid_predictions, ~ mean(.$db, na.rm = TRUE))
@@ -261,63 +287,96 @@ df_boot_parallel <- boot_resamples %>%
   collect()
 toc()
 
-# unit conversions
-df_boot_parallel <- df_boot_parallel |>
-  mutate(grid_predictions = map(
-    grid_predictions,
-    ~ mutate(
-      .,
-      dB_Mg_ha = db * 10^-3,
-      dC_Mg_ha = dB_Mg_ha * 0.5
-    )
-  ))
+## Global C sink calculation ---------------------------------------------------
+calc_global_csink <- function(df, df_info){
+  # biomass data is in kg-DM/ha
+  df |>
+    left_join(
+      df_info,
+      by = join_by(lon_i, lat_i)
+    ) |>
+    # convert from kg-DM ha-2 on forest land to gC (integral across gridcell)
+    mutate(db_gc_per_gridcell = db * 1e3 * 0.5 * fcf * area_ha) |>
+    summarise(db_gc_global = sum(db_gc_per_gridcell, na.rm = TRUE)) |>
+    pull(db_gc_global)
+}
 
-#### Plot ---------------------
-# distribution of mean changes across bootstrap samples
-hist(df_boot_parallel$grid_predictions[[1]]$dn)
-hist(df_boot_parallel$grid_predictions[[1]]$db)
+# calculate global C sink in PgC on each bootstrap
+df_boot <- df_boot |>
+  mutate(db_pgc_global = 1e-15 * map_dbl(grid_predictions, ~calc_global_csink(., grid_drivers)))
 
-write_rds(df_boot_parallel, file = here("data/df_boot_parallel.rds"))
+write_rds(df_boot, file = here("data/df_boot.rds"))
 
 ### Summarise across bootstraps ------------------------------------------------
 # stack predictions from all bootstrap samples into (very) long vector
-df_boot_unnested <- df_boot_parallel |>
-  select(id, grid_predictions) |>
-  unnest(grid_predictions)
-
-write_rds(df_boot_unnested, file = here("data/df_boot_unnested.rds"))
-
-df_summ <- df_boot_unnested |>
-  mutate(lon_i = round(lon * 4), lat_i = round(lat * 4)) |>
+df_summ <- df_boot |>
+  select(id_boot = id, grid_predictions) |>
+  unnest(grid_predictions) |>
   group_by(lon_i, lat_i) |>
   summarise(
     db_mean = mean(db, na.rm = TRUE),
     db_median = median(db, na.rm = TRUE),
     db_sd = sd(db, na.rm = TRUE)
   ) |>
+  drop_na() |>
   ungroup() |>
+  left_join(
+    grid_drivers,
+    by = join_by(lon_i, lat_i)
+  ) |>
   mutate(lon = lon_i/4, lat = lat_i/4) |>
-  drop_na()
+  mutate(
+    across(
+      starts_with("db"),
+      list(
+        gc_per_ha_forest   = ~ .x * 1e3 * 0.5,
+        gc_per_ha_gridcell = ~ (.x * 1e3 * 0.5) * fcf
+      ),
+      .names = "{.col}_{.fn}"
+    )
+  )
 
 write_rds(df_summ, file = here("data/df_summ.rds"))
 
 ## Visualisations --------------------------------------------------------------
-### Distribution ---------------------------------------------------------------
-df_boot_unnested <- read_rds(file = here("data/df_boot_unnested.rds"))
-
-df_boot_unnested |>
-  ggplot(aes(dC_Mg_ha, ..density..)) +
+### Distribution of global C sink estimates ------------------------------------
+# sum across all gridcells, distribution across bootstraps
+gg_hist_csink_boot <- df_boot |>
+  ggplot(aes(db_pgc_global, ..density..)) +
   geom_histogram(fill = "grey", color = "black", bins = 50) +
-  geom_vline(xintercept = 0, linetype = "dotted") +
-  # theme_classic() +
-  labs(x = expression(paste("Mg C ", ha^-1, " ", yr^-1))) +
-  theme_bw() +
-  xlim(-3, 3)
+  labs(
+    x = expression(paste("PgC ", yr^-1)),
+    y = "Density"
+  ) +
+  theme_bw()
 
-ggsave(here("manuscript/figures/histogram_db.pdf"))
+ggsave(
+  here("manuscript/figures/gg_hist_csink_boot.pdf"),
+  plot = gg_hist_csink_boot,
+  width = 5,
+  height = 4
+)
+
+# across gridcells (median across bootstraps)
+gg_hist_db_boot <- df_summ |>
+  ggplot(aes(db_median_gc_per_ha_forest * 1e-6, ..density..)) +
+  geom_histogram(fill = "grey", color = "black", bins = 50) +
+  labs(
+    x = expression(paste("MgC ha"^-1, "yr"^-1)),
+    y = "Density"
+  ) +
+  theme_bw()
+
+ggsave(
+  here("manuscript/figures/gg_hist_db_boot.pdf"),
+  plot = gg_hist_db_boot,
+  width = 5,
+  height = 4
+  )
 
 ### Map ---------------------------------------------------------------
-df_summ <- read_rds(file = here("data/df_summ.rds"))
+#### Per forest area -----------
+# df_summ <- read_rds(file = here("data/df_summ.rds"))
 
 coast <- rnaturalearth::ne_coastline(
   scale = 110,
@@ -332,14 +391,10 @@ layer_ocean <- rnaturalearth::ne_download( # ne_load(
   destdir = here("data/")
 )
 
-df_summ |>
-  mutate(
-    dB_Mg_ha = db_median * 10^-3,
-    dC_Mg_ha = dB_Mg_ha * 0.5
-  ) |>
+gg_map_sink_perforestarea <- df_summ |>
   ggplot() +
   geom_raster(
-    aes(lon, lat, fill = dC_Mg_ha),
+    aes(lon, lat, fill = db_median_gc_per_ha_forest * 1e-6),
     show.legend = TRUE
   ) +
   geom_sf(
@@ -361,40 +416,56 @@ df_summ |>
     midpoint = 0,
     na.value = "grey20", # <- missing data color
     limits = c(-1.5, 1.5),
-    oob = squish # clamp values outside limits
+    oob = squish, # clamp values outside limits,
+    name = expression(paste("MgC ha"^-1, "yr"^-1))
   ) +
-  # scale_fill_viridis_c(
-  #   # name =  expression(paste("Mg C ", ha^-1, " ", yr^-1))
-  # ) +
   theme_void() +
   theme(panel.background = element_rect(fill = "grey20", color = NA)) # ocean = light grey
-# labs(
-#   #subtitle = "Global forest carbon increase per ha and year"
-# )
 
-ggsave(here("manuscript/figures/fig4.pdf"))
+ggsave(
+  here("manuscript/figures/gg_map_sink_perforestarea.pdf"),
+  plot = gg_map_sink_perforestarea,
+  width = 8,
+  height = 6
+  )
 
-## Global C sink calculation ---------------------------------------------------
-### Forest cover fraction weighing ---------------------------------------------
+#### Per grid area -----------
+gg_map_sink_pergridarea <- df_summ |>
+  ggplot() +
+  geom_raster(
+    aes(lon, lat, fill = db_median_gc_per_ha_gridcell * 1e-6),
+    show.legend = TRUE
+  ) +
+  geom_sf(
+    data = layer_ocean,
+    color = NA,
+    fill = "grey60"
+  ) +
+  geom_sf(
+    data = coast,
+    colour = "black",
+    linewidth = 0.3
+  ) +
+  coord_sf(
+    ylim = c(-60, 85),
+    expand = FALSE
+  ) +
+  khroma::scale_fill_berlin(
+    reverse = TRUE,
+    midpoint = 0,
+    na.value = "grey20", # <- missing data color
+    limits = c(-1, 1),
+    oob = squish, # clamp values outside limits,
+    name = expression(paste("MgC ha"^-1, "yr"^-1))
+  ) +
+  theme_void() +
+  theme(panel.background = element_rect(fill = "grey20", color = NA)) # ocean = light grey
 
-# load modis fraction forest cover raster
-# r_fcf <- terra::rast("/home/laura/data/forest_fraction/MODIS_ForestCoverFraction.nc")
-r_fcf <- terra::rast(
-  "/data/archive/forestcovermodis_dimiceli_2015/data/MODIS-C006_MOD44B_ForestCoverFraction/MODIS-TERRA_C6__MOD44B__ForestCoverFraction__LPDAAC__GLOBAL__0.5degree__UHAM-ICDC__20100306__fv0.02.nc",
-  lyrs = "forestcoverfraction")
+ggsave(
+  here("manuscript/figures/gg_map_sink_pergridarea.pdf"),
+  plot = gg_map_sink_pergridarea,
+  width = 8,
+  height = 6
+)
 
-df_fcf <- as.data.frame(r_fcf, xy = TRUE, na.rm = FALSE)
-
-plot(r_fcf)
-
-# Convert df to SpatVector
-points <- vect(results, geom = c("lon", "lat"), crs = crs(r_fcf))
-
-# Extract raster values at given points
-extracted <- extract(r_fcf, points, fun = NULL, na.rm = TRUE, touches = TRUE)
-
-# Combine extracted values with polygon attributes
-results$fcf <- extracted$forestcoverfraction  # Assuming 'layer' contains the raster values
-
-db_Pg_yr = dB_Mg_ha*1e-9*area_ha*fcf*1e-2
 
