@@ -35,27 +35,27 @@ grid_drivers <- read_rds(here::here("data/global_drivers.rds")) |>
 ### Forest cover fraction ------------------------------------------------------
 # load modis fraction forest cover raster
 # r_fcf <- terra::rast("/home/laura/data/forest_fraction/MODIS_ForestCoverFraction.nc")
-r_fcf <- terra::rast(
-  "~/data/archive/forestcovermodis_dimiceli_2015/data/MODIS-C006_MOD44B_ForestCoverFraction/MODIS-TERRA_C6__MOD44B__ForestCoverFraction__LPDAAC__GLOBAL__0.5degree__UHAM-ICDC__20100306__fv0.02.nc",
-  lyrs = "forestcoverfraction")
-
-df_fcf <- as.data.frame(r_fcf, xy = TRUE, na.rm = FALSE) |>
-  as_tibble() |>
-  rename(lon = x, lat = y) |>
-  mutate(
-    lon_i = round(lon * 4),
-    lat_i = round(lat * 4),
-    forestcoverfraction = forestcoverfraction * 1e-2
-    )
-
-# combine with environmental covariates df
-grid_drivers <- grid_drivers |>
-  left_join(
-    df_fcf |>
-      select(-lon, -lat),
-    by = join_by(lon_i, lat_i)
-  ) |>
-  rename(fcf = forestcoverfraction)
+# r_fcf <- terra::rast(
+#   "~/data/archive/forestcovermodis_dimiceli_2015/data/MODIS-C006_MOD44B_ForestCoverFraction/MODIS-TERRA_C6__MOD44B__ForestCoverFraction__LPDAAC__GLOBAL__0.5degree__UHAM-ICDC__20100306__fv0.02.nc",
+#   lyrs = "forestcoverfraction")
+#
+# df_fcf <- as.data.frame(r_fcf, xy = TRUE, na.rm = FALSE) |>
+#   as_tibble() |>
+#   rename(lon = x, lat = y) |>
+#   mutate(
+#     lon_i = round(lon * 4),
+#     lat_i = round(lat * 4),
+#     forestcoverfraction = forestcoverfraction * 1e-2
+#     )
+#
+# # combine with environmental covariates df
+# grid_drivers <- grid_drivers |>
+#   left_join(
+#     df_fcf |>
+#       select(-lon, -lat),
+#     by = join_by(lon_i, lat_i)
+#   ) |>
+#   rename(fcf = forestcoverfraction)
 
 ## Function definitions --------------
 ### Fit LMM for STL per bootstrap --------
