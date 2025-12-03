@@ -28,42 +28,17 @@ data_forest_plots <- read_rds(here::here("data/inputs/data_fil75_biomes.rds")) |
 
 ### Maps of environmental covariates -------------------------------------------
 # Load data for upscaling: maps of environmental factors
-grid_drivers <- read_rds(here::here("data/global_drivers.rds")) |>
+grid_drivers <- read_rds(here("data/df_grid.rds")) |>
   as_tibble() |>
   mutate(lon_i = round(lon * 4), lat_i = round(lat * 4))
-
-### Forest cover fraction ------------------------------------------------------
-# load modis fraction forest cover raster
-# r_fcf <- terra::rast("/home/laura/data/forest_fraction/MODIS_ForestCoverFraction.nc")
-# r_fcf <- terra::rast(
-#   "~/data/archive/forestcovermodis_dimiceli_2015/data/MODIS-C006_MOD44B_ForestCoverFraction/MODIS-TERRA_C6__MOD44B__ForestCoverFraction__LPDAAC__GLOBAL__0.5degree__UHAM-ICDC__20100306__fv0.02.nc",
-#   lyrs = "forestcoverfraction")
-#
-# df_fcf <- as.data.frame(r_fcf, xy = TRUE, na.rm = FALSE) |>
-#   as_tibble() |>
-#   rename(lon = x, lat = y) |>
-#   mutate(
-#     lon_i = round(lon * 4),
-#     lat_i = round(lat * 4),
-#     forestcoverfraction = forestcoverfraction * 1e-2
-#     )
-#
-# # combine with environmental covariates df
-# grid_drivers <- grid_drivers |>
-#   left_join(
-#     df_fcf |>
-#       select(-lon, -lat),
-#     by = join_by(lon_i, lat_i)
-#   ) |>
-#   rename(fcf = forestcoverfraction)
 
 ## Function definitions --------------
 ### Fit LMM for STL per bootstrap --------
 fit_stl_byboot <- function(df) {
-  vars_to_scale <- c("logQMD", "year", "ai", "ndep", "ORGC", "PBR")
+  vars_to_scale <- c("logQMD", "year", "tavg", "ai", "ndep", "ORGC", "CNrt")
 
   rec <- recipe(
-    logDensity ~ logQMD + year + ai + ndep + ORGC + PBR + dataset + plotID + species,
+    logDensity ~ logQMD + year + tavg + ai + ndep + ORGC + CNrt + dataset + plotID + species,
     data = df |>
       drop_na(
         all_of(
@@ -71,10 +46,11 @@ fit_stl_byboot <- function(df) {
             "logDensity",
             "logQMD",
             "year",
+            "tavg",
             "ai",
             "ndep",
             "ORGC",
-            "PBR",
+            "CNrt",
             "dataset",
             "plotID",
             "species"
@@ -94,10 +70,11 @@ fit_stl_byboot <- function(df) {
   # fit your model using these preprocessed columns
   model <- lmer(
     logDensity ~ logQMD +
+      year * tavg +
       year * ai +
       year * ndep +
       year * ORGC +
-      year * PBR +
+      year * CNrt +
       (1 | dataset / plotID) + (1 | species),
     data = df_scaled
   )
@@ -207,7 +184,7 @@ predict_db <- function(df, model) {
 }
 
 ## Create bootstraps ------------
-n_boot <- 300 # Will have to increase this
+n_boot <- 100 # Will have to increase this
 boot_resamples <- bootstraps(data_forest_plots, times = n_boot)
 
 ### Un-parallel version --------------------------

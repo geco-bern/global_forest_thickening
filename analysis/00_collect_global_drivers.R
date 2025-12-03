@@ -27,10 +27,18 @@ df_fcf <- as.data.frame(r_fcf, xy = TRUE, na.rm = FALSE) |>
     fcf = fcf * 1e-2 # to make it a fraction (not percent)
   )
 
-# Forest biomes ----------------------------------------------------------------
-# Rasterise biomes map and select forest biomes for determining the maximum
-# extent of global upscaling.
-# sf::sf_use_s2(FALSE)
+# Gridcell area ----------------------------------------------------------------
+df_area <- as.data.frame(
+  cellSize(r_fcf)*1e-4,   # cell size in ha
+  xy = TRUE,
+  na.rm = FALSE
+  ) |>
+  as_tibble() |>
+  rename(lon = x, lat = y, area_ha = area) |>
+  mutate(
+    lon_i = round(lon * 4),
+    lat_i = round(lat * 4)
+  )
 
 # Biomes -------------
 # Get data from Olson, D. M, 2020, "Terrestrial ecoregions of the world",
@@ -188,12 +196,20 @@ clean_latlon_halfdeg <- function(df){
       )
 }
 
-df_grid <- df_grid |>
+df_grid_out <- df_grid |>
   clean_latlon_halfdeg() |>
 
   # add forest cover fraction
   left_join(
     df_fcf |>
+      clean_latlon_halfdeg() |>
+      select(-lat, -lon),
+    by = join_by(lat_i, lon_i)
+  ) |>
+
+  # gridcell area
+  left_join(
+    df_area |>
       clean_latlon_halfdeg() |>
       select(-lat, -lon),
     by = join_by(lat_i, lon_i)
@@ -233,7 +249,7 @@ df_grid <- df_grid |>
 
 # write to file
 write_rds(
-  df_grid,
+  df_grid_out,
   file = here("data/df_grid.rds")
 )
 
