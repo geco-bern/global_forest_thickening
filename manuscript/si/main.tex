@@ -31,7 +31,7 @@ Global forest thickening}
 
 \tableofcontents
 
-\section{Self-thinning trends}
+\section{Data}
 
 \begin{table}
   % \label{tab:datasets}
@@ -85,6 +85,16 @@ Dataset & N & Description & Filter & Reference \\
 \end{figure}
 
 \clearpage
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{../figures/gg_sitepoints.pdf}
+\caption{Distribution of forest plots (red circles) and forest biomes.}
+\end{figure}
+
+\section{Self-thinning trends}
+
+% XXX todo: visualise evolution of individual forest plots for a small subset of plots, selected based on length of available time series.
 
 % Example for how to include a table, generated externally
 % Uses library xtable.
@@ -150,6 +160,18 @@ Biome & Mean & SE \\
 \section{Environmental drivers}
 
 \input{../tables/mods_env.tex}
+
+\clearpage
+
+\section{Global C sink}
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=\textwidth]{../figures/gg_map_sink_perforestarea_combined.pdf}
+\caption{(a) C sink in aboveground biomass due to temporal changes in the self-thinning relationship. (b) Standard deviation of estimates across bootstraps. Values are expressed per unit forest area (gC m$^{-2}$ yr$^{-1}$).}
+\end{figure}
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage

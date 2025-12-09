@@ -184,30 +184,34 @@ predict_db <- function(df, model) {
 }
 
 ## Create bootstraps ------------
-n_boot <- 100 # Will have to increase this
+set.seed(1982)
+n_boot <- 2000
 boot_resamples <- bootstraps(data_forest_plots, times = n_boot)
 
 ### Un-parallel version --------------------------
-tic()
-df_boot <- boot_resamples %>%
-  slice(1:30) |>
-  mutate(id = row_number()) |>
-  mutate(
-    bundle_stl = map(splits, ~ fit_stl_byboot(analysis(.x))),
-    model_biomass = map(splits, ~ fit_biomass_byboot(analysis(.x)))
-  ) |>
-  mutate(
-    grid_predictions = map(
-      bundle_stl,
-      ~ predict_dn(., vec_qmd = data_forest_plots$QMD, df = grid_drivers)
-    ),
-    grid_predictions = map2(
-      grid_predictions,
-      model_biomass,
-      ~ predict_db(.x, .y)
-    )
-  )
-toc()
+# tic()
+# df_boot <- boot_resamples |>
+#   slice(1:30) |>
+#   mutate(id = row_number()) |>
+#   mutate(
+#     bundle_stl = map(splits, ~ fit_stl_byboot(analysis(.x))),
+#     model_biomass = map(splits, ~ fit_biomass_byboot(analysis(.x)))
+#   ) |>
+#   mutate(
+#     grid_predictions = map(
+#       bundle_stl,
+#       ~ predict_dn(., vec_qmd = data_forest_plots$QMD, df = grid_drivers)
+#     )) |>
+#   select(-bundle_stl) |>
+#   mutate(
+#     grid_predictions = map2(
+#       grid_predictions,
+#       model_biomass,
+#       ~ predict_db(.x, .y)
+#     )
+#   ) |>
+#   select(-model_biomass)
+# toc()
 
 ### Parallel version --------------------------
 ncores <- 4 # parallel::detectCores() - 2
@@ -233,7 +237,7 @@ cl <- new_cluster(n = ncores) |>
   )
 
 tic()
-df_boot <- boot_resamples %>%
+df_boot <- boot_resamples |>
   mutate(id = row_number()) |>
   partition(cl) |>
   mutate(
@@ -244,18 +248,16 @@ df_boot <- boot_resamples %>%
     grid_predictions = map(
       bundle_stl,
       ~ predict_dn(., vec_qmd = data_forest_plots$QMD, df = grid_drivers)
-    ),
+    )) |>
+  select(-bundle_stl) |>
+  mutate(
     grid_predictions = map2(
       grid_predictions,
       model_biomass,
       ~ predict_db(.x, .y)
     )
   ) |>
-  # mean across gridcells within bootstraps
-  mutate(
-    dn_mean = map_dbl(grid_predictions, ~ mean(.$dn, na.rm = TRUE)),
-    db_mean = map_dbl(grid_predictions, ~ mean(.$db, na.rm = TRUE))
-  ) |>
+  select(-model_biomass) |>
   collect()
 toc()
 
@@ -277,7 +279,12 @@ calc_global_csink <- function(df, df_info){
 df_boot <- df_boot |>
   mutate(db_pgc_global = 1e-15 * map_dbl(grid_predictions, ~calc_global_csink(., grid_drivers)))
 
-write_rds(df_boot, file = here("data/df_boot.rds"))
+# write_rds(df_boot, file = here("data/df_boot.rds"))
+
+df_boot_sub <- df_boot |>
+  select(-grid_predictions, -splits)
+
+write_rds(df_boot_sub, file = here("data/df_boot_sub.rds"))
 
 ### Summarise across bootstraps ------------------------------------------------
 # stack predictions from all bootstrap samples into (very) long vector
@@ -314,7 +321,7 @@ write_rds(df_summ, file = here("data/df_summ.rds"))
 ### Distribution of global C sink estimates ------------------------------------
 # sum across all gridcells, distribution across bootstraps
 gg_hist_csink_boot <- df_boot |>
-  ggplot(aes(db_pgc_global, ..density..)) +
+  ggplot(aes(db_pgc_global, after_stat(density))) +
   geom_histogram(fill = "grey", color = "black", bins = 50) +
   labs(
     x = expression(paste("PgC ", yr^-1)),
@@ -331,7 +338,7 @@ ggsave(
 
 # across gridcells (median across bootstraps)
 gg_hist_db_boot <- df_summ |>
-  ggplot(aes(db_median_gc_per_ha_forest * 1e-6, ..density..)) +
+  ggplot(aes(db_median_gc_per_ha_forest * 1e-6, after_stat(density))) +
   geom_histogram(fill = "grey", color = "black", bins = 50) +
   labs(
     x = expression(paste("MgC ha"^-1, "yr"^-1)),
@@ -348,6 +355,7 @@ ggsave(
 
 ### Map ---------------------------------------------------------------
 #### Per forest area -----------
+##### Mean --------------
 # df_summ <- read_rds(file = here("data/df_summ.rds"))
 
 coast <- rnaturalearth::ne_coastline(
@@ -383,16 +391,24 @@ gg_map_sink_perforestarea <- df_summ |>
     ylim = c(-60, 85),
     expand = FALSE
   ) +
+  # scale_fill_stepsn(
+  #   colours = rev(khroma::color("berlin")(50)), # viridisLite::viridis(7),
+  #   guide = guide_coloursteps(),
+  #   na.value = "grey30", # <- missing data color
+  #   limits = c(-1.5, 1.5),
+  #   oob = squish, # clamp values outside limits,
+  #   name = expression(paste("MgC ha"^-1, "yr"^-1)),
+  # ) +
   khroma::scale_fill_berlin(
     reverse = TRUE,
     midpoint = 0,
-    na.value = "grey20", # <- missing data color
+    na.value = "grey30", # <- missing data color
     limits = c(-1.5, 1.5),
     oob = squish, # clamp values outside limits,
-    name = expression(paste("MgC ha"^-1, "yr"^-1))
+    name = expression(paste("MgC ha"^-1, "yr"^-1)),
   ) +
   theme_void() +
-  theme(panel.background = element_rect(fill = "grey20", color = NA)) # ocean = light grey
+  theme(panel.background = element_rect(fill = "grey40", color = NA)) # ocean = light grey
 
 ggsave(
   here("manuscript/figures/gg_map_sink_perforestarea.pdf"),
@@ -401,7 +417,61 @@ ggsave(
   height = 6
   )
 
+##### SD --------------
+gg_map_sink_perforestarea_sd <- df_summ |>
+  ggplot() +
+  geom_raster(
+    aes(lon, lat, fill = db_sd_gc_per_ha_forest * 1e-6),
+    show.legend = TRUE
+  ) +
+  geom_sf(
+    data = layer_ocean,
+    color = NA,
+    fill = "grey60"
+  ) +
+  geom_sf(
+    data = coast,
+    colour = "black",
+    linewidth = 0.3
+  ) +
+  coord_sf(
+    ylim = c(-60, 85),
+    expand = FALSE
+  ) +
+  khroma::scale_fill_lajolla(
+    reverse = TRUE,
+    midpoint = 0,
+    na.value = "grey30", # <- missing data color
+    limits = c(0, 0.5),
+    oob = squish, # clamp values outside limits,
+    name = expression(paste("MgC ha"^-1, "yr"^-1))
+  ) +
+  theme_void() +
+  theme(panel.background = element_rect(fill = "grey40", color = NA)) # ocean = light grey
+
+ggsave(
+  here("manuscript/figures/gg_map_sink_perforestarea_sd.pdf"),
+  plot = gg_map_sink_perforestarea_sd,
+  width = 8,
+  height = 4
+)
+
+gg_map_sink_perforestarea_combined <- cowplot::plot_grid(
+  gg_map_sink_perforestarea,
+  gg_map_sink_perforestarea_sd,
+  ncol = 1,
+  labels = letters[1:2]
+)
+
+ggsave(
+  here("manuscript/figures/gg_map_sink_perforestarea_combined.pdf"),
+  plot = gg_map_sink_perforestarea_combined,
+  width = 8.2,
+  height = 5.5
+)
+
 #### Per grid area -----------
+##### Mean --------------
 gg_map_sink_pergridarea <- df_summ |>
   ggplot() +
   geom_raster(
@@ -425,13 +495,15 @@ gg_map_sink_pergridarea <- df_summ |>
   khroma::scale_fill_berlin(
     reverse = TRUE,
     midpoint = 0,
-    na.value = "grey20", # <- missing data color
+    na.value = "grey30", # <- missing data color
     limits = c(-1, 1),
     oob = squish, # clamp values outside limits,
     name = expression(paste("MgC ha"^-1, "yr"^-1))
   ) +
   theme_void() +
-  theme(panel.background = element_rect(fill = "grey20", color = NA)) # ocean = light grey
+  theme(panel.background = element_rect(fill = "grey30", color = NA)) # ocean = light grey
+
+gg_map_sink_pergridarea
 
 ggsave(
   here("manuscript/figures/gg_map_sink_pergridarea.pdf"),
@@ -440,4 +512,56 @@ ggsave(
   height = 6
 )
 
+##### SD --------------
+gg_map_sink_pergridgridtarea_sd <- df_summ |>
+  ggplot() +
+  geom_raster(
+    aes(lon, lat, fill = db_sd_gc_per_ha_gridcell * 1e-6),
+    show.legend = TRUE
+  ) +
+  geom_sf(
+    data = layer_ocean,
+    color = NA,
+    fill = "grey60"
+  ) +
+  geom_sf(
+    data = coast,
+    colour = "black",
+    linewidth = 0.3
+  ) +
+  coord_sf(
+    ylim = c(-60, 85),
+    expand = FALSE
+  ) +
+  khroma::scale_fill_lajolla(
+    reverse = TRUE,
+    midpoint = 0,
+    na.value = "grey30", # <- missing data color
+    limits = c(0, 0.15),
+    oob = squish, # clamp values outside limits,
+    name = expression(paste("MgC ha"^-1, "yr"^-1))
+  ) +
+  theme_void() +
+  theme(panel.background = element_rect(fill = "grey40", color = NA)) # ocean = light grey
+
+ggsave(
+  here("manuscript/figures/gg_map_sink_pergridgridtarea_sd.pdf"),
+  plot = gg_map_sink_pergridgridtarea_sd,
+  width = 8,
+  height = 4
+)
+
+gg_map_sink_pergridarea_combined <- cowplot::plot_grid(
+  gg_map_sink_pergridarea,
+  gg_map_sink_pergridgridtarea_sd,
+  ncol = 1,
+  labels = letters[1:2]
+)
+
+ggsave(
+  here("manuscript/figures/gg_map_sink_pergridarea_combined.pdf"),
+  plot = gg_map_sink_pergridarea_combined,
+  width = 8.2,
+  height = 5.5
+)
 

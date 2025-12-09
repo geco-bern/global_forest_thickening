@@ -39,6 +39,7 @@ source(here("R/plot_lqmm_bybiome.R"))
 source(here("R/calc_lqmm_byqmdbin.R"))
 source(here("R/create_table_latex.R"))
 source(here("R/process_cite_lines.R"))
+source(here("R/wrap_fit_lqmm.R"))
 
 # Quantile regression ----------------------------------------------------------
 
@@ -419,6 +420,11 @@ gg_fdisturbed_biome4
 data_unm_biome_including_disturbed <- data_unm_biome
 data_unm_biome <- data_unm_biome |>
   filter(ndisturbed == 0)
+
+write_rds(
+  data_unm_biome,
+  file = here("data/data_unm_undist_biome4.rds")
+  )
 
 ### LQMM fit -------------------------------------------------------------------
 set.seed(123)
