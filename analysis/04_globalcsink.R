@@ -51,7 +51,7 @@ grid_drivers <- read_rds(here("data/df_grid.rds")) |>
 ### Fit LMM for STL per bootstrap --------
 # this is hard-coded here based on model selection results from 03_env_drivers.R
 fit_stl_byboot <- function(df) {
-  vars_to_scale <- c("logQMD", "year", "tavg", "ai", "ndep", "ORGC", "CNrt")
+  vars_to_scale <- c("logQMD", "year", "tavg", "ai", "ndep", "ORGC", "CNrt", "PBR")
 
   rec <- recipe(
     logDensity ~ logQMD + year + tavg + ai + ndep + ORGC + CNrt + PBR + dataset + plotID + species,
@@ -234,7 +234,7 @@ calc_csink_bylat <- function(df, df_info){
 
 ## Create bootstraps ------------
 set.seed(1982)
-n_boot <- 1000
+n_boot <- 3000
 boot_resamples <- bootstraps(data_forest_plots, times = n_boot)
 
 ### Un-parallel version --------------------------
@@ -326,7 +326,7 @@ toc()
 write_rds(
   df_boot,
   file = here(paste0("data/df_boot_", lab_filter, "_nboot_", as.character(n_boot),".rds"))
-  )
+)
 
 ### Summarise across bootstraps ------------------------------------------------
 # stack predictions from all bootstrap samples into (very) long vector
@@ -360,7 +360,7 @@ df_summ <- df_boot |>
 write_rds(
   df_summ,
   here(paste0("data/df_summ_", lab_filter, "_nboot_", as.character(n_boot),".rds"))
-  )
+)
 
 ## Visualisations --------------------------------------------------------------
 ### Distribution of global C sink estimates ------------------------------------
@@ -460,7 +460,7 @@ ggsave(
   plot = gg_map_sink_perforestarea,
   width = 8,
   height = 6
-  )
+)
 
 ##### SD --------------
 gg_map_sink_perforestarea_sd <- df_summ |>

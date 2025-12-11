@@ -1048,6 +1048,72 @@ ggsave(
   height = 15
 )
 
+## SI Figure: Length of repeated observations ----------------------------------
+df_len <- data_unm |>
+  group_by(plotID, biome, biomeID) |>
+  summarise(start = min(year), end = max(year)) |>
+  mutate(len = end - start)
+
+# numbers for paper
+df_len |>
+  ungroup() |>
+  group_by(biomeID, biome) |>
+  summarise(
+    len_median = median(len),
+    len_mean = mean(len)
+  )
+
+df_len |>
+  ungroup() |>
+  summarise(
+    len_median = median(len),
+    len_mean = mean(len)
+  )
+
+df_len |>
+  ggplot(aes(x = len, color = biome, fill = biome)) +
+  geom_density(adjust = 3, alpha = 0.5) +
+  scale_fill_manual(
+    values = c(
+      "Boreal Forests/Taiga"                                       = "dodgerblue4",
+      "Mediterranean Forests, Woodlands & Scrub"                   = "orangered3",
+      "Temperate Broadleaf & Mixed Forests"                        = "darkgreen",
+      "Temperate Conifer Forests"                                  = "lightseagreen",
+      "Tropical & Subtropical Dry Broadleaf Forests"               = "goldenrod4",
+      "Tropical & Subtropical Moist Broadleaf Forests"             = "springgreen3"
+    ),
+    na.value = NA,
+    breaks = ~ .x[!is.na(.x)],
+    name = ""
+  ) +
+  scale_color_manual(
+    values = c(
+      "Boreal Forests/Taiga"                                       = "dodgerblue4",
+      "Mediterranean Forests, Woodlands & Scrub"                   = "orangered3",
+      "Temperate Broadleaf & Mixed Forests"                        = "darkgreen",
+      "Temperate Conifer Forests"                                  = "lightseagreen",
+      "Tropical & Subtropical Dry Broadleaf Forests"               = "goldenrod4",
+      "Tropical & Subtropical Moist Broadleaf Forests"             = "springgreen3"
+    ),
+    na.value = NA,
+    breaks = ~ .x[!is.na(.x)],
+    name = ""
+  ) +
+  theme_classic() +
+  theme(
+    legend.position = "bottom"
+  ) +
+  labs(
+    x = "Length (years)",
+    y = "Density"
+  )
+
+ggsave(
+  filename = here("manuscript/figures/distribution_length.pdf"),
+  width = 10,
+  height = 5
+)
+
 ## SI Figure: Bootstrapped percent change of N per year ------------------------
 write_rds(df_boot, file = here("data/df_boot.rds"))
 
@@ -1055,8 +1121,32 @@ df_boot |>
   mutate(percent_change = 100*(exp(estimate) - 1)) |>
   ggplot(aes(x = percent_change, group = biome, color = biome, fill = biome)) +
   geom_density(alpha = 0.5) +
-  scale_color_okabe_ito() +
-  scale_fill_okabe_ito() +
+  scale_fill_manual(
+    values = c(
+      "Boreal Forests/Taiga"                                       = "dodgerblue4",
+      "Mediterranean Forests, Woodlands & Scrub"                   = "orangered3",
+      "Temperate Broadleaf & Mixed Forests"                        = "darkgreen",
+      "Temperate Conifer Forests"                                  = "lightseagreen",
+      "Tropical & Subtropical Dry Broadleaf Forests"               = "goldenrod4",
+      "Tropical & Subtropical Moist Broadleaf Forests"             = "springgreen3"
+    ),
+    na.value = NA,
+    breaks = ~ .x[!is.na(.x)],
+    name = ""
+  ) +
+  scale_color_manual(
+    values = c(
+      "Boreal Forests/Taiga"                                       = "dodgerblue4",
+      "Mediterranean Forests, Woodlands & Scrub"                   = "orangered3",
+      "Temperate Broadleaf & Mixed Forests"                        = "darkgreen",
+      "Temperate Conifer Forests"                                  = "lightseagreen",
+      "Tropical & Subtropical Dry Broadleaf Forests"               = "goldenrod4",
+      "Tropical & Subtropical Moist Broadleaf Forests"             = "springgreen3"
+    ),
+    na.value = NA,
+    breaks = ~ .x[!is.na(.x)],
+    name = ""
+  ) +
   theme_classic() +
   labs(
     x = expression(paste("Change in density (%"^{-yr}, ")")),
