@@ -25,7 +25,7 @@ calc_lqmm_byqmdbin <- function(df, binwidth = 0.25, breaks = NA) {
       labels = bin_labels
     ))
 
-  # Nest and fit models NOT including logQMD_sc
+  # Nest and fit models, including logQMD_sc
   df <- df |>
     group_by(bin_lqmm) |>
     nest() |>
@@ -38,7 +38,7 @@ calc_lqmm_byqmdbin <- function(df, binwidth = 0.25, breaks = NA) {
 
     # LQMM fit per bin
     mutate(mod_lqmm = purrr::map(data, ~ lqmm(
-      logDensity ~ year_sc, # + logQMD_sc,
+      logDensity ~ year_sc + logQMD_sc,
       random = ~1,
       group = plotID,
       tau = 0.90,
