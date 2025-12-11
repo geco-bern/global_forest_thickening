@@ -4,28 +4,22 @@
 # library(renv)
 library(readr)
 library(dplyr)
-library(tidyverse)
+library(ggplot2)
+library(tidyr)
 library(lubridate)
 library(rFIA)
-library(patchwork)
-library(terra)
-library(sf)
 library(lme4)
 library(lmerTest)
 library(ggeffects)
 library(effects)
 library(sjPlot)
 library(measurements)
-library(sp)
 library(lqmm)
 library(ggforce)
 library(MuMIn)
-# library(ingestr)
 library(DescTools)
 library(here)
 library(viridis)
-library(rnaturalearth)
-library(rnaturalearthdata)
 library(purrr)
 library(rsample)
 library(cowplot)
@@ -150,27 +144,27 @@ write_rds(fit_lqmm, file = here("data/outputs/fit_lqmm_biome1.rds"))
 percent_change <- calc_percent_change(data_unm_biome, fit_lqmm)
 
 #### Bootstrapping LQMM fit ----------------------------------------------------
-boot_data <- rsample::bootstraps(
-  data_unm_biome %>%
-    group_by(plotID),
-  times = 500,
-  apparent = FALSE
-)
-
-# Apply model to each bootstrap sample
-boot_results <- boot_data %>%
-  mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
-  filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
-  unnest(coefs) |>
-  dplyr::select(-splits)
-
-write_rds(boot_results, file = here("data/boot_results_biome1.rds"))
-
-df_boot <- boot_results |>
-  filter(term == "year") |>
-  mutate(biome = "Tropical & Subtropical Moist Broadleaf Forests")
-
-boot_results <- read_rds(file = here("data/boot_results_biome1.rds"))
+# boot_data <- rsample::bootstraps(
+#   data_unm_biome %>%
+#     group_by(plotID),
+#   times = 500,
+#   apparent = FALSE
+# )
+#
+# # Apply model to each bootstrap sample
+# boot_results <- boot_data %>%
+#   mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
+#   filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
+#   unnest(coefs) |>
+#   dplyr::select(-splits)
+#
+# write_rds(boot_results, file = here("data/boot_results_biome1.rds"))
+#
+# df_boot <- boot_results |>
+#   filter(term == "year") |>
+#   mutate(biome = "Tropical & Subtropical Moist Broadleaf Forests")
+#
+# boot_results <- read_rds(file = here("data/boot_results_biome1.rds"))
 
 ### Plot STL from LQMM ---------------------------------------------------------
 gg_lqmm_biome1 <- plot_lqmm_bybiome(
@@ -303,28 +297,28 @@ summary(fit_lqmm)
 write_rds(fit_lqmm, file = here("data/outputs/fit_lqmm_biome2.rds"))
 
 #### Bootstrapping LQMM fit -----------------------------------------------------
-boot_data <- rsample::bootstraps(
-  data_unm_biome %>%
-    group_by(plotID),
-  times = 500,
-  apparent = FALSE
-)
-
-# Apply model to each bootstrap sample
-boot_results <- boot_data %>%
-  mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
-  filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
-  unnest(coefs) |>
-  dplyr::select(-splits)
-
-write_rds(boot_results, file = here("data/boot_results_biome2.rds"))
-
-df_boot <- bind_rows(
-  df_boot,
-  boot_results |>
-    filter(term == "year") |>
-    mutate(biome = "Tropical Dry Broadleaf Forests")
-)
+# boot_data <- rsample::bootstraps(
+#   data_unm_biome %>%
+#     group_by(plotID),
+#   times = 500,
+#   apparent = FALSE
+# )
+#
+# # Apply model to each bootstrap sample
+# boot_results <- boot_data %>%
+#   mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
+#   filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
+#   unnest(coefs) |>
+#   dplyr::select(-splits)
+#
+# write_rds(boot_results, file = here("data/boot_results_biome2.rds"))
+#
+# df_boot <- bind_rows(
+#   df_boot,
+#   boot_results |>
+#     filter(term == "year") |>
+#     mutate(biome = "Tropical Dry Broadleaf Forests")
+# )
 
 ### Plot STL from LQMM ---------------------------------------------------------
 gg_lqmm_biome2 <- plot_lqmm_bybiome(
@@ -453,28 +447,28 @@ summary(fit_lqmm)
 write_rds(fit_lqmm, file = here("data/outputs/fit_lqmm_biome4.rds"))
 
 #### Bootstrapping LQMM fit -----------------------------------------------------
-boot_data <- rsample::bootstraps(
-  data_unm_biome %>%
-    group_by(plotID),
-  times = 500,
-  apparent = FALSE
-)
-
-# Apply model to each bootstrap sample
-boot_results <- boot_data %>%
-  mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
-  filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
-  unnest(coefs) |>
-  dplyr::select(-splits)
-
-write_rds(boot_results, file = here("data/boot_results_biome4.rds"))
-
-df_boot <- bind_rows(
-  df_boot,
-  boot_results |>
-    filter(term == "year") |>
-    mutate(biome = "Temperate Broadleaf & Mixed Forests")
-)
+# boot_data <- rsample::bootstraps(
+#   data_unm_biome %>%
+#     group_by(plotID),
+#   times = 500,
+#   apparent = FALSE
+# )
+#
+# # Apply model to each bootstrap sample
+# boot_results <- boot_data %>%
+#   mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
+#   filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
+#   unnest(coefs) |>
+#   dplyr::select(-splits)
+#
+# write_rds(boot_results, file = here("data/boot_results_biome4.rds"))
+#
+# df_boot <- bind_rows(
+#   df_boot,
+#   boot_results |>
+#     filter(term == "year") |>
+#     mutate(biome = "Temperate Broadleaf & Mixed Forests")
+# )
 
 ### Plot STL from LQMM ---------------------------------------------------------
 gg_lqmm_biome4 <- plot_lqmm_bybiome(
@@ -603,28 +597,28 @@ summary(fit_lqmm)
 write_rds(fit_lqmm, file = here("data/outputs/fit_lqmm_biome5.rds"))
 
 #### Bootstrapping LQMM fit -----------------------------------------------------
-boot_data <- rsample::bootstraps(
-  data_unm_biome %>%
-    group_by(plotID),
-  times = 500,
-  apparent = FALSE
-)
-
-# Apply model to each bootstrap sample
-boot_results <- boot_data %>%
-  mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
-  filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
-  unnest(coefs) |>
-  dplyr::select(-splits)
-
-write_rds(boot_results, file = here("data/boot_results_biome5.rds"))
-
-df_boot <- bind_rows(
-  df_boot,
-  boot_results |>
-    filter(term == "year") |>
-    mutate(biome = "Temperate Conifer Forests")
-)
+# boot_data <- rsample::bootstraps(
+#   data_unm_biome %>%
+#     group_by(plotID),
+#   times = 500,
+#   apparent = FALSE
+# )
+#
+# # Apply model to each bootstrap sample
+# boot_results <- boot_data %>%
+#   mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
+#   filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
+#   unnest(coefs) |>
+#   dplyr::select(-splits)
+#
+# write_rds(boot_results, file = here("data/boot_results_biome5.rds"))
+#
+# df_boot <- bind_rows(
+#   df_boot,
+#   boot_results |>
+#     filter(term == "year") |>
+#     mutate(biome = "Temperate Conifer Forests")
+# )
 
 ### Plot STL from LQMM ---------------------------------------------------------
 gg_lqmm_biome5 <- plot_lqmm_bybiome(
@@ -757,28 +751,28 @@ summary(fit_lqmm)
 write_rds(fit_lqmm, file = here("data/outputs/fit_lqmm_biome6.rds"))
 
 #### Bootstrapping LQMM fit -----------------------------------------------------
-boot_data <- rsample::bootstraps(
-  data_unm_biome %>%
-    group_by(plotID),
-  times = 500,
-  apparent = FALSE
-)
-
-# Apply model to each bootstrap sample
-boot_results <- boot_data %>%
-  mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
-  filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
-  unnest(coefs) |>
-  dplyr::select(-splits)
-
-write_rds(boot_results, file = here("data/boot_results_biome6.rds"))
-
-df_boot <- bind_rows(
-  df_boot,
-  boot_results |>
-    filter(term == "year") |>
-    mutate(biome = "Boreal Forests/Taiga")
-)
+# boot_data <- rsample::bootstraps(
+#   data_unm_biome %>%
+#     group_by(plotID),
+#   times = 500,
+#   apparent = FALSE
+# )
+#
+# # Apply model to each bootstrap sample
+# boot_results <- boot_data %>%
+#   mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
+#   filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
+#   unnest(coefs) |>
+#   dplyr::select(-splits)
+#
+# write_rds(boot_results, file = here("data/boot_results_biome6.rds"))
+#
+# df_boot <- bind_rows(
+#   df_boot,
+#   boot_results |>
+#     filter(term == "year") |>
+#     mutate(biome = "Boreal Forests/Taiga")
+# )
 
 ### Plot STL from LQMM ---------------------------------------------------------
 gg_lqmm_biome6 <- plot_lqmm_bybiome(
@@ -907,28 +901,28 @@ summary(fit_lqmm)
 write_rds(fit_lqmm, file = here("data/outputs/fit_lqmm_biome12.rds"))
 
 #### Bootstrapping LQMM fit -----------------------------------------------------
-boot_data <- rsample::bootstraps(
-  data_unm_biome %>%
-    group_by(plotID),
-  times = 500,
-  apparent = FALSE
-)
-
-# Apply model to each bootstrap sample
-boot_results <- boot_data %>%
-  mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
-  filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
-  unnest(coefs) |>
-  dplyr::select(-splits)
-
-write_rds(boot_results, file = here("data/boot_results_biome12.rds"))
-
-df_boot <- bind_rows(
-  df_boot,
-  boot_results |>
-    filter(term == "year") |>
-    mutate(biome = "Mediterranean Forests")
-)
+# boot_data <- rsample::bootstraps(
+#   data_unm_biome %>%
+#     group_by(plotID),
+#   times = 500,
+#   apparent = FALSE
+# )
+#
+# # Apply model to each bootstrap sample
+# boot_results <- boot_data %>%
+#   mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
+#   filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
+#   unnest(coefs) |>
+#   dplyr::select(-splits)
+#
+# write_rds(boot_results, file = here("data/boot_results_biome12.rds"))
+#
+# df_boot <- bind_rows(
+#   df_boot,
+#   boot_results |>
+#     filter(term == "year") |>
+#     mutate(biome = "Mediterranean Forests")
+# )
 
 ### Plot STL from LQMM ---------------------------------------------------------
 gg_lqmm_biome12 <- plot_lqmm_bybiome(
@@ -1114,88 +1108,88 @@ ggsave(
   height = 5
 )
 
-## SI Figure: Bootstrapped percent change of N per year ------------------------
-write_rds(df_boot, file = here("data/df_boot.rds"))
-
-df_boot |>
-  mutate(percent_change = 100*(exp(estimate) - 1)) |>
-  ggplot(aes(x = percent_change, group = biome, color = biome, fill = biome)) +
-  geom_density(alpha = 0.5) +
-  scale_fill_manual(
-    values = c(
-      "Boreal Forests/Taiga"                                       = "dodgerblue4",
-      "Mediterranean Forests, Woodlands & Scrub"                   = "orangered3",
-      "Temperate Broadleaf & Mixed Forests"                        = "darkgreen",
-      "Temperate Conifer Forests"                                  = "lightseagreen",
-      "Tropical & Subtropical Dry Broadleaf Forests"               = "goldenrod4",
-      "Tropical & Subtropical Moist Broadleaf Forests"             = "springgreen3"
-    ),
-    na.value = NA,
-    breaks = ~ .x[!is.na(.x)],
-    name = ""
-  ) +
-  scale_color_manual(
-    values = c(
-      "Boreal Forests/Taiga"                                       = "dodgerblue4",
-      "Mediterranean Forests, Woodlands & Scrub"                   = "orangered3",
-      "Temperate Broadleaf & Mixed Forests"                        = "darkgreen",
-      "Temperate Conifer Forests"                                  = "lightseagreen",
-      "Tropical & Subtropical Dry Broadleaf Forests"               = "goldenrod4",
-      "Tropical & Subtropical Moist Broadleaf Forests"             = "springgreen3"
-    ),
-    na.value = NA,
-    breaks = ~ .x[!is.na(.x)],
-    name = ""
-  ) +
-  theme_classic() +
-  labs(
-    x = expression(paste("Change in density (%"^{-yr}, ")")),
-    y = "Density",
-    color = "",
-    fill = ""
-    ) +
-  theme(
-    legend.position = "bottom"
-  )
-
-ggsave(
-  filename = here("manuscript/figures/distribution_percent_change.pdf"),
-  width = 8,
-  height = 4
-)
-
-# table of bootstrapped estimates for coefficient and percent change
-summary_stats <- df_boot |>
-  mutate(percent_change = 100*(exp(estimate) - 1)) |>
-  ungroup() |>
-  group_by(biome) %>%
-  summarise(
-    estimate_mean = mean(estimate),
-    estimate_sd = sd(estimate),
-    estimate_ci_low = quantile(estimate, 0.025),
-    estimate_ci_high = quantile(estimate, 0.975),
-
-    percent_change_mean = mean(percent_change),
-    percent_change_sd = sd(percent_change),
-    percent_change_ci_low = quantile(percent_change, 0.025),
-    percent_change_ci_high = quantile(percent_change, 0.975),
-
-    .groups = "drop"
-  )
-
-write_rds(summary_stats, file = here("data/summary_stats.csv"))
-
-create_table_latex(
-  summary_stats |>
-    select(
-      Biome = biome,
-      Mean = percent_change_mean,
-      SD = percent_change_sd
-      ),
-    caption = "Percentage change of forest stand density.",
-    filn = here("manuscript/tables/table_percentage_change.tex")
-    # align = c("p{0.1cm}", "p{5cm}", "p{7cm}")
-    )
+# ## SI Figure: Bootstrapped percent change of N per year ------------------------
+# write_rds(df_boot, file = here("data/df_boot.rds"))
+#
+# df_boot |>
+#   mutate(percent_change = 100*(exp(estimate) - 1)) |>
+#   ggplot(aes(x = percent_change, group = biome, color = biome, fill = biome)) +
+#   geom_density(alpha = 0.5) +
+#   scale_fill_manual(
+#     values = c(
+#       "Boreal Forests/Taiga"                                       = "dodgerblue4",
+#       "Mediterranean Forests, Woodlands & Scrub"                   = "orangered3",
+#       "Temperate Broadleaf & Mixed Forests"                        = "darkgreen",
+#       "Temperate Conifer Forests"                                  = "lightseagreen",
+#       "Tropical & Subtropical Dry Broadleaf Forests"               = "goldenrod4",
+#       "Tropical & Subtropical Moist Broadleaf Forests"             = "springgreen3"
+#     ),
+#     na.value = NA,
+#     breaks = ~ .x[!is.na(.x)],
+#     name = ""
+#   ) +
+#   scale_color_manual(
+#     values = c(
+#       "Boreal Forests/Taiga"                                       = "dodgerblue4",
+#       "Mediterranean Forests, Woodlands & Scrub"                   = "orangered3",
+#       "Temperate Broadleaf & Mixed Forests"                        = "darkgreen",
+#       "Temperate Conifer Forests"                                  = "lightseagreen",
+#       "Tropical & Subtropical Dry Broadleaf Forests"               = "goldenrod4",
+#       "Tropical & Subtropical Moist Broadleaf Forests"             = "springgreen3"
+#     ),
+#     na.value = NA,
+#     breaks = ~ .x[!is.na(.x)],
+#     name = ""
+#   ) +
+#   theme_classic() +
+#   labs(
+#     x = expression(paste("Change in density (%"^{-yr}, ")")),
+#     y = "Density",
+#     color = "",
+#     fill = ""
+#     ) +
+#   theme(
+#     legend.position = "bottom"
+#   )
+#
+# ggsave(
+#   filename = here("manuscript/figures/distribution_percent_change.pdf"),
+#   width = 8,
+#   height = 4
+# )
+#
+# # table of bootstrapped estimates for coefficient and percent change
+# summary_stats <- df_boot |>
+#   mutate(percent_change = 100*(exp(estimate) - 1)) |>
+#   ungroup() |>
+#   group_by(biome) %>%
+#   summarise(
+#     estimate_mean = mean(estimate),
+#     estimate_sd = sd(estimate),
+#     estimate_ci_low = quantile(estimate, 0.025),
+#     estimate_ci_high = quantile(estimate, 0.975),
+#
+#     percent_change_mean = mean(percent_change),
+#     percent_change_sd = sd(percent_change),
+#     percent_change_ci_low = quantile(percent_change, 0.025),
+#     percent_change_ci_high = quantile(percent_change, 0.975),
+#
+#     .groups = "drop"
+#   )
+#
+# write_rds(summary_stats, file = here("data/summary_stats.csv"))
+#
+# create_table_latex(
+#   summary_stats |>
+#     select(
+#       Biome = biome,
+#       Mean = percent_change_mean,
+#       SD = percent_change_sd
+#       ),
+#     caption = "Percentage change of forest stand density.",
+#     filn = here("manuscript/tables/table_percentage_change.tex")
+#     # align = c("p{0.1cm}", "p{5cm}", "p{7cm}")
+#     )
 
 ## SI Figure: Disturbed plots --------------------------------------------------
 cowplot::plot_grid(
