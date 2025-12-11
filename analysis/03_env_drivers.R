@@ -6,29 +6,22 @@ library(readr)
 library(dplyr)
 library(tibble)
 library(lubridate)
-# library(rFIA)
-# library(terra)
-# library(sf)
 library(lme4)
-# library(lmerTest)
-# library(ggeffects)
-# library(effects)
-# library(sjPlot)
-# library(measurements)
-# library(sp)
-# library(lqmm)
-# library(ggforce)
-# library(MuMIn)
-# library(ingestr)
-# library(DescTools)
-# library(corrplot)
+library(lmerTest)
 library(here)
 library(broom)
 library(kableExtra)
 library(modelsummary)
+library(broom.mixed)
+library(forcats)
+library(ggplot2)
 
 # load data
-data_fil_biomes <- read_rds(here("data/inputs/data_fil75_biomes.rds"))
+# filtered as upper quantile within QMD-bin
+# data_fil_biomes <- read_rds(here("data/inputs/data_fil75_biomes.rds"))
+
+# filtered by slope
+data_fil_biomes <- read_rds(here("data/data_unm_slopefilter.rds"))
 
 # LMM with lmer() --------------------------------------------------------------
 ## Fit model -------------------------------------------------------------------
@@ -117,34 +110,30 @@ modelsummary(
 )
 
 # select best model for further analyses looking at AIC and BIC in latex table
-mod_lmer_env <- mod_lmer_env_nopbr
+# mod_lmer_env <- mod_lmer_env_nopbr  # based on quantile filter
+mod_lmer_env <- mod_lmer_env_complete  # based on slope filter
 
 ## Visualise fixed effects -----------------------------------------------------
 out <- summary(mod_lmer_env)
+#
+# df_coef <- broom.mixed::tidy(mod_lmer_env, effects = "fixed", conf.int = TRUE) |>
+#   mutate(
+#     pvalue = ifelse(p.value > 0.1, "", pvalue),
+#     pvalue = ifelse(p.value < 0.05, "*", pvalue),
+#     pvalue = ifelse(p.value < 0.01, "**", pvalue),
+#     pvalue = ifelse(p.value < 0.001, "***", pvalue)
+#   )
 
-df_coef <- out$coefficients |>
-  as.data.frame() |>
-  rownames_to_column(var = "var") |>
-  as_tibble() |>
-  rename(
-    pval = `Pr(>|t|)`,
-    std = `Std. Error`,
-    tval = `t value`,
-    est = Estimate
-  ) |>
-  select(var, est, std, pval) |>
-  mutate(
-    pvalue = ifelse(pval > 0.1, "", pval),
-    pvalue = ifelse(pval < 0.05, "*", pvalue),
-    pvalue = ifelse(pval < 0.01, "**", pvalue),
-    pvalue = ifelse(pval < 0.001, "***", pvalue)
-  )
+tl <- attr(terms(mod_lmer_env), "term.labels")
+main_effects <- tl[ !grepl(":", tl) ]   # remove interaction terms
+len_main_effects <- length(main_effects)
 
-df_coef_plot <- df_coef |>
+df_coef_plot <- broom.mixed::tidy(mod_lmer_env, effects = "fixed", conf.int = TRUE) |>
   mutate(
-    eff = ifelse(row_number() %in% 1:8, "Main effect", "Interaction terms"),
+    eff = ifelse(row_number() %in% 1:(len_main_effects + 1), "Main effect", "Interaction terms"),
     eff = as_factor(eff)
   ) |>
+  rename(var = term) |>
   mutate(
     varnew = ifelse(var == "scale(year)", "year", var),
     varnew = ifelse(var == "scale(tavg)", "MAT", varnew),
@@ -163,7 +152,8 @@ df_coef_plot <- df_coef |>
     varnew = fct_relevel(varnew, c("C:N", "Ndep", "ORGC", "MI", "MAT"))
   ) |>
   filter(varnew == "MAT" | varnew == "MI" | varnew == "Ndep" |
-    varnew == "PBR" | varnew == "ORGC" | varnew == "C:N")
+    varnew == "PBR" | varnew == "ORGC" | varnew == "C:N") |>
+  mutate(varnew = forcats::fct_relevel(varnew, "PBR", "ORGC", "C:N", "Ndep", "MI", "MAT"))
 
 ## Save model object and coefficients table ------------------------------------
 saveRDS(mod_lmer_env, file = here("data/mod_lmer_env.rds"))
@@ -209,20 +199,20 @@ saveRDS(df_coef_plot, file = here("data/df_coef_plot.rds"))
 
 ## Plot effects ----------------------------------------------------------------
 fig2a <- df_coef_plot |>
-  slice(1:5) |> # only main effects
+  filter(eff == "Main effect") |>
   ggplot() +
   geom_point(
     aes(
       x = varnew,
-      y = est
+      y = estimate
     ),
     size = 2
   ) +
   geom_errorbar(
     aes(
       x = varnew,
-      ymin = est - 1.96 * std,
-      ymax = est + 1.96 * std
+      ymin = conf.low,
+      ymax = conf.high
     ),
     width = 0
   ) +
@@ -246,20 +236,20 @@ fig2a <- df_coef_plot |>
   coord_flip()
 
 fig2b <- df_coef_plot |>
-  slice(6:10) |> # only main effects
+  filter(eff == "Interaction terms") |>
   ggplot() +
   geom_point(
     aes(
       x = varnew,
-      y = est
+      y = estimate
     ),
     size = 2
   ) +
   geom_errorbar(
     aes(
       x = varnew,
-      ymin = est - 1.96 * std,
-      ymax = est + 1.96 * std
+      ymin = conf.low,
+      ymax = conf.high
     ),
     width = 0
   ) +

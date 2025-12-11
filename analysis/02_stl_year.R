@@ -40,6 +40,7 @@ source(here("R/calc_lqmm_byqmdbin.R"))
 source(here("R/create_table_latex.R"))
 source(here("R/process_cite_lines.R"))
 source(here("R/wrap_fit_lqmm.R"))
+source(here("R/calc_percent_change.R"))
 
 # Quantile regression ----------------------------------------------------------
 
@@ -73,7 +74,7 @@ gg_hist_year_biome1 <- ggplot(data = data_unm_biome, aes(x = year, fill = datase
   labs(title = "Tropical Moist Broadleaf Forests") +
   xlim(1970, 2024) +
   labs(x = "Year", y = "Count", fill = "") +
-  scale_fill_okabe_ito() +
+  khroma::scale_fill_okabeito() +
   theme(
     legend.position = "right"
   )
@@ -120,6 +121,11 @@ data_unm_biome_including_disturbed <- data_unm_biome
 data_unm_biome <- data_unm_biome |>
   filter(ndisturbed == 0)
 
+write_rds(
+  data_unm_biome,
+  file = here("data/data_unm_undist_biome1.rds")
+)
+
 ### LQMM fit -------------------------------------------------------------------
 set.seed(123)
 fit_lqmm <- lqmm(
@@ -143,7 +149,7 @@ write_rds(fit_lqmm, file = here("data/outputs/fit_lqmm_biome1.rds"))
 # Opt 2: predicted logDensity at two years differing by one year (in scaled units)
 percent_change <- calc_percent_change(data_unm_biome, fit_lqmm)
 
-#### Bootstrapping LQMM fit -----------------------------------------------------
+#### Bootstrapping LQMM fit ----------------------------------------------------
 boot_data <- rsample::bootstraps(
   data_unm_biome %>%
     group_by(plotID),
@@ -225,7 +231,7 @@ gg_hist_year_biome2 <- ggplot(data = data_unm_biome, aes(x = year, fill = datase
   labs(title = "Tropical Dry Broadleaf Forests") +
   xlim(1990, 2024) +
   labs(x = "Year", y = "Count", fill = "") +
-  scale_fill_okabe_ito() +
+  khroma::scale_fill_okabeito() +
   theme(
     legend.position = "right"
   )
@@ -271,6 +277,11 @@ gg_fdisturbed_biome2
 data_unm_biome_including_disturbed <- data_unm_biome
 data_unm_biome <- data_unm_biome |>
   filter(ndisturbed == 0)
+
+write_rds(
+  data_unm_biome,
+  file = here("data/data_unm_undist_biome2.rds")
+)
 
 ### LQMM fit -------------------------------------------------------------------
 set.seed(123)
@@ -571,6 +582,11 @@ data_unm_biome_including_disturbed <- data_unm_biome
 data_unm_biome <- data_unm_biome |>
   filter(ndisturbed == 0)
 
+write_rds(
+  data_unm_biome,
+  file = here("data/data_unm_undist_biome5.rds")
+)
+
 ### LQMM fit -------------------------------------------------------------------
 set.seed(123)
 fit_lqmm <- lqmm(
@@ -669,7 +685,7 @@ gg_hist_year_biome6 <- ggplot(data = data_unm_biome, aes(x = year, fill = datase
   labs(title = "Boreal Forests/Taiga") +
   xlim(1980, 2024) +
   labs(x = "Year", y = "Count", fill = "") +
-  scale_fill_okabe_ito() +
+  khroma::scale_fill_okabeito() +
   theme(
     legend.position = "right"
   )
@@ -715,6 +731,11 @@ gg_fdisturbed_biome6
 data_unm_biome_including_disturbed <- data_unm_biome
 data_unm_biome <- data_unm_biome |>
   filter(ndisturbed == 0)
+
+write_rds(
+  data_unm_biome,
+  file = here("data/data_unm_undist_biome6.rds")
+)
 
 ### LQMM fit -------------------------------------------------------------------
 set.seed(123)
@@ -818,7 +839,7 @@ gg_hist_year_biome12 <- ggplot(data = data_unm_biome, aes(x = year, fill = datas
   labs(title = "Mediterranean Forests") +
   xlim(1980, 2024) +
   labs(x = "Year", y = "Count", fill = "") +
-  scale_fill_okabe_ito() +
+  khroma::scale_fill_okabeito() +
   theme(
     legend.position = "right"
   )
@@ -864,6 +885,11 @@ gg_fdisturbed_biome12
 data_unm_biome_including_disturbed <- data_unm_biome
 data_unm_biome <- data_unm_biome |>
   filter(ndisturbed == 0)
+
+write_rds(
+  data_unm_biome,
+  file = here("data/data_unm_undist_biome12.rds")
+)
 
 ### LQMM fit -------------------------------------------------------------------
 set.seed(123)

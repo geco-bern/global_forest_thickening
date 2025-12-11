@@ -14,8 +14,8 @@ plot_stl_longplots <- function(df, biome_name = ""){
 
   df_longplots <- tmp |>
     filter(len >= thresh_len) |>
-    group_by(dataset) |>
-    slice_sample(n = 3) |>
+    # group_by(dataset) |>
+    slice_sample(n = 10) |>   # used 3 before
     select(plotID, dataset) |>
     distinct()
 

@@ -185,6 +185,54 @@ df_wise <- ingest(
   drop_na() |>
   select(-sitename)
 
+## Soil PBR --------------------------------------------------------------------
+# take top three layers
+rasta_pbr <- rast("~/data/archive/soil_shangguan_2014/data/PBR1.nc")
+
+# Regrid to template (forest cover fraction, half degree)
+rasta_pbr_halfdeg <- resample(rasta_pbr, r_fcf, method = "bilinear")
+
+# Depth weights for the first 3 layers
+wgt <- c(4.5, 9.1, 16.6)
+
+# Normalize weights so they sum to 1
+wgt <- wgt / sum(wgt)
+
+# Select the top 3 layers
+rasta_pbr_halfdeg_top3 <- rasta_pbr_halfdeg[[1:3]]
+
+# Compute depth-weighted mean (na.rm = TRUE)
+rasta_pbr_halfdeg_mean <- app(rasta_pbr_halfdeg_top3, fun = function(x) {
+  if (all(is.na(x))) {
+    return(NA)
+  }
+  sum(x * wgt, na.rm = TRUE)
+})
+
+# Multiply all values by 0.01
+rasta_pbr_halfdeg_mean <- rasta_pbr_halfdeg_mean * 0.01
+
+writeCDF(rasta_pbr_halfdeg_mean, here("data/rasta_pbr_halfdeg_mean.nc"), overwrite = TRUE)
+
+# use CDO to fill missing values to nearest neighbour
+# Do this from project root folder:
+# cdo setgrid,analysis/grid_halfdeg.txt data/rasta_pbr_halfdeg_mean.nc data/rasta_pbr_halfdeg_mean_grid.nc
+# cdo setmisstonn data/rasta_pbr_halfdeg_mean_grid.nc data/rasta_pbr_halfdeg_mean_grid_filled.nc
+
+# read back into R
+rasta_pbr_new <- rast(here("data/rasta_pbr_halfdeg_mean_grid_filled.nc"))
+
+# fill gaps for all land gridcells by nearest-neighbour interpolation
+# apply land mask taken from forest cover raster
+landmask <- !is.na(r_fcf)   # TRUE where land
+rasta_pbr_new_masked <- mask(rasta_pbr_new, landmask, maskvalues = 0)   # NA over ocean, keep land values
+
+# extract values into data frame
+df_pbr <- as.data.frame(rasta_pbr_new_masked, xy = TRUE, na.rm = FALSE) |>
+  as_tibble() |>
+  rename(lon = x, lat = y, PBR = rasta_pbr_halfdeg_mean) |>
+  drop_na()
+
 # Clean and combine data frames ------------------------------------------------
 clean_latlon_halfdeg <- function(df){
   df |>
@@ -242,6 +290,14 @@ df_grid_out <- df_grid |>
   # add CN and ORGC
   left_join(
     df_wise |>
+      clean_latlon_halfdeg() |>
+      select(-lat, -lon),
+    by = join_by(lat_i, lon_i)
+  ) |>
+
+  # add PBR
+  left_join(
+    df_pbr |>
       clean_latlon_halfdeg() |>
       select(-lat, -lon),
     by = join_by(lat_i, lon_i)
