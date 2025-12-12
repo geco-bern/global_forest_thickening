@@ -35,6 +35,7 @@ source(here("R/create_table_latex.R"))
 source(here("R/process_cite_lines.R"))
 source(here("R/wrap_fit_lqmm.R"))
 source(here("R/calc_percent_change.R"))
+source(here("R/plot_disturbed.R"))
 
 # Quantile regression ----------------------------------------------------------
 
@@ -78,37 +79,10 @@ gg_hist_year_biome1
 ### Plot disturbed plots -------------------------------------------------------
 breaks <- get_breaks(data_unm_biome$year)
 
-df_disturbed <- data_unm_biome |>
-  mutate(year_bin = cut(
-    year,
-    breaks = breaks,
-    labels = breaks[1:length(breaks) - 1] + 2.5,
-    include.lowest = TRUE
-  )) |>
-  group_by(year_bin) |>
-  summarise(
-    nplots = length(unique(plotID)),
-    ndisturbed = sum(disturbed, na.rm = TRUE)
-  ) |>
-  filter(nplots > 30) |>
-  mutate(fdisturbed = ndisturbed / nplots) |>
-  mutate(fdisturbed_logit = log(fdisturbed / (1 - fdisturbed)))
-
-gg_fdisturbed_biome1 <- df_disturbed |>
-  ggplot(aes(as.numeric(as.character(year_bin)), fdisturbed_logit)) +
-  geom_point() +
-  geom_smooth(method = "lm", color = "red") +
-  theme_classic() +
-  labs(
-    x = "Year",
-    title = "Tropical & Subtropical Moist Broadleaf Forests"
-  ) +
-  scale_y_continuous(
-    name = expression(logit(Fraction ~ disturbed)),
-    sec.axis = sec_axis(~ plogis(.), name = "Fraction disturbed")
+gg_fdisturbed_biome1 <- plot_disturbed(
+  data_unm_biome,
+  "Tropical & Subtropical Moist Broadleaf Forests"
   )
-
-gg_fdisturbed_biome1
 
 ### Remove disturbed plots -----------------------------------------------------
 data_unm_biome_including_disturbed <- data_unm_biome
@@ -235,35 +209,10 @@ gg_hist_year_biome2
 ### Plot disturbed plots -------------------------------------------------------
 breaks <- get_breaks(data_unm_biome$year)
 
-df_disturbed <- data_unm_biome |>
-  mutate(year_bin = cut(
-    year,
-    breaks = breaks,
-    labels = breaks[1:length(breaks) - 1] + 2.5,
-    include.lowest = TRUE
-  )) |>
-  group_by(year_bin) |>
-  summarise(
-    nplots = length(unique(plotID)),
-    ndisturbed = sum(disturbed, na.rm = TRUE)
-  ) |>
-  filter(nplots > 30) |>
-  mutate(fdisturbed = ndisturbed / nplots) |>
-  mutate(fdisturbed_logit = log(fdisturbed / (1 - fdisturbed)))
-
-gg_fdisturbed_biome2 <- df_disturbed |>
-  ggplot(aes(as.numeric(as.character(year_bin)), fdisturbed_logit)) +
-  geom_point() +
-  # geom_smooth(method = "lm", color = "red") + # only two points
-  theme_classic() +
-  labs(
-    x = "Year",
-    title = "Tropical Dry Broadleaf Forests"
-  ) +
-  scale_y_continuous(
-    name = expression(logit(Fraction ~ disturbed)),
-    sec.axis = sec_axis(~ plogis(.), name = "Fraction disturbed")
-  )
+gg_fdisturbed_biome2 <- plot_disturbed(
+  data_unm_biome,
+  "Tropical Dry Broadleaf Forests"
+)
 
 gg_fdisturbed_biome2
 
@@ -389,35 +338,10 @@ gg_hist_year_biome4
 ### Plot disturbed plots -------------------------------------------------------
 breaks <- get_breaks(data_unm_biome$year)
 
-df_disturbed <- data_unm_biome |>
-  mutate(year_bin = cut(
-    year,
-    breaks = breaks,
-    labels = breaks[1:length(breaks) - 1] + 2.5,
-    include.lowest = TRUE
-  )) |>
-  group_by(year_bin) |>
-  summarise(
-    nplots = length(unique(plotID)),
-    ndisturbed = sum(disturbed, na.rm = TRUE)
-  ) |>
-  filter(nplots > 30) |>
-  mutate(fdisturbed = ndisturbed / nplots) |>
-  mutate(fdisturbed_logit = log(fdisturbed / (1 - fdisturbed)))
-
-gg_fdisturbed_biome4 <- df_disturbed |>
-  ggplot(aes(as.numeric(as.character(year_bin)), fdisturbed_logit)) +
-  geom_point() +
-  geom_smooth(method = "lm", color = "red") +
-  theme_classic() +
-  labs(
-    x = "Year",
-    title = "Temperate Broadleaf & Mixed Forests"
-  ) +
-  scale_y_continuous(
-    name = expression(logit(Fraction ~ disturbed)),
-    sec.axis = sec_axis(~ plogis(.), name = "Fraction disturbed")
-  )
+gg_fdisturbed_biome4 <- plot_disturbed(
+  data_unm_biome,
+  "Temperate Broadleaf & Mixed Forests"
+)
 
 gg_fdisturbed_biome4
 
@@ -539,35 +463,10 @@ gg_hist_year_biome5
 ### Plot disturbed plots -------------------------------------------------------
 breaks <- get_breaks(data_unm_biome$year)
 
-df_disturbed <- data_unm_biome |>
-  mutate(year_bin = cut(
-    year,
-    breaks = breaks,
-    labels = breaks[1:length(breaks) - 1] + 2.5,
-    include.lowest = TRUE
-  )) |>
-  group_by(year_bin) |>
-  summarise(
-    nplots = length(unique(plotID)),
-    ndisturbed = sum(disturbed, na.rm = TRUE)
-  ) |>
-  filter(nplots > 30) |>
-  mutate(fdisturbed = ndisturbed / nplots) |>
-  mutate(fdisturbed_logit = log(fdisturbed / (1 - fdisturbed)))
-
-gg_fdisturbed_biome5 <- df_disturbed |>
-  ggplot(aes(as.numeric(as.character(year_bin)), fdisturbed_logit)) +
-  geom_point() +
-  geom_smooth(method = "lm", color = "red") +
-  theme_classic() +
-  labs(
-    x = "Year",
-    title = "Temperate Conifer Forests"
-  ) +
-  scale_y_continuous(
-    name = expression(logit(Fraction ~ disturbed)),
-    sec.axis = sec_axis(~ plogis(.), name = "Fraction disturbed")
-  )
+gg_fdisturbed_biome5 <- plot_disturbed(
+  data_unm_biome,
+  "Temperate Conifer Forests"
+)
 
 gg_fdisturbed_biome5
 
@@ -689,35 +588,10 @@ gg_hist_year_biome6
 ### Plot disturbed plots -------------------------------------------------------
 breaks <- get_breaks(data_unm_biome$year)
 
-df_disturbed <- data_unm_biome |>
-  mutate(year_bin = cut(
-    year,
-    breaks = breaks,
-    labels = breaks[1:length(breaks) - 1] + 2.5,
-    include.lowest = TRUE
-  )) |>
-  group_by(year_bin) |>
-  summarise(
-    nplots = length(unique(plotID)),
-    ndisturbed = sum(disturbed, na.rm = TRUE)
-  ) |>
-  filter(nplots > 30) |>
-  mutate(fdisturbed = ndisturbed / nplots) |>
-  mutate(fdisturbed_logit = log(fdisturbed / (1 - fdisturbed)))
-
-gg_fdisturbed_biome6 <- df_disturbed |>
-  ggplot(aes(as.numeric(as.character(year_bin)), fdisturbed_logit)) +
-  geom_point() +
-  geom_smooth(method = "lm", color = "red") +
-  theme_classic() +
-  labs(
-    x = "Year",
-    title = "Boreal Forests/Taiga"
-  ) +
-  scale_y_continuous(
-    name = expression(logit(Fraction ~ disturbed)),
-    sec.axis = sec_axis(~ plogis(.), name = "Fraction disturbed")
-  )
+gg_fdisturbed_biome6 <- plot_disturbed(
+  data_unm_biome,
+  "Boreal Forests/Taiga"
+)
 
 gg_fdisturbed_biome6
 
@@ -843,35 +717,10 @@ gg_hist_year_biome12
 ### Plot disturbed plots -------------------------------------------------------
 breaks <- get_breaks(data_unm_biome$year)
 
-df_disturbed <- data_unm_biome |>
-  mutate(year_bin = cut(
-    year,
-    breaks = breaks,
-    labels = breaks[1:length(breaks) - 1] + 2.5,
-    include.lowest = TRUE
-  )) |>
-  group_by(year_bin) |>
-  summarise(
-    nplots = length(unique(plotID)),
-    ndisturbed = sum(disturbed, na.rm = TRUE)
-  ) |>
-  filter(nplots > 30) |>
-  mutate(fdisturbed = ndisturbed / nplots) |>
-  mutate(fdisturbed_logit = log(fdisturbed / (1 - fdisturbed)))
-
-gg_fdisturbed_biome12 <- df_disturbed |>
-  ggplot(aes(as.numeric(as.character(year_bin)), fdisturbed_logit)) +
-  geom_point() +
-  geom_smooth(method = "lm", color = "red") +
-  theme_classic() +
-  labs(
-    x = "Year",
-    title = "Mediterranean Forests"
-  ) +
-  scale_y_continuous(
-    name = expression(logit(Fraction ~ disturbed)),
-    sec.axis = sec_axis(~ plogis(.), name = "Fraction disturbed")
-  )
+gg_fdisturbed_biome12 <- plot_disturbed(
+  data_unm_biome,
+  "Mediterranean Forests"
+)
 
 gg_fdisturbed_biome12
 
@@ -1108,7 +957,7 @@ ggsave(
   height = 5
 )
 
-# ## SI Figure: Bootstrapped percent change of N per year ------------------------
+## SI Figure: Bootstrapped percent change of N per year ------------------------
 # write_rds(df_boot, file = here("data/df_boot.rds"))
 #
 # df_boot |>
