@@ -108,6 +108,11 @@ Dataset & N & Description & Filter & Reference \\
 \caption{Self-thinning relation across biomes with example long-term forest monitoring plots highlighted.}
 \end{figure}
 
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{../figures/slope_distribution.pdf}
+\caption{Self-thinning relation across biomes with example long-term forest monitoring plots highlighted.}
+\end{figure}
 
 % XXX todo: visualise evolution of individual forest plots for a small subset of plots, selected based on length of available time series.
 
@@ -174,7 +179,23 @@ Biome & Mean & SE \\
 
 \section{Environmental drivers}
 
-\input{../tables/mods_env.tex}
+\input{../tables/mods_env_slopefilter.tex}
+
+% \input{../tables/mods_env_quantilefilter.tex}
+
+\clearpage
+
+% \begin{figure}
+% \centering
+% \includegraphics[width=0.8\textwidth]{../figures/coefs_env_quantilefilter.pdf}
+% \caption{Coefficients of fixed effects of environmental factors on the self-thinning relationship. Data was filtered to retain observations from plots subject to dominant self-thinning dynamics based on quantiles within QMD bins, following Marqués et al. xxx}
+% \end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.8\textwidth]{../figures/coefs_env_slopefilter.pdf}
+\caption{Coefficients of fixed effects of environmental factors on the self-thinning relationship. Data was filtered to retain observations from plots subject to dominant self-thinning dynamics based on slopes.}
+\end{figure}
 
 \clearpage
 

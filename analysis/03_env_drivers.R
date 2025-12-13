@@ -16,12 +16,28 @@ library(broom.mixed)
 library(forcats)
 library(ggplot2)
 
-# load data
-# filtered as upper quantile within QMD-bin
-# data_fil_biomes <- read_rds(here("data/inputs/data_fil75_biomes.rds"))
+## Load data -----------
+# note: always use (use_slopefilter = TRUE). Results are consistent for MI and
+# Ndep against alternative filter options, but not for other factors.
 
-# filtered by slope
-data_fil_biomes <- read_rds(here("data/data_unm_slopefilter.rds"))
+use_slopefilter <- TRUE
+
+if (use_slopefilter){
+
+  lab_filter <- "slopefilter"
+
+  # filtered by slope
+  data_fil_biomes <- read_rds(here("data/data_unm_slopefilter.rds"))
+
+} else {
+
+  lab_filter <- "quantilefilter"
+
+  # Load and engineer data with environmental factors
+  # plot-level data for model fitting, filtered based on quantiles by bin
+  data_fil_biomes <- read_rds(here::here("data/inputs/data_fil75_biomes.rds"))
+
+}
 
 # LMM with lmer() --------------------------------------------------------------
 ## Fit model -------------------------------------------------------------------
@@ -100,7 +116,7 @@ modelsummary(
     "No PBR, ORGC" = mod_lmer_env_nopbr_noorgc,
     "No PBR, C:N" = mod_lmer_env_nopbr_nocn
   ),
-  output = here("manuscript/tables/mods_env.tex"),
+  output = here(paste0("manuscript/tables/mods_env_", lab_filter, ".tex")),
   # estimate  = "p.value",
   estimate = "{estimate}{stars}",
   # estimate  = "{estimate} [{conf.low}, {conf.high}], {p.value}",
@@ -109,21 +125,19 @@ modelsummary(
   coef_omit = "Intercept"
 )
 
-# select best model for further analyses looking at AIC and BIC in latex table
-# mod_lmer_env <- mod_lmer_env_nopbr  # based on quantile filter
-mod_lmer_env <- mod_lmer_env_complete  # based on slope filter
+# Warning: this is not dynamic
+if (use_slopefilter){
+  # select best model for further analyses looking at AIC and BIC in latex table
+  mod_lmer_env <- mod_lmer_env_complete  # based on slope filter
+
+} else {
+  # select best model for further analyses looking at AIC and BIC in latex table
+  mod_lmer_env <- mod_lmer_env_nopbr  # based on quantile filter
+
+}
+
 
 ## Visualise fixed effects -----------------------------------------------------
-out <- summary(mod_lmer_env)
-#
-# df_coef <- broom.mixed::tidy(mod_lmer_env, effects = "fixed", conf.int = TRUE) |>
-#   mutate(
-#     pvalue = ifelse(p.value > 0.1, "", pvalue),
-#     pvalue = ifelse(p.value < 0.05, "*", pvalue),
-#     pvalue = ifelse(p.value < 0.01, "**", pvalue),
-#     pvalue = ifelse(p.value < 0.001, "***", pvalue)
-#   )
-
 tl <- attr(terms(mod_lmer_env), "term.labels")
 main_effects <- tl[ !grepl(":", tl) ]   # remove interaction terms
 len_main_effects <- length(main_effects)
@@ -158,44 +172,6 @@ df_coef_plot <- broom.mixed::tidy(mod_lmer_env, effects = "fixed", conf.int = TR
 ## Save model object and coefficients table ------------------------------------
 saveRDS(mod_lmer_env, file = here("data/mod_lmer_env.rds"))
 saveRDS(df_coef_plot, file = here("data/df_coef_plot.rds"))
-
-# # Figure 2 (OLD VERSION)
-# fig2 <- ggplot(df_coef_plot) +
-#   geom_bar(aes(y = varnew, weight = est, fill = eff), position = position_stack(reverse = TRUE), width = .5) +
-#   geom_text(aes(y = varnew, x = est, label = pvalue),
-#     color = "white", size = 5,
-#     position = position_stack(vjust = 0.5), vjust = 0.75
-#   ) +
-#   xlab("Coefficients") +
-#   ylab("Environmental drivers") +
-#   labs(fill = "Predictors") +
-#   geom_vline(xintercept = 0, color = "black", linetype = "dashed", size = .8) +
-#   theme_classic() +
-#   theme(
-#     panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-#     axis.text = element_text(size = 10), axis.title = element_text(size = 10),
-#     axis.text.y = element_text(hjust = 0.5),
-#     legend.text = element_text(size = 9.5), legend.title = element_text(size = 9.5),
-#     plot.title = element_text(size = 10),
-#     legend.key = element_rect(fill = NA, color = NA),
-#     legend.position = c(0.85, 0.15),
-#     legend.direction = "vertical",
-#     legend.box = "horizontal",
-#     legend.margin = margin(2, 2, 2, 2),
-#     legend.key.size = unit(.6, "cm"),
-#     legend.box.margin = margin(1, 1, 1, 1)
-#   ) +
-#   scale_x_continuous(limits = c(-0.04, 0.055), breaks = seq(-0.05, 0.05, 0.025)) +
-#   scale_y_discrete(labels = c(
-#     "MI" = "Moisture \nIndex",
-#     "Tavg" = "Mean \nTemperature",
-#     "ORGC" = "Organic \ncarbon",
-#     "Ndep" = "Nitrogen \ndeposition",
-#     "PBR" = "Phosporus \navailability"
-#   )) +
-#   scale_fill_okabe_ito()
-# fig2
-# ggsave(paste0(here(), "/manuscript/figures/fig2_color.png"), width = 8, height = 5, dpi = 300)
 
 ## Plot effects ----------------------------------------------------------------
 fig2a <- df_coef_plot |>
@@ -274,163 +250,163 @@ cowplot::plot_grid(
 )
 
 ggsave(
-  here("manuscript/figures/fig2_tavg.png"),
+  here(paste0("manuscript/figures/coefs_env_", lab_filter, ".png")),
   width = 6,
   height = 3,
-  dpi = 300
+  dpi = 500
   )
 
 ggsave(
-  here("manuscript/figures/fig2_tavg.pdf"),
+  here(paste0("manuscript/figures/coefs_env_", lab_filter, ".pdf")),
   width = 6,
   height = 3
 )
 
-# LMM with lqmm() --------------------------------------------------------------
-
-# data_unm <- readRDS(here("data/inputs/data_unm.rds")) |>
-#   tidyr::drop_na(
-#     year, logQMD, tavg, ai, ndep, ORGC, PBR, CNrt, lai
-#   ) |>
+# # LMM with lqmm() --------------------------------------------------------------
+#
+# # data_unm <- readRDS(here("data/inputs/data_unm.rds")) |>
+# #   tidyr::drop_na(
+# #     year, logQMD, tavg, ai, ndep, ORGC, PBR, CNrt, lai
+# #   ) |>
+# #   mutate(
+# #     year_sc = scale(year),
+# #     logQMD_sc = scale(logQMD),
+# #     tavg_sc = scale(tavg),
+# #     ai_sc = scale(ai),
+# #     ndep_sc = scale(ndep),
+# #     ORGC_sc = scale(ORGC),
+# #     PBR_sc = scale(PBR),
+# #     CNrt_sc = scale(CNrt),
+# #     lai_sc = scale(lai)
+# #   )
+# #
+# # visdat::vis_miss(data_unm, warn_large_data = FALSE)
+# #
+# # mod_lqmm_env <- lqmm(
+# #   logDensity ~ logQMD_sc +
+# #     year_sc * tavg_sc +
+# #     year_sc * ai_sc +
+# #     year_sc * ndep_sc +
+# #     year_sc * ORGC_sc +
+# #     year_sc * PBR_sc +
+# #     year_sc * CNrt_sc,
+# #   random = ~1,
+# #   group = plotID,
+# #   tau = 0.9,
+# #   data = data_unm,
+# #   type = "normal",
+# #   control = lqmmControl(
+# #     LP_max_iter = 5000, # inner loop iterations
+# #     LP_tol_ll   = 1e-05, # inner loop tolerance
+# #     startQR     = TRUE
+# #   )
+# # )
+#
+#
+# data_unm <- readRDS(here("data/inputs/data_unm.rds"))
+#
+# data_unm <- data_unm |>
 #   mutate(
 #     year_sc = scale(year),
 #     logQMD_sc = scale(logQMD),
 #     tavg_sc = scale(tavg),
 #     ai_sc = scale(ai),
 #     ndep_sc = scale(ndep),
-#     ORGC_sc = scale(ORGC),
-#     PBR_sc = scale(PBR),
-#     CNrt_sc = scale(CNrt),
-#     lai_sc = scale(lai)
+#     orgc_sc = scale(ORGC),
+#     pbr_sc = scale(PBR)
 #   )
 #
-# visdat::vis_miss(data_unm, warn_large_data = FALSE)
+# ### Identify disturbed plots ---------------------------------------------------
+# source(here("R/identify_disturbed_plots.R"))
+# source(here("R/get_breaks.R"))
 #
+# data_unm <- data_unm |>
+#   identify_disturbed_plots()
+#
+# breaks <- get_breaks(data_unm$year)
+#
+# df_disturbed <- data_unm |>
+#   mutate(year_bin = cut(
+#     year,
+#     breaks = breaks,
+#     labels = breaks[1:length(breaks) - 1] + 2.5,
+#     include.lowest = TRUE
+#   )) |>
+#   group_by(year_bin) |>
+#   summarise(
+#     nplots = length(unique(plotID)),
+#     ndisturbed = sum(disturbed, na.rm = TRUE)
+#   ) |>
+#   filter(nplots > 30) |>
+#   mutate(fdisturbed = ndisturbed / nplots) |>
+#   mutate(fdisturbed_logit = log(fdisturbed / (1 - fdisturbed)))
+#
+# ### Plot disturbed plots -------------------------------------------------------
+# gg_fdisturbed <- df_disturbed |>
+#   ggplot(aes(as.numeric(as.character(year_bin)), fdisturbed_logit)) +
+#   geom_point() +
+#   geom_smooth(method = "lm", color = "red") +
+#   theme_classic() +
+#   labs(
+#     x = "Year"
+#   ) +
+#   scale_y_continuous(
+#     name = expression(logit(Fraction ~ disturbed)),
+#     sec.axis = sec_axis(~ plogis(.), name = "Fraction disturbed")
+#   )
+#
+# gg_fdisturbed
+#
+# # Additional filter: remove plots with no change in ln(N)
+# data_unm <- data_unm |>
+#   group_by(plotID) |>
+#   mutate(var_logdensity = diff(range(logDensity))) |>
+#   filter(var_logdensity > 0.001)
+#
+# # remove disturbed plots
+# data_unm_including_disturbed <- data_unm
+# data_unm <- data_unm |>
+#   filter(ndisturbed == 0)
+#
+# ### LQMM fit -------------------------------------------------------------------
+# set.seed(123)
+# fit_lqmm <- lqmm(
+#   logDensity ~ logQMD_sc + year_sc,
+#   random = ~1,
+#   group = plotID,
+#   tau = 0.90,
+#   data = data_unm,
+#   type = "normal",
+#   control = lqmmControl(startQR = TRUE)
+# )
+#
+# # with all environmental factors and their interaction with time as predictors
+# set.seed(123)
 # mod_lqmm_env <- lqmm(
 #   logDensity ~ logQMD_sc +
 #     year_sc * tavg_sc +
 #     year_sc * ai_sc +
 #     year_sc * ndep_sc +
-#     year_sc * ORGC_sc +
-#     year_sc * PBR_sc +
-#     year_sc * CNrt_sc,
+#     year_sc * orgc_sc +
+#     year_sc * pbr_sc,
 #   random = ~1,
 #   group = plotID,
-#   tau = 0.9,
-#   data = data_unm,
+#   tau = 0.70,
+#   data = data_unm |>
+#     drop_na(),
 #   type = "normal",
-#   control = lqmmControl(
-#     LP_max_iter = 5000, # inner loop iterations
-#     LP_tol_ll   = 1e-05, # inner loop tolerance
+#   control = list(
+#     LP_max_iter = 5000,
+#     LP_tol_ll   = 1e-05,
 #     startQR     = TRUE
 #   )
 # )
-
-
-data_unm <- readRDS(here("data/inputs/data_unm.rds"))
-
-data_unm <- data_unm |>
-  mutate(
-    year_sc = scale(year),
-    logQMD_sc = scale(logQMD),
-    tavg_sc = scale(tavg),
-    ai_sc = scale(ai),
-    ndep_sc = scale(ndep),
-    orgc_sc = scale(ORGC),
-    pbr_sc = scale(PBR)
-  )
-
-### Identify disturbed plots ---------------------------------------------------
-source(here("R/identify_disturbed_plots.R"))
-source(here("R/get_breaks.R"))
-
-data_unm <- data_unm |>
-  identify_disturbed_plots()
-
-breaks <- get_breaks(data_unm$year)
-
-df_disturbed <- data_unm |>
-  mutate(year_bin = cut(
-    year,
-    breaks = breaks,
-    labels = breaks[1:length(breaks) - 1] + 2.5,
-    include.lowest = TRUE
-  )) |>
-  group_by(year_bin) |>
-  summarise(
-    nplots = length(unique(plotID)),
-    ndisturbed = sum(disturbed, na.rm = TRUE)
-  ) |>
-  filter(nplots > 30) |>
-  mutate(fdisturbed = ndisturbed / nplots) |>
-  mutate(fdisturbed_logit = log(fdisturbed / (1 - fdisturbed)))
-
-### Plot disturbed plots -------------------------------------------------------
-gg_fdisturbed <- df_disturbed |>
-  ggplot(aes(as.numeric(as.character(year_bin)), fdisturbed_logit)) +
-  geom_point() +
-  geom_smooth(method = "lm", color = "red") +
-  theme_classic() +
-  labs(
-    x = "Year"
-  ) +
-  scale_y_continuous(
-    name = expression(logit(Fraction ~ disturbed)),
-    sec.axis = sec_axis(~ plogis(.), name = "Fraction disturbed")
-  )
-
-gg_fdisturbed
-
-# Additional filter: remove plots with no change in ln(N)
-data_unm <- data_unm |>
-  group_by(plotID) |>
-  mutate(var_logdensity = diff(range(logDensity))) |>
-  filter(var_logdensity > 0.001)
-
-# remove disturbed plots
-data_unm_including_disturbed <- data_unm
-data_unm <- data_unm |>
-  filter(ndisturbed == 0)
-
-### LQMM fit -------------------------------------------------------------------
-set.seed(123)
-fit_lqmm <- lqmm(
-  logDensity ~ logQMD_sc + year_sc,
-  random = ~1,
-  group = plotID,
-  tau = 0.90,
-  data = data_unm,
-  type = "normal",
-  control = lqmmControl(startQR = TRUE)
-)
-
-# with all environmental factors and their interaction with time as predictors
-set.seed(123)
-mod_lqmm_env <- lqmm(
-  logDensity ~ logQMD_sc +
-    year_sc * tavg_sc +
-    year_sc * ai_sc +
-    year_sc * ndep_sc +
-    year_sc * orgc_sc +
-    year_sc * pbr_sc,
-  random = ~1,
-  group = plotID,
-  tau = 0.70,
-  data = data_unm |>
-    drop_na(),
-  type = "normal",
-  control = list(
-    LP_max_iter = 5000,
-    LP_tol_ll   = 1e-05,
-    startQR     = TRUE
-  )
-)
-
-summary(mod_lqmm_env)
-
-out <- summary(mod_lqmm_env)
-
-plot_lqmm_bybiome(
-  data_unm,
-  mod_lqmm_env
-)
+#
+# summary(mod_lqmm_env)
+#
+# out <- summary(mod_lqmm_env)
+#
+# plot_lqmm_bybiome(
+#   data_unm,
+#   mod_lqmm_env
+# )

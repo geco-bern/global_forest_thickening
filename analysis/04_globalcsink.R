@@ -267,100 +267,104 @@ boot_resamples <- bootstraps(data_forest_plots, times = n_boot)
 # toc()
 
 ### Parallel version --------------------------
-ncores <- 4 # parallel::detectCores() - 2
+# ncores <- 4 # parallel::detectCores() - 2
+#
+# cl <- new_cluster(n = ncores) |>
+#   cluster_library(
+#     packages = c(
+#       "dplyr",
+#       "tidyr",
+#       "lme4",
+#       "purrr",
+#       "recipes",
+#       "rsample"
+#     )
+#   ) |>
+#   cluster_assign(
+#     fit_stl_byboot = fit_stl_byboot,
+#     fit_biomass_byboot = fit_biomass_byboot,
+#     predict_dn = predict_dn,
+#     predict_db = predict_db,
+#     data_forest_plots = data_forest_plots,
+#     grid_drivers = grid_drivers,
+#     calc_csink_global = calc_csink_global
+#   )
+#
+# tic()
+# df_boot <- boot_resamples |>
+#   mutate(id = row_number()) |>
+#   partition(cl) |>
+#   mutate(
+#     bundle_stl = map(splits, ~ fit_stl_byboot(analysis(.x))),
+#     model_biomass = map(splits, ~ fit_biomass_byboot(analysis(.x)))
+#   ) |>
+#   select(-splits) |>
+#   mutate(
+#     grid_predictions = map(
+#       bundle_stl,
+#       ~ predict_dn(., vec_qmd = data_forest_plots$QMD, df = grid_drivers)
+#     )) |>
+#   select(-bundle_stl) |>
+#   mutate(
+#     grid_predictions = map2(
+#       grid_predictions,
+#       model_biomass,
+#       ~ predict_db(.x, .y)
+#     )
+#   ) |>
+#   select(-model_biomass) |>
+#
+#   # calculate C sink by latitude (retain to keep sprad across bootstraps)
+#   mutate(db_pgc_global = map_dbl(grid_predictions, ~calc_csink_global(., grid_drivers))) |>
+#
+#   # drop full information to avoid excessive memory use - uncomment only when n_boot is very large
+#   select(-grid_predictions) |>
+#
+#   collect()
+# toc()
+#
+# write_rds(
+#   df_boot,
+#   file = here(paste0("data/df_boot_", lab_filter, "_nboot_", as.character(n_boot),".rds"))
+# )
 
-cl <- new_cluster(n = ncores) |>
-  cluster_library(
-    packages = c(
-      "dplyr",
-      "tidyr",
-      "lme4",
-      "purrr",
-      "recipes",
-      "rsample"
-    )
-  ) |>
-  cluster_assign(
-    fit_stl_byboot = fit_stl_byboot,
-    fit_biomass_byboot = fit_biomass_byboot,
-    predict_dn = predict_dn,
-    predict_db = predict_db,
-    data_forest_plots = data_forest_plots,
-    grid_drivers = grid_drivers,
-    calc_csink_global = calc_csink_global
-  )
-
-tic()
-df_boot <- boot_resamples |>
-  mutate(id = row_number()) |>
-  partition(cl) |>
-  mutate(
-    bundle_stl = map(splits, ~ fit_stl_byboot(analysis(.x))),
-    model_biomass = map(splits, ~ fit_biomass_byboot(analysis(.x)))
-  ) |>
-  select(-splits) |>
-  mutate(
-    grid_predictions = map(
-      bundle_stl,
-      ~ predict_dn(., vec_qmd = data_forest_plots$QMD, df = grid_drivers)
-    )) |>
-  select(-bundle_stl) |>
-  mutate(
-    grid_predictions = map2(
-      grid_predictions,
-      model_biomass,
-      ~ predict_db(.x, .y)
-    )
-  ) |>
-  select(-model_biomass) |>
-
-  # calculate C sink by latitude (retain to keep sprad across bootstraps)
-  mutate(db_pgc_global = map_dbl(grid_predictions, ~calc_csink_global(., grid_drivers))) |>
-
-  # drop full information to avoid excessive memory use - uncomment only when n_boot is very large
-  select(-grid_predictions) |>
-
-  collect()
-toc()
-
-write_rds(
-  df_boot,
-  file = here(paste0("data/df_boot_", lab_filter, "_nboot_", as.character(n_boot),".rds"))
-)
+df_boot <- read_rds(here("data/df_boot_slopefilter_nboot_2000.rds"))
 
 ### Summarise across bootstraps ------------------------------------------------
-# stack predictions from all bootstrap samples into (very) long vector
-df_summ <- df_boot |>
-  select(-db_pgc_global) |>
-  unnest(grid_predictions) |>
-  group_by(lat_i, lon_i) |>
-  summarise(
-    db_mean = mean(db, na.rm = TRUE),
-    db_median = median(db, na.rm = TRUE),
-    db_sd = sd(db, na.rm = TRUE)
-  ) |>
-  drop_na() |>
-  ungroup() |>
-  left_join(
-    grid_drivers,
-    by = join_by(lon_i, lat_i)
-  ) |>
-  mutate(lon = lon_i/4, lat = lat_i/4) |>
-  mutate(
-    across(
-      starts_with("db"),
-      list(
-        gc_per_ha_forest   = ~ .x * 1e3 * 0.5,
-        gc_per_ha_gridcell = ~ (.x * 1e3 * 0.5) * fcf
-      ),
-      .names = "{.col}_{.fn}"
-    )
-  )
+# # stack predictions from all bootstrap samples into (very) long vector
+# df_summ <- df_boot |>
+#   select(-db_pgc_global) |>
+#   unnest(grid_predictions) |>
+#   group_by(lat_i, lon_i) |>
+#   summarise(
+#     db_mean = mean(db, na.rm = TRUE),
+#     db_median = median(db, na.rm = TRUE),
+#     db_sd = sd(db, na.rm = TRUE)
+#   ) |>
+#   drop_na() |>
+#   ungroup() |>
+#   left_join(
+#     grid_drivers,
+#     by = join_by(lon_i, lat_i)
+#   ) |>
+#   mutate(lon = lon_i/4, lat = lat_i/4) |>
+#   mutate(
+#     across(
+#       starts_with("db"),
+#       list(
+#         gc_per_ha_forest   = ~ .x * 1e3 * 0.5,
+#         gc_per_ha_gridcell = ~ (.x * 1e3 * 0.5) * fcf
+#       ),
+#       .names = "{.col}_{.fn}"
+#     )
+#   )
+#
+# write_rds(
+#   df_summ,
+#   here(paste0("data/df_summ_", lab_filter, "_nboot_", as.character(n_boot),".rds"))
+# )
 
-write_rds(
-  df_summ,
-  here(paste0("data/df_summ_", lab_filter, "_nboot_", as.character(n_boot),".rds"))
-)
+df_summ <- read_rds(here("data/df_summ_slopefilter_nboot_30.rds"))
 
 ## Visualisations --------------------------------------------------------------
 ### Distribution of global C sink estimates ------------------------------------
@@ -380,6 +384,10 @@ ggsave(
   width = 5,
   height = 4
 )
+
+# numbers for paper
+mean(df_boot$db_pgc_global)
+quantile(df_boot$db_pgc_global, probs = c(0.025, 0.975))
 
 # # across gridcells (median across bootstraps)
 # gg_hist_db_boot <- df_summ |>
@@ -610,8 +618,10 @@ ggsave(
   height = 5.5
 )
 
-## Sink across latitude ---------
-df_bylat <- df_boot |>
+### Sink across latitude ---------
+df_boot_small <- read_rds(here("data/df_boot_slopefilter_nboot_30.rds"))
+
+df_bylat <- df_boot_small |>
   select(-db_pgc_global) |>
   mutate(csink_tgc_bylat = map(grid_predictions, ~calc_csink_bylat(., grid_drivers))) |>
   select(-grid_predictions) |>
@@ -636,8 +646,27 @@ gg_csink_bylat <- df_bylat |>
   theme_classic() +
   labs(
     x = "Latitude (°)",
-    y = expression(paste("C sink (TgC °" ^{-1},")"))
+    y = expression(paste("C sink (TgC yr"^{-1}, " °" ^{-1},")"))
   ) +
   coord_flip()
 
 gg_csink_bylat
+
+## Publication figure --------------------------
+gg_map_sink_all <- cowplot::plot_grid(
+  gg_csink_bylat,
+  gg_map_sink_pergridarea,
+  gg_hist_csink_boot,
+  gg_map_sink_pergridgridtarea_sd,
+  ncol = 2,
+  labels = letters[1:4],
+  rel_widths = c(0.3, 1)
+)
+
+ggsave(
+  here("manuscript/figures/gg_map_sink_all.pdf"),
+  plot = gg_map_sink_all,
+  width = 11,
+  height = 5.5
+)
+
