@@ -192,7 +192,7 @@ fig2a <- df_coef_plot |>
     ),
     width = 0
   ) +
-  labs(x = "", y = "Coefficient (scaled)", title = "Main effects") +
+  labs(x = "", y = "Coefficient (scaled)", title = "Effects on mean") +
   geom_hline(yintercept = 0, linetype = "dotted") +
   theme_classic() +
   scale_x_discrete(
@@ -229,7 +229,7 @@ fig2b <- df_coef_plot |>
     ),
     width = 0
   ) +
-  labs(x = "", y = "Coefficient (scaled)", title = "Interactions with year") +
+  labs(x = "", y = "Coefficient (scaled)", title = "Effects on trend") +
   geom_hline(yintercept = 0, linetype = "dotted") +
   theme_classic() +
   scale_x_discrete(

@@ -628,21 +628,31 @@ df_bylat <- df_boot_small |>
   unnest(csink_tgc_bylat) |>
   group_by(lat_i) |>
   summarise(
-    db_pgc_bylat_median = median(db_tgc, na.rm = TRUE),
-    db_pgc_bylat_q05 = quantile(db_tgc, probs = 0.5, na.rm = TRUE),
-    db_pgc_bylat_q95 = quantile(db_tgc, probs = 0.95, na.rm = TRUE),
+    db_tgc_bylat_mean = mean(db_tgc, na.rm = TRUE),
+    db_tgc_bylat_median = median(db_tgc, na.rm = TRUE),
+    db_tgc_bylat_q05 = quantile(db_tgc, probs = 0.5, na.rm = TRUE),
+    db_tgc_bylat_q95 = quantile(db_tgc, probs = 0.95, na.rm = TRUE),
   ) |>
   mutate(lat = lat_i / 4)
+
+# number for paper
+csink_tropical <- df_bylat |>
+  mutate(is_topical = ifelse(lat > -30 & lat < 30, TRUE, FALSE)) |>
+  group_by(is_topical) |>
+  summarise(db_tgc = sum(db_tgc_bylat_mean, na.rm = TRUE))
+
+csink_tropical
 
 gg_csink_bylat <- df_bylat |>
   ggplot() +   # multiplication by two because 0.5 degree resolution
   geom_ribbon(
     aes(
       x = lat,
-      ymin = db_pgc_bylat_q05 * 2,
-      ymax = db_pgc_bylat_q95 * 2),
-    fill = "grey50") +
-  geom_line(aes(lat, db_pgc_bylat_median * 2)) +
+      ymin = db_tgc_bylat_q05 * 2,
+      ymax = db_tgc_bylat_q95 * 2),
+    fill = "grey50",
+    color = NA) +
+  # geom_line(aes(lat, db_tgc_bylat_median * 2), color = "red") +
   theme_classic() +
   labs(
     x = "Latitude (°)",
