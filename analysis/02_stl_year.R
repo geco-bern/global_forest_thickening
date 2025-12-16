@@ -808,6 +808,7 @@ gg_lqmm_biome12_both
 # Publication figures and tables  ----------------------------------------------
 
 ## Figure 1 --------------------------------------------------------------------
+### STL and dots combined ------------------------------------------------------
 legend <- get_legend(
   gg_lqmm_biome1 +
     theme(legend.position = "right")
@@ -823,6 +824,7 @@ fig1_lqmm <- cowplot::plot_grid(
   gg_lqmm_biome12_both,
   ncol = 3
 )
+
 fig1_lqmm
 
 # Combine grid and legend
@@ -845,6 +847,65 @@ ggsave(
   plot = fig1_lqmm,
   width = 11,
   height = 12
+)
+
+### Fig 1 only STL ------------------
+fig1_lqmm_onlystl <- cowplot::plot_grid(
+  gg_lqmm_biome1,
+  gg_lqmm_biome2,
+  gg_lqmm_biome4,
+  gg_lqmm_biome5,
+  gg_lqmm_biome6,
+  gg_lqmm_biome12,
+  ncol = 3
+)
+
+fig1_lqmm_onlystl <- cowplot::plot_grid(
+  fig1_lqmm_onlystl,
+  legend,
+  ncol = 2,
+  rel_widths = c(1, 0.2)
+)
+
+ggsave(
+  filename = here("manuscript/figures/fig1_lqmm_onlystl.pdf"),
+  plot = fig1_lqmm_onlystl,
+  width = 11,
+  height = 8
+)
+
+ggsave(
+  filename = here("manuscript/figures/fig1_lqmm_onlystl.png"),
+  plot = fig1_lqmm_onlystl,
+  width = 11,
+  height = 8
+)
+
+
+### Fig 1 only dots ------------------
+fig1_lqmm_onlydots <- cowplot::plot_grid(
+  gg_lqmm_biome1_byqmdbin,
+  gg_lqmm_biome2_byqmdbin,
+  gg_lqmm_biome4_byqmdbin,
+  gg_lqmm_biome5_byqmdbin,
+  gg_lqmm_biome6_byqmdbin,
+  gg_lqmm_biome12_byqmdbin,
+  ncol = 3,
+  labels = letters[1:6]
+)
+
+ggsave(
+  filename = here("manuscript/figures/fig1_lqmm_onlydots.pdf"),
+  plot = fig1_lqmm_onlydots,
+  width = 9,
+  height = 5
+)
+
+ggsave(
+  filename = here("manuscript/figures/fig1_lqmm_onlystl.png"),
+  plot = fig1_lqmm_onlydots,
+  width = 9,
+  height = 5
 )
 
 ## SI Figure: Histogram over years ---------------------------------------------
