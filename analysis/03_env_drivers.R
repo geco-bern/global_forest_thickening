@@ -42,6 +42,7 @@ if (use_slopefilter){
 # LMM with lmer() --------------------------------------------------------------
 ## Fit model -------------------------------------------------------------------
 # with all environmental factors and their interaction with time as predictors
+### complete model --------
 mod_lmer_env_complete <- lmer(
   logDensity ~ scale(logQMD) +
     scale(year) * scale(tavg) +
@@ -57,6 +58,7 @@ mod_lmer_env_complete <- lmer(
 
 write_rds(mod_lmer_env_complete, file = here("data/mod_lmer_env_complete.rds"))
 
+### no PBR ---------
 # fit model without PBR - this turns out as the best one
 mod_lmer_env_nopbr <- lmer(
   logDensity ~ scale(logQMD) +
@@ -73,6 +75,7 @@ mod_lmer_env_nopbr <- lmer(
 
 write_rds(mod_lmer_env_nopbr, file = here("data/mod_lmer_env_nopbr.rds"))
 
+### no PBR and ORGC -----------
 # fit model without PBR and ORGC
 mod_lmer_env_nopbr_noorgc <- lmer(
   logDensity ~ scale(logQMD) +
@@ -89,6 +92,7 @@ mod_lmer_env_nopbr_noorgc <- lmer(
 
 write_rds(mod_lmer_env_nopbr_noorgc, file = here("data/mod_lmer_env_nopbr_noorgc.rds"))
 
+### no PBR and CNrt ------------
 # fit model without PBR and CNrt
 mod_lmer_env_nopbr_nocn <- lmer(
   logDensity ~ scale(logQMD) +
@@ -105,6 +109,31 @@ mod_lmer_env_nopbr_nocn <- lmer(
 
 write_rds(mod_lmer_env_nopbr_nocn, file = here("data/mod_lmer_env_nopbr_nocn.rds"))
 
+### complete model with interactions on QMD ----------------
+mod_lmer_env_complete_interactions <- lmer(
+  logDensity ~
+    scale(logQMD) +
+
+    # year × environment interactions
+    scale(year) * scale(tavg) +
+    scale(year) * scale(ai) +
+    scale(year) * scale(ndep) +
+    scale(year) * scale(ORGC) +
+    scale(year) * scale(PBR) +
+    scale(year) * scale(CNrt) +
+
+    # logQMD × environment interactions
+    scale(logQMD) * scale(tavg) +
+    scale(logQMD) * scale(ai) +
+    scale(logQMD) * scale(ndep) +
+    scale(logQMD) * scale(ORGC) +
+    scale(logQMD) * scale(PBR) +
+    scale(logQMD) * scale(CNrt) +
+
+    (1 | plotID) + (1 | species),
+  data = data_fil_biomes,
+  na.action = "na.exclude"
+)
 
 ## Write summary of model fits to latex table
 options("modelsummary_format_numeric_latex" = "plain")
@@ -114,7 +143,8 @@ modelsummary(
     "Complete" = mod_lmer_env_complete,
     "No PBR" = mod_lmer_env_nopbr,
     "No PBR, ORGC" = mod_lmer_env_nopbr_noorgc,
-    "No PBR, C:N" = mod_lmer_env_nopbr_nocn
+    "No PBR, C:N" = mod_lmer_env_nopbr_nocn,
+    "Complete interactions" = mod_lmer_env_complete_interactions
   ),
   output = here(paste0("manuscript/tables/mods_env_", lab_filter, ".tex")),
   # estimate  = "p.value",

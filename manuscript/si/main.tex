@@ -5,6 +5,7 @@
 \usepackage{graphicx}
 \usepackage{codehigh}
 \usepackage[normalem]{ulem}
+\usepackage{longtable}
 
 % References
 \bibliographystyle{copernicus.bst}
@@ -61,6 +62,19 @@ Dataset & N & Description & Filter & Reference \\
   wuls & 1416 & Białowieża National Park & Forest reserves & Restricted data (not publicly available) \\
   wytham & 1200 & Wytham Woods & No management intervention observed during monitoring & https://forestgeo.si.edu \\
   serc & 1026 & Smithsonian Environmental Research Center & No management intervention observed during monitoring & https://forestgeo.si.edu \\
+  \bottomrule
+  \end{tabular}
+\caption{Constituent forest dataset sizes and descriptions.}
+\end{table}
+
+\begin{table}
+  % \label{tab:datasets}
+\centering
+\fontsize{8}{10}\selectfont
+\begin{tabular}{llp{4cm}p{4cm}p{4cm}}
+  \toprule
+Dataset & N & Description & Filter & Reference \\
+    \midrule
   pasoh & 1007 & Pasoh & No management intervention observed during monitoring & https://forestgeo.si.edu \\
   df\_rainfor & 988 & Amazon Forest Inventory Network (RAINFOR) & No management intervention ocurred & Esquivel-Muelbert, A., Banbury Morgan, R., Brienen, R. et al. Increasing tree size across Amazonia. Nat. Plants 11, 2016–2025 (2025). https://doi.org/10.1038/s41477-025-02097-4 \\
   nfr\_swi & 729 & Swiss Natural Forest Reserves & Forest reserves & Restricted data (not publicly available) \\
