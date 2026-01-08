@@ -33,7 +33,7 @@ source(file.path(here::here(), "/R/functions.R"))
 # Data providers: Paloma Ruiz-Benito and Veronica Cruz-Alonso
 
 # stand-level for species
-nfi_spain <- read.csv("~/data/nfi_spa/nfi_spa.csv")
+nfi_spain <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfi_spa/nfi_spa.csv")
 
 # rename variables
 nfi_spain <- nfi_spain |>
@@ -100,13 +100,13 @@ saveRDS(data_nfi_spain, file = file.path(here::here(), "/data/inputs/data_nfi_sp
 # Data providers: Julian Tijerin-Triviño
 
 # Tree-level for species
-species_code <- read.csv("~/data/nfi_swe/swe_sp_code.csv", sep = ",")
+species_code <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfi_swe/swe_sp_code.csv", sep = ",")
 species_code <- species_code |>
   filter(country == "ES") |>
   rename(species = acceptedname) |>
   select(code, species)
 
-nfi_sweeden_tree <- read.csv("~/data/nfi_swe/nfi_swe_tree.csv", sep = ",")
+nfi_sweeden_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfi_swe/nfi_swe_tree.csv", sep = ",")
 nfi_sweeden_tree <- nfi_sweeden_tree |>
   select(-c(speciescode2, speciescode3)) |>
   rename(
@@ -122,7 +122,7 @@ nfi_sweeden_tree <- nfi_sweeden_tree |>
   left_join(species_code)
 
 # Stand-level
-nfi_sweeden <- read.csv("~/data/nfi_swe/nfi_swe_stand.csv", sep = ",")
+nfi_sweeden <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfi_swe/nfi_swe_stand.csv", sep = ",")
 
 # rename variable
 nfi_sweeden <- nfi_sweeden |>
@@ -192,17 +192,17 @@ if (!file.exists(filn)) {
   # Download FIA data ---
   # for all states
   # the dataset needed: COND, PLOT, TREE
-  states <- read.csv("~/data/fia_us/obs/states.csv")
+  states <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fia_us/obs/states.csv")
   st <- states$State.abbreviation
 
   # Data unavailable for:  DC, MH
   st <- st[-which(st %in% c("DC", "MH"))]
 
   for (i in st) {
-    getFIA(states = i, dir = "~/data/fia_us/obs", tables = "COND", load = FALSE)
-    getFIA(states = i, dir = "~/data/fia_us/obs", tables = "PLOT", load = FALSE)
+    getFIA(states = i, dir = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fia_us/obs", tables = "COND", load = FALSE)
+    getFIA(states = i, dir = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fia_us/obs", tables = "PLOT", load = FALSE)
     options(timeout = 3600)
-    getFIA(states = i, dir = "~/data/fia_us/obs", tables = "TREE", load = FALSE)
+    getFIA(states = i, dir = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fia_us/obs", tables = "TREE", load = FALSE)
   }
 
   # Read data ---
@@ -213,9 +213,9 @@ if (!file.exists(filn)) {
 
   ## PLOT table ---
   # meta info for forest plots
-  setwd("~/data/fia_us/obs")
+  setwd("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fia_us/obs")
 
-  data_plot <- list.files(path = "~/data/fia_us/obs", pattern = "*_PLOT.csv") |>
+  data_plot <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fia_us/obs", pattern = "*_PLOT.csv") |>
     purrr::map(read.csv) |>
     lapply(\(x) mutate(x, across(ECO_UNIT_PNW, as.character))) |>
     bind_rows() |>
@@ -224,7 +224,7 @@ if (!file.exists(filn)) {
 
   ## COND table ---
   # used for filtering unmanaged forest plots (reserves)
-  data_cond <- list.files(path = "~/data/fia_us/obs", pattern = "*_COND.csv") |>
+  data_cond <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fia_us/obs", pattern = "*_COND.csv") |>
     purrr::map(read.csv) |>
     # lapply(read_csv) |>
     lapply(\(x) mutate(x, across(HABTYPCD1, as.character))) |>
@@ -253,15 +253,15 @@ if (!file.exists(filn)) {
   # density: from indiv per acre to indiv per ha = */0.405
   # dbh: from inches per acre to cm per ha = *2.54/0.405
   # BA: from sq. inches per acre to sq. m per ha = *0.00064516/0.405
-  species <- read.csv("~/data/fia_us/obs/species_code.csv")
-  states <- read.csv("~/data/fia_us/obs/states.csv")
+  species <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fia_us/obs/species_code.csv")
+  states <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fia_us/obs/states.csv")
   st <- states$State.abbreviation
   # Data unavailable for:  DC, MH
   st <- st[-which(st %in% c("DC", "MH"))]
 
   data_stand <- data.frame()
   for (i in st) {
-    currentDF <- read.csv("~/data/obs/", i, "_TREE.csv")
+    currentDF <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/obs/", i, "_TREE.csv")
     currentDF <- currentDF |>
       left_join(species) |>
       relocate(species, .after = SPCD) |>
@@ -316,9 +316,9 @@ if (!file.exists(filn)) {
 
     data_stand <- rbind(data_stand, currentDF)
   }
-  saveRDS(data_stand, file = "~/data/fia_us/obs/data_stand_us.rds")
+  saveRDS(data_stand, file = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fia_us/obs/data_stand_us.rds")
 
-  data_stand <- readRDS("~/data/fia_us/obs/data_stand_us.rds")
+  data_stand <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fia_us/obs/data_stand_us.rds")
 
   # We want to filter the unmanaged plots. For that we select those plots classified as Reserves.
   # COND table RESERVCD==1 represents the reserves, where no interventions have been carried out.
@@ -392,13 +392,13 @@ saveRDS(data_fia_us, file = file.path(here::here(), "/data/inputs/data_fia_us.rd
 # Data providers: Brigitte Rohner
 
 # Plot characteristics
-lfi_plot_constant <- read.csv("~/data/nfi_swi/lfi_plot_constant.csv", sep = ";")
+lfi_plot_constant <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfi_swi/lfi_plot_constant.csv", sep = ";")
 
 # Species names
-lfi_species_names <- read.csv("~/data/nfi_swi/lfi_species_names.csv", sep = ",")
+lfi_species_names <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfi_swi/lfi_species_names.csv", sep = ",")
 
 ## calculate dom_species from tree-level data
-lfi_tree_census <- read.csv("~/data/nfi_swi/lfi_tree_census.csv", sep = ",")
+lfi_tree_census <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfi_swi/lfi_tree_census.csv", sep = ",")
 
 dom_species <- lfi_tree_census |>
   mutate(year = str_sub(CENSUS_DATE, 7, 10)) |>
@@ -416,7 +416,7 @@ dom_species <- lfi_tree_census |>
   select(PLOTID, year, species)
 
 # Stand-level data
-lfi_plot_census <- read.csv("~/data/nfi_swi/lfi_plot_census.csv", sep = ",")
+lfi_plot_census <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfi_swi/lfi_plot_census.csv", sep = ",")
 
 # prepare data
 nfi_switzerland <- lfi_plot_census |>
@@ -480,7 +480,7 @@ saveRDS(data_nfi_switzerland, file = file.path(here::here(), "/data/inputs/data_
 # Data providers: Oliver Moen Snoksrud and Johannes Breidenbach
 
 # Stand-level data
-nfi_norway <- read.csv("~/data/nfi_nor/nfi_nor.csv", sep = ",")
+nfi_norway <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfi_nor/nfi_nor.csv", sep = ",")
 
 # rename variable
 nfi_norway <- nfi_norway |>
@@ -541,26 +541,26 @@ saveRDS(data_nfi_norway, file = file.path(here::here(), "/data/inputs/data_nfi_n
 # David Forrester and Jonas Glatthorn
 
 # Plot characteristics
-efm_metadata <- read.csv("~/data/efm/raw/VFL_LISTmanual.csv") |>
+efm_metadata <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/VFL_LISTmanual.csv") |>
   mutate(FNUM = as.character(FNUM)) |>
   select(-BA)
 
 # Plot area
-efm_area <- read.csv("~/data/efm/raw/EFM_plot_area.csv") |>
+efm_area <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/EFM_plot_area.csv") |>
   mutate(FNUM = as.character(FNUM))
-efm_locations <- read.csv("~/data/efm/raw/efm_plot_locations.csv") |>
+efm_locations <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/efm_plot_locations.csv") |>
   mutate(FNUM = as.character(FNUM))
 
 # Last management intervention
-efm_management <- read.csv("~/data/efm/raw/EFM_last_intervention.csv") |>
+efm_management <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/EFM_last_intervention.csv") |>
   mutate(FNUM = as.character(FNUM))
 
 # Stand level data (per plot, year and species)
-# EFM_stand_1 <- readRDS("~/data/efm/raw/EFM_stand_data.RDS")
-# EFM_stand_2 <- readRDS("~/data/efm/raw/EFM_stand_data6003.RDS")
+# EFM_stand_1 <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/EFM_stand_data.RDS")
+# EFM_stand_2 <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/EFM_stand_data6003.RDS")
 # efm_stand <- EFM_stand_1 %>% bind_rows(EFM_stand_2) %>% filter(FNUM!=6003000)
-# saveRDS(efm_stand, file = "~/data/efm/raw/efm_stand.RDS")
-efm_stand <- readRDS("~/data/efm/raw/efm_stand.RDS") |>
+# saveRDS(efm_stand, file = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/efm_stand.RDS")
+efm_stand <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/efm_stand.RDS") |>
   mutate(FNUM = as.character(FNUM)) |>
   select(-BA)
 
@@ -643,7 +643,7 @@ saveRDS(data_efm_swi, file = file.path(here::here(), "/data/inputs/data_efm_swi.
 # Data providers: Jonas Stillhard
 
 # Tree-level data
-uholka <- read.csv("~/data/uholka/uholka_tree.csv", sep = ",")
+uholka <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/uholka/uholka_tree.csv", sep = ",")
 
 # prepare data
 uholka <- uholka |>
@@ -708,7 +708,7 @@ saveRDS(data_uholka, file = file.path(here::here(), "/data/inputs/data_uholka.rd
 # Data providers: Gavriil Spyroglou and Nikolaos Fyllas
 
 # tree-level data to estimate dominant species
-greece_tree <- read.csv("~/data/fp_gre/fp_gre_tree.csv", sep = ",")
+greece_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_gre/fp_gre_tree.csv", sep = ",")
 
 dom_species <- greece_tree |>
   rename(
@@ -726,7 +726,7 @@ dom_species <- greece_tree |>
 length(unique(dom_species$plotID))
 
 # stand-level data
-greece_stand <- read.csv("~/data/fp_gre/fp_gre_stand.csv", sep = ",")
+greece_stand <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_gre/fp_gre_stand.csv", sep = ",")
 str(greece_stand)
 
 # rename variable
@@ -790,10 +790,10 @@ saveRDS(data_greece, file = file.path(here::here(), "/data/inputs/data_fp_gre.rd
 # Data providers: Georges Kunstler
 
 # Tree- and -stand level data
-france_plot <- read.csv("~/data/fp_fra/fp_fra_stand.csv", sep = ",") |> as_tibble()
-france_tree <- read.csv("~/data/fp_fra/fp_fra_tree.csv", sep = ",") |> as_tibble()
-france_species <- read.csv("~/data/fp_fra/fra_sp_code.csv", sep = ",") |> as_tibble()
-france_status <- read.csv("~/data/fp_fra/fra_sta_code.csv", sep = ",") |> as_tibble()
+france_plot <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_fra/fp_fra_stand.csv", sep = ",") |> as_tibble()
+france_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_fra/fp_fra_tree.csv", sep = ",") |> as_tibble()
+france_species <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_fra/fra_sp_code.csv", sep = ",") |> as_tibble()
+france_status <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_fra/fra_sta_code.csv", sep = ",") |> as_tibble()
 
 str(france_tree)
 
@@ -861,7 +861,7 @@ saveRDS(data_france, file = file.path(here::here(), "/data/inputs/data_fp_fra.rd
 # Data providers: Michael Maroschek and Rupert Seidl
 
 # Stand-level data by species
-bnp <- read.csv("~/data/euforia/bnp/euf_bnp.csv", sep = ",")
+bnp <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/bnp/euf_bnp.csv", sep = ",")
 str(bnp)
 # prepare data
 bnp <- bnp |>
@@ -917,8 +917,8 @@ saveRDS(data_bnp, file = file.path(here::here(), "/data/inputs/data_euf_bnp.rds"
 # Data providers: Miroslav Svoboda
 
 # Tree- and stand-level data by species
-czu_tree <- read.csv("~/data/euforia/czu/euf_czu_tree.csv", sep = ",")
-czu_stand <- read.csv("~/data/euforia/czu/euf_czu_stand.csv", sep = ",")
+czu_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/czu/euf_czu_tree.csv", sep = ",")
+czu_stand <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/czu/euf_czu_stand.csv", sep = ",")
 str(czu_tree)
 # prepare data
 czu <- czu_stand |>
@@ -977,7 +977,7 @@ saveRDS(data_czu, file = file.path(here::here(), "/data/inputs/data_euf_czu.rds"
 # Data providers: Yannek Käber and Lucia Seebach
 
 # Stand-level data by species
-forst <- read.csv("~/data/euforia/forst/euf_forst.csv", sep = ",")
+forst <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/forst/euf_forst.csv", sep = ",")
 str(forst)
 # prepare data
 forst <- forst |>
@@ -1039,7 +1039,7 @@ saveRDS(data_forst, file = file.path(here::here(), "/data/inputs/data_euf_forst.
 # Data providers: Tzvetan Zlatanov
 
 # Tree-level data
-iberbas <- read.csv("~/data/euforia/iberbas/euf_iberbas.csv", sep = ",")
+iberbas <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/iberbas/euf_iberbas.csv", sep = ",")
 
 # prepare data
 iberbas <- iberbas |>
@@ -1095,7 +1095,7 @@ saveRDS(data_iberbas, file = file.path(here::here(), "/data/inputs/data_euf_iber
 # Data providers: Any Mary Petritan, Cătălin Petritan
 
 # Tree-level data
-incds <- read.csv("~/data/euforia/incds/euf_incds.csv", sep = ",")
+incds <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/incds/euf_incds.csv", sep = ",")
 
 incds <- incds |>
   select(-c(Height2003, Height2013, Height2023)) |>
@@ -1185,7 +1185,7 @@ saveRDS(data_incds, file = file.path(here::here(), "/data/inputs/data_euf_incds.
 # Data providers: Markus Blaschke
 
 # Stand-level data
-lwf_stand <- read.csv("~/data/euforia/lwf/euf_lwf_stand.csv", sep = ";")
+lwf_stand <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/lwf/euf_lwf_stand.csv", sep = ";")
 lwf_stand <- lwf_stand |>
   rename(
     plotID = Plot_ID,
@@ -1197,7 +1197,7 @@ lwf_stand <- lwf_stand |>
   distinct()
 
 # Tree-level data
-lwf_tree <- read.csv("~/data/euforia/lwf/euf_lwf_tree.csv", sep = ",")
+lwf_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/lwf/euf_lwf_tree.csv", sep = ",")
 
 # prepare data
 lwf_tree <- lwf_tree |>
@@ -1259,7 +1259,7 @@ saveRDS(data_lwf, file = file.path(here::here(), "/data/inputs/data_euf_lwf.rds"
 # Data from Marco Heurich and Isabelle Klein
 
 # tree-level data
-nbw <- read.csv("~/data/euforia/nbw/euf_nbw_tree.csv", sep = ",")
+nbw <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/nbw/euf_nbw_tree.csv", sep = ",")
 
 # prepare data
 nbw <- nbw |>
@@ -1324,14 +1324,14 @@ saveRDS(data_nbw, file = file.path(here::here(), "/data/inputs/data_euf_nbw.rds"
 # Martina Hobi and Harald Bugmann
 
 # Metadata
-nfr_Metadata <- read.csv("~/data/nfr/raw/NFR_metadata.csv")
+nfr_Metadata <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfr/raw/NFR_metadata.csv")
 nfr_Metadata <- nfr_Metadata |>
   mutate(fg = as.character(fg)) |>
   select(fg, lat, long, ele, temp, precip) |>
   distinct(fg, .keep_all = TRUE)
 
 # Plot area
-nfr_plot_area <- read.csv("~/data/nfr/raw/NFR_plot_area.csv")
+nfr_plot_area <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfr/raw/NFR_plot_area.csv")
 nfr_plot_area <- nfr_plot_area |>
   mutate(
     fg = as.character(fg),
@@ -1340,12 +1340,12 @@ nfr_plot_area <- nfr_plot_area |>
   left_join(nfr_Metadata)
 
 # Last management intervention
-nfr_last_intervention <- read.csv("~/data/nfr/raw/NFR_last_intervention.csv")
+nfr_last_intervention <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfr/raw/NFR_last_intervention.csv")
 nfr_last_intervention <- nfr_last_intervention |>
   mutate(fg = as.character(fg))
 
 # Stand level data (per plot, year and species)
-nfr_stand <- readRDS("~/data/nfr/raw/NFR_stand_data.RDS") # 291 plots From David Forrester data
+nfr_stand <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfr/raw/NFR_stand_data.RDS") # 291 plots From David Forrester data
 
 # Select Stand level data for all species: "All species combined"
 dom_species_nfr <- nfr_stand |>
@@ -1428,10 +1428,10 @@ saveRDS(data_nfr_swi, file = file.path(here::here(), "/data/inputs/data_nfr_swi.
 # Data providers: Peter Meyer
 
 # Stand-level data
-nwfva_stand <- read.csv("~/data/euforia/nwfva/euf_nwfva_stand.csv", sep = ",")
+nwfva_stand <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/nwfva/euf_nwfva_stand.csv", sep = ",")
 
 # Tree-level data
-nwfva_tree <- read.csv("~/data/euforia/nwfva/euf_nwfva_tree.csv", sep = ",")
+nwfva_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/nwfva/euf_nwfva_tree.csv", sep = ",")
 
 # prepare data
 nwfva_stand <- nwfva_stand |>
@@ -1505,7 +1505,7 @@ saveRDS(data_nwfva, file = file.path(here::here(), "/data/inputs/data_euf_nwfva.
 # Data providers: Stanislav Kucbel and Peter Jalovia
 
 # Stand-level data
-tuzvo_stand <- read.csv("~/data/euforia/tuzvo/euf_tuzvo_stand.csv", sep = ",")
+tuzvo_stand <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/tuzvo/euf_tuzvo_stand.csv", sep = ",")
 
 tuzvo_stand <- tuzvo_stand |>
   rename(
@@ -1518,7 +1518,7 @@ tuzvo_stand <- tuzvo_stand |>
   distinct()
 
 # Tree-level data
-tuzvo_tree <- read.csv("~/data/euforia/tuzvo/euf_tuzvo_tree.csv", sep = ",")
+tuzvo_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/tuzvo/euf_tuzvo_tree.csv", sep = ",")
 
 # prepare data
 # we use wood density from the BIOMASS pkg to estimate biomass given volume (m3)
@@ -1586,15 +1586,15 @@ saveRDS(data_tuzvo, file = file.path(here::here(), "/data/inputs/data_euf_tuzvo.
 # Thomas Nagel
 
 # tree-level data
-ul_tree <- read.csv("~/data/euforia/ul/euf_ul_tree.csv", sep = ",")
+ul_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/ul/euf_ul_tree.csv", sep = ",")
 
 # metadata
-ul_metadata <- read.csv("~/data/euforia/ul/euf_ul_meta.csv", sep = ",")
+ul_metadata <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/ul/euf_ul_meta.csv", sep = ",")
 ul_metadata <- ul_metadata |>
   select(plotid, plot_size) |>
   distinct() |>
   rename(plotsize = plot_size)
-ul_coords <- read.csv("~/data/euforia/ul/euf_ul_coor.csv", sep = ",")
+ul_coords <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/ul/euf_ul_coor.csv", sep = ",")
 ul_coords <- ul_coords |>
   select(plotid, lat, lon)
 
@@ -1657,7 +1657,7 @@ saveRDS(data_ul, file = file.path(here::here(), "/data/inputs/data_euf_ul.rds"))
 # Renzo Motta
 
 # Tree-level data
-unito <- read.csv("~/data/euforia/unito/euf_unito_tree.csv", sep = ",")
+unito <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/unito/euf_unito_tree.csv", sep = ",")
 
 # Divide plot into grids of different size given the coordinates
 # plotsize = 100 * 100 = 1 ha
@@ -1838,7 +1838,7 @@ saveRDS(data_unito, file = file.path(here::here(), "/data/inputs/data_euf_unito.
 # Data providers: Srdjan Keren and Zbigniew Maciejewski
 
 # Stand-level data
-urk <- read.csv("~/data/euforia/urk/euf_urk_stand.csv", sep = ",")
+urk <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/urk/euf_urk_stand.csv", sep = ",")
 
 # aggregate data from stand
 data_urk <- from_stand_data(urk) |>
@@ -1884,11 +1884,11 @@ saveRDS(data_urk, file = file.path(here::here(), "/data/inputs/data_euf_urk.rds"
 # Data providers: Bogdan Brzeziecki
 
 # Tree-level data
-wuls_tree <- read.csv("~/data/euforia/wuls/euf_wuls_tree.csv", sep = ",")
-wuls_census <- read.csv("~/data/euforia/wuls/euf_wuls_census.csv", sep = ",")
-wuls_areas <- read.csv("~/data/euforia/wuls/euf_wuls_area.csv", sep = ",")
-wuls_coords <- read.csv("~/data/euforia/wuls/euf_wuls_coor.csv", sep = ",")
-wuls_species <- read.csv("~/data/euforia/wuls/euf_wuls_sp.csv", sep = ",")
+wuls_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/wuls/euf_wuls_tree.csv", sep = ",")
+wuls_census <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/wuls/euf_wuls_census.csv", sep = ",")
+wuls_areas <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/wuls/euf_wuls_area.csv", sep = ",")
+wuls_coords <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/wuls/euf_wuls_coor.csv", sep = ",")
+wuls_species <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/wuls/euf_wuls_sp.csv", sep = ",")
 
 wuls <- wuls_tree |>
   select(-c(H1, H2, H3, H4, H5, H6, H7, H8, V1, V2, V3, V4, V5, V6, V7, V8)) |>
@@ -1964,7 +1964,7 @@ saveRDS(data_wuls, file = file.path(here::here(), "/data/inputs/data_euf_wuls.rd
 # Contact: Jess Zimmerman
 
 # Tree-level data
-luquillo <- list.files(path = "~/data/forestgeo/luquillo", full.names = TRUE, pattern = "\\.csv$") |>
+luquillo <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/luquillo", full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   bind_rows()
 
@@ -2046,7 +2046,7 @@ saveRDS(data_luquillo, file = file.path(here::here(), "/data/inputs/data_luquill
 ## BCI ----
 # contact: Salomon Aguilar, technician in BCI
 
-bci <- list.files(path = "~/data/forestgeo/bci", full.names = TRUE, pattern = "\\.csv$") |>
+bci <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/bci", full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   bind_rows()
 
@@ -2099,7 +2099,7 @@ data_bci <- from_tree_data(bci) |>
   ungroup()
 
 # check that lianas are excluded
-sp_lianas <- read.csv("~/data/forestgeo/bci/sp_lianas.csv")
+sp_lianas <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/bci/sp_lianas.csv")
 data_bci <- data_bci %>%
   filter(!data_bci$species %in% sp_lianas$species)
 
@@ -2136,7 +2136,7 @@ saveRDS(data_bci, file = file.path(here::here(), "/data/inputs/data_bci.rds"))
 ## SCBI ----
 # Contact: Kristina J. Anderson-Teixeira , William J. McShea, Norman A. Bourg
 
-scbi <- list.files(path = "~/data/forestgeo/scbi", full.names = TRUE, pattern = "\\.csv$") |>
+scbi <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/scbi", full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   lapply(\(x) mutate(x, across(Tag, as.double))) |>
   lapply(\(x) mutate(x, across(StemTag, as.double))) |>
@@ -2214,7 +2214,7 @@ saveRDS(data_scbi, file = file.path(here::here(), "/data/inputs/data_scbi.rds"))
 ## Palanam ----
 # Contact: Perry S. Ong
 
-palanam <- list.files(path = "~/data/forestgeo/palanam", full.names = TRUE, pattern = "\\.csv$") |>
+palanam <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/palanam", full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   lapply(\(x) mutate(x, across(Tag, as.double))) |>
   lapply(\(x) mutate(x, across(StemTag, as.double))) |>
@@ -2289,7 +2289,7 @@ saveRDS(data_palanam, file = file.path(here::here(), "/data/inputs/data_palanam.
 ## SERC ----
 # Contact: Sean McMahon
 
-serc <- list.files(path = "~/data/forestgeo/serc", full.names = TRUE, pattern = "\\.csv$") |>
+serc <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/serc", full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   bind_rows()
 unique(serc$Census)
@@ -2388,8 +2388,8 @@ saveRDS(data_serc, file = file.path(here::here(), "/data/inputs/data_serc.rds"))
 # Data from Yadvinder Malhi
 
 # tree-level data
-wytham <- read.csv("~/data/forestgeo/wytham/wytham.csv")
-wytham_sp <- read.csv("~/data/forestgeo/wytham/wytham_sp.csv")
+wytham <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/wytham/wytham.csv")
+wytham_sp <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/wytham/wytham_sp.csv")
 
 # prepare data
 wytham <- wytham |>
@@ -2570,7 +2570,7 @@ saveRDS(data_pasoh, file = file.path(here::here(), "/data/inputs/data_pasoh.rds"
 # Contact: Prof. Sukumar
 
 # Stand-level data
-mudumalai <- read.csv("~/data/forestgeo/mudumalai/mudumalai_stand.csv", sep = ",")
+mudumalai <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/mudumalai/mudumalai_stand.csv", sep = ",")
 mudumalai <- mudumalai |>
   mutate(density = nindiv / plotsize) |>
   mutate(ba = ba / plotsize)
@@ -2640,7 +2640,7 @@ saveRDS(data_mudumalai, file = file.path(here::here(), "/data/inputs/data_muduma
 # Data provided by Yadvinder Mahli and Huanyuan Zhang
 
 # 0) Metadata
-meta_fp <- read.csv("~/data/forestplots/mahli_zhang/fp_mz_metadata.csv")
+meta_fp <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestplots/mahli_zhang/fp_mz_metadata.csv")
 meta_fp <- meta_fp |>
   select(Plot_code, Country, Longitude, Latitude, Elevation..m., Plot.Size..ha.) |>
   rename(
@@ -2653,7 +2653,7 @@ meta_fp <- meta_fp |>
   )
 
 # 1) A selection of countries and plots together
-multiplots <- read.csv("~/data/forestplots/mahli_zhang/fp_mz_multiplots.csv")
+multiplots <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestplots/mahli_zhang/fp_mz_multiplots.csv")
 
 # select and rename variables
 multiplots <- multiplots |>
@@ -2677,7 +2677,7 @@ multiplots <- multiplots |>
 unique(multiplots$country)
 
 # 2) Gabon
-gabon <- list.files(path = "~/data/forestplots/mahli_zhang/gabon", full.names = TRUE, pattern = "\\.csv$") |>
+gabon <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestplots/mahli_zhang/gabon", full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   bind_rows()
 
@@ -2691,7 +2691,7 @@ gabon <- gabon |>
   left_join(meta_fp |> select(-country), by = "plotID")
 
 # 3) Ghana
-ghana <- list.files(path = "~/data/forestplots/mahli_zhang/ghana", full.names = TRUE, pattern = "\\.csv$") |>
+ghana <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestplots/mahli_zhang/ghana", full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   bind_rows()
 
@@ -2704,7 +2704,7 @@ ghana <- ghana |>
   left_join(meta_fp |> select(-country), by = "plotID")
 
 # 4) Malaysia
-malaysia <- list.files(path = "~/data/forestplots/mahli_zhang/malaysia", full.names = TRUE, pattern = "\\.csv$") |>
+malaysia <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestplots/mahli_zhang/malaysia", full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   bind_rows()
 
@@ -2838,9 +2838,9 @@ saveRDS(data_aus, file = file.path(here::here(), "/data/inputs/data_fp_aus.rds")
 # Coordinates of the sites from Bennett et al. 2023
 
 # Stand-level data
-rainfor_plots <- read.csv("~/data/rainfor/esquivel_etal/full_final_dataset.csv", sep = ",")
-rainfor_bennet <- read.csv("~/data/rainfor/bennett_etal/table_s3.csv", sep = ",")
-rainfor_brienen <- read.csv("~/data/rainfor/brienen_etal/table_s1.csv", sep = ",")
+rainfor_plots <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/rainfor/esquivel_etal/full_final_dataset.csv", sep = ",")
+rainfor_bennet <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/rainfor/bennett_etal/table_s3.csv", sep = ",")
+rainfor_brienen <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/rainfor/brienen_etal/table_s1.csv", sep = ",")
 
 # select variables from coordinates data
 rainfor_bennet <- rainfor_bennet |>
