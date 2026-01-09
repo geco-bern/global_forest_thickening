@@ -109,9 +109,28 @@ fit_lqmm <- lqmm(
     startQR     = TRUE
   )
 )
-summary(fit_lqmm)
+# summary(fit_lqmm)
 
 write_rds(fit_lqmm, file = here("data/outputs/fit_lqmm_biome1.rds"))
+
+### LQMM fit with interaction --------------------------------------------------
+set.seed(123)
+fit_lqmm_int <- lqmm(
+  logDensity ~ logQMD_sc * year_sc,
+  random = ~1,
+  group = plotID,
+  tau = 0.9, # c(0.75, 0.90),
+  data = data_unm_biome,
+  type = "normal",
+  control = lqmmControl(
+    LP_max_iter = 500, # inner loop iterations
+    LP_tol_ll   = 1e-05, # inner loop tolerance
+    startQR     = TRUE
+  )
+)
+# summary(fit_lqmm_int)
+
+write_rds(fit_lqmm_int, file = here("data/outputs/fit_lqmm_int_biome1.rds"))
 
 #### STL shift -----------------------------------------------------------------
 # Opt 2: predicted logDensity at two years differing by one year (in scaled units)
@@ -147,6 +166,14 @@ gg_lqmm_biome1 <- plot_lqmm_bybiome(
   name = bquote(bold("a") ~ ~"Tropical Moist Broadleaf Forests")
 )
 gg_lqmm_biome1
+
+### Plot STL-interaction from LQMM ---------------------------------------------
+gg_lqmm_int_biome1 <- plot_lqmm_bybiome(
+  data_unm_biome,
+  fit_lqmm_int,
+  name = bquote(bold("a") ~ ~"Tropical Moist Broadleaf Forests")
+)
+gg_lqmm_int_biome1
 
 ### Within QMD bins ------------------------------------------------------------
 # Test whether upward shift of 90% quantile is significant within logQMD-bins
@@ -241,9 +268,28 @@ fit_lqmm <- lqmm(
     startQR     = TRUE
   )
 )
-summary(fit_lqmm)
+# summary(fit_lqmm)
 
 write_rds(fit_lqmm, file = here("data/outputs/fit_lqmm_biome2.rds"))
+
+### LQMM interaction fit -------------------------------------------------------
+set.seed(123)
+fit_lqmm_int <- lqmm(
+  logDensity ~ logQMD_sc * year_sc,
+  random = ~1,
+  group = plotID,
+  tau = 0.90,
+  data = data_unm_biome,
+  type = "normal",
+  control = lqmmControl(
+    LP_max_iter = 500, # inner loop iterations
+    LP_tol_ll   = 1e-05, # inner loop tolerance
+    startQR     = TRUE
+  )
+)
+# summary(fit_lqmm_int)
+
+write_rds(fit_lqmm_int, file = here("data/outputs/fit_lqmm_int_biome2.rds"))
 
 #### Bootstrapping LQMM fit -----------------------------------------------------
 # boot_data <- rsample::bootstraps(
@@ -276,6 +322,14 @@ gg_lqmm_biome2 <- plot_lqmm_bybiome(
   name = bquote(bold("b") ~ ~"Tropical Dry Broadleaf Forests")
 )
 gg_lqmm_biome2
+
+### Plot STL-interaction from LQMM ---------------------------------------------
+gg_lqmm_int_biome2 <- plot_lqmm_bybiome(
+  data_unm_biome,
+  fit_lqmm_int,
+  name = bquote(bold("b") ~ ~"Tropical Dry Broadleaf Forests")
+)
+gg_lqmm_int_biome2
 
 ### Within QMD bins ----------------------------------------
 # Test whether upward shift of 90% quantile is significant within logQMD-bins
@@ -366,9 +420,24 @@ fit_lqmm <- lqmm(
   type = "normal",
   control = lqmmControl(startQR = TRUE)
 )
-summary(fit_lqmm)
+# summary(fit_lqmm)
 
 write_rds(fit_lqmm, file = here("data/outputs/fit_lqmm_biome4.rds"))
+
+### LQMM with interaction fit -------------------------------------------------------------------
+set.seed(123)
+fit_lqmm_int <- lqmm(
+  logDensity ~ logQMD_sc * year_sc,
+  random = ~1,
+  group = plotID,
+  tau = 0.90,
+  data = data_unm_biome,
+  type = "normal",
+  control = lqmmControl(startQR = TRUE)
+)
+# summary(fit_lqmm_int)
+
+write_rds(fit_lqmm_int, file = here("data/outputs/fit_lqmm_int_biome4.rds"))
 
 #### Bootstrapping LQMM fit -----------------------------------------------------
 # boot_data <- rsample::bootstraps(
@@ -401,6 +470,14 @@ gg_lqmm_biome4 <- plot_lqmm_bybiome(
   name = bquote(bold("c") ~ ~"Temperate Broadleaf & Mixed Forests")
 )
 gg_lqmm_biome4
+
+### Plot STL from LQMM with interaction ----------------------------------------
+gg_lqmm_int_biome4 <- plot_lqmm_bybiome(
+  data_unm_biome,
+  fit_lqmm_int,
+  name = bquote(bold("c") ~ ~"Temperate Broadleaf & Mixed Forests")
+)
+gg_lqmm_int_biome4
 
 ### Within QMD bins ----------------------------------------
 # Test whether upward shift of 90% quantile is significant within logQMD-bins
@@ -491,9 +568,24 @@ fit_lqmm <- lqmm(
   type = "normal",
   control = lqmmControl(startQR = TRUE)
 )
-summary(fit_lqmm)
+# summary(fit_lqmm)
 
 write_rds(fit_lqmm, file = here("data/outputs/fit_lqmm_biome5.rds"))
+
+### LQMM-interaction fit -------------------------------------------------------
+set.seed(123)
+fit_lqmm_int <- lqmm(
+  logDensity ~ logQMD_sc * year_sc,
+  random = ~1,
+  group = plotID,
+  tau = 0.90,
+  data = data_unm_biome,
+  type = "normal",
+  control = lqmmControl(startQR = TRUE)
+)
+# summary(fit_lqmm_int)
+
+write_rds(fit_lqmm_int, file = here("data/outputs/fit_lqmm_int_biome5.rds"))
 
 #### Bootstrapping LQMM fit -----------------------------------------------------
 # boot_data <- rsample::bootstraps(
@@ -526,6 +618,14 @@ gg_lqmm_biome5 <- plot_lqmm_bybiome(
   name = bquote(bold("d") ~ ~"Temperate Conifer Forest")
 )
 gg_lqmm_biome5
+
+### Plot STL-interaction from LQMM ---------------------------------------------
+gg_lqmm_int_biome5 <- plot_lqmm_bybiome(
+  data_unm_biome,
+  fit_lqmm_int,
+  name = bquote(bold("d") ~ ~"Temperate Conifer Forest")
+)
+gg_lqmm_int_biome5
 
 ### Within QMD bins ----------------------------------------
 # Test whether upward shift of 90% quantile is significant within logQMD-bins
@@ -620,9 +720,28 @@ fit_lqmm <- lqmm(
     startQR = TRUE # good to keep this TRUE
   )
 )
-summary(fit_lqmm)
+# summary(fit_lqmm)
 
 write_rds(fit_lqmm, file = here("data/outputs/fit_lqmm_biome6.rds"))
+
+### LQMM-interaction fit -------------------------------------------------------
+set.seed(123)
+fit_lqmm_int <- lqmm(
+  logDensity ~ logQMD_sc * year_sc,
+  random = ~1,
+  group = plotID,
+  tau = 0.90,
+  data = data_unm_biome,
+  type = "normal",
+  control = lqmmControl(
+    LP_max_iter = 500, # increase max iterations
+    LP_tol_ll = 1e-4, # relax tolerance slightly (default is 1e-5)
+    startQR = TRUE # good to keep this TRUE
+  )
+)
+# summary(fit_lqmm)
+
+write_rds(fit_lqmm_int, file = here("data/outputs/fit_lqmm_int_biome6.rds"))
 
 #### Bootstrapping LQMM fit -----------------------------------------------------
 # boot_data <- rsample::bootstraps(
@@ -655,6 +774,14 @@ gg_lqmm_biome6 <- plot_lqmm_bybiome(
   name = bquote(bold("e") ~ ~"Boreal Forests/Taiga")
 )
 gg_lqmm_biome6
+
+### Plot STL-interaction from LQMM ---------------------------------------------
+gg_lqmm_int_biome6 <- plot_lqmm_bybiome(
+  data_unm_biome,
+  fit_lqmm_int,
+  name = bquote(bold("e") ~ ~"Boreal Forests/Taiga")
+)
+gg_lqmm_int_biome6
 
 ### Within QMD bins ----------------------------------------
 # Test whether upward shift of 90% quantile is significant within logQMD-bins
@@ -745,9 +872,24 @@ fit_lqmm <- lqmm(
   type = "normal",
   control = lqmmControl(startQR = TRUE)
 )
-summary(fit_lqmm)
+# summary(fit_lqmm)
 
 write_rds(fit_lqmm, file = here("data/outputs/fit_lqmm_biome12.rds"))
+
+### LQMM-interaction fit -------------------------------------------------------
+set.seed(123)
+fit_lqmm_int <- lqmm(
+  logDensity ~ logQMD_sc * year_sc,
+  random = ~1,
+  group = plotID,
+  tau = 0.90,
+  data = data_unm_biome,
+  type = "normal",
+  control = lqmmControl(startQR = TRUE)
+)
+# summary(fit_lqmm_int)
+
+write_rds(fit_lqmm_int, file = here("data/outputs/fit_lqmm_int_biome12.rds"))
 
 #### Bootstrapping LQMM fit -----------------------------------------------------
 # boot_data <- rsample::bootstraps(
@@ -780,6 +922,14 @@ gg_lqmm_biome12 <- plot_lqmm_bybiome(
   name = bquote(bold("f") ~ ~"Mediterranean Forests")
 )
 gg_lqmm_biome12
+
+### Plot STL-interaction from LQMM ---------------------------------------------
+gg_lqmm_int_biome12 <- plot_lqmm_bybiome(
+  data_unm_biome,
+  fit_lqmm_int,
+  name = bquote(bold("f") ~ ~"Mediterranean Forests")
+)
+gg_lqmm_int_biome12
 
 ### Within QMD bins ----------------------------------------
 # Test whether upward shift of 90% quantile is significant within logQMD-bins
@@ -877,6 +1027,38 @@ ggsave(
 ggsave(
   filename = here("manuscript/figures/fig1_lqmm_onlystl.png"),
   plot = fig1_lqmm_onlystl,
+  width = 11,
+  height = 8
+)
+
+### Fig 1 ALTERNATIVE only STL with interactions  ------------------
+fig1_lqmm_int_onlystl <- cowplot::plot_grid(
+  gg_lqmm_int_biome1,
+  gg_lqmm_int_biome2,
+  gg_lqmm_int_biome4,
+  gg_lqmm_int_biome5,
+  gg_lqmm_int_biome6,
+  gg_lqmm_int_biome12,
+  ncol = 3
+)
+
+fig1_lqmm_int_onlystl <- cowplot::plot_grid(
+  fig1_lqmm_int_onlystl,
+  legend,
+  ncol = 2,
+  rel_widths = c(1, 0.2)
+)
+
+ggsave(
+  filename = here("manuscript/figures/fig1_lqmm_int_onlystl.pdf"),
+  plot = fig1_lqmm_int_onlystl,
+  width = 11,
+  height = 8
+)
+
+ggsave(
+  filename = here("manuscript/figures/fig1_lqmm_int_onlystl.png"),
+  plot = fig1_lqmm_int_onlystl,
   width = 11,
   height = 8
 )

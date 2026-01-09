@@ -138,20 +138,34 @@ mod_lmer_env_complete_interactions <- lmer(
 ## Write summary of model fits to latex table
 options("modelsummary_format_numeric_latex" = "plain")
 
+# no interactions between slope (QMD) and environmental factors
 modelsummary(
   list(
     "Complete" = mod_lmer_env_complete,
     "No PBR" = mod_lmer_env_nopbr,
     "No PBR, ORGC" = mod_lmer_env_nopbr_noorgc,
-    "No PBR, C:N" = mod_lmer_env_nopbr_nocn,
-    "Complete interactions" = mod_lmer_env_complete_interactions
+    "No PBR, C:N" = mod_lmer_env_nopbr_nocn
   ),
   output = here(paste0("manuscript/tables/mods_env_", lab_filter, ".tex")),
   # estimate  = "p.value",
   estimate = "{estimate}{stars}",
   # estimate  = "{estimate} [{conf.low}, {conf.high}], {p.value}",
   title = "Regression Results",
-  statistic = "std.error",
+  statistic = "conf.int",
+  coef_omit = "Intercept"
+)
+
+# with interactions between slope (QMD) and environmental factors
+modelsummary(
+  list(
+    "Complete interactions" = mod_lmer_env_complete_interactions
+  ),
+  output = here(paste0("manuscript/tables/mods_env_int_", lab_filter, ".tex")),
+  # estimate  = "p.value",
+  estimate = "{estimate}{stars}",
+  # estimate  = "{estimate} [{conf.low}, {conf.high}], {p.value}",
+  title = "Regression Results",
+  statistic = "conf.int",
   coef_omit = "Intercept"
 )
 

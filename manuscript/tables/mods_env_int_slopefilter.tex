@@ -1,0 +1,65 @@
+\begin{table}
+\centering
+\scriptsize
+\begin{talltblr}[         %% tabularray outer open
+caption={Regression Results},
+]                     %% tabularray outer close
+{                     %% tabularray inner open
+colspec={Q[]Q[]},
+column{2}={}{halign=c,},
+column{1}={}{halign=l,},
+hline{43}={1,2}{solid, black, 0.05em},
+}                     %% tabularray inner close
+\toprule
+& Complete interactions \\ \midrule %% TinyTableHeader
+scale(logQMD) & -0.830*** \\
+& [-0.835, -0.826] \\
+scale(year) & 0.120*** \\
+& [0.117, 0.123] \\
+scale(tavg) & -0.014 \\
+& [-0.043, 0.016] \\
+scale(ai) & 0.101*** \\
+& [0.082, 0.120] \\
+scale(ndep) & 0.129*** \\
+& [0.109, 0.150] \\
+scale(ORGC) & -0.024+ \\
+& [-0.048, 0.001] \\
+scale(PBR) & -0.005 \\
+& [-0.021, 0.011] \\
+scale(CNrt) & 0.062*** \\
+& [0.040, 0.084] \\
+scale(year) × scale(tavg) & -0.006* \\
+& [-0.010, -0.001] \\
+scale(year) × scale(ai) & -0.033*** \\
+& [-0.036, -0.030] \\
+scale(year) × scale(ndep) & -0.012*** \\
+& [-0.015, -0.009] \\
+scale(year) × scale(ORGC) & -0.011*** \\
+& [-0.015, -0.006] \\
+scale(year) × scale(PBR) & -0.001 \\
+& [-0.005, 0.002] \\
+scale(year) × scale(CNrt) & -0.029*** \\
+& [-0.033, -0.026] \\
+scale(logQMD) × scale(tavg) & 0.020*** \\
+& [0.012, 0.027] \\
+scale(logQMD) × scale(ai) & 0.102*** \\
+& [0.097, 0.108] \\
+scale(logQMD) × scale(ndep) & -0.021*** \\
+& [-0.026, -0.016] \\
+scale(logQMD) × scale(ORGC) & -0.009* \\
+& [-0.017, -0.000] \\
+scale(logQMD) × scale(PBR) & 0.017*** \\
+& [0.012, 0.022] \\
+scale(logQMD) × scale(CNrt) & 0.047*** \\
+& [0.040, 0.053] \\
+SD (Observations) & 0.171 \\
+Num.Obs. & 36133 \\
+R2 Marg. & 0.515 \\
+R2 Cond. & 0.980 \\
+AIC & 15842.4 \\
+BIC & 16046.3 \\
+ICC & 1.0 \\
+RMSE & 0.14 \\
+\bottomrule
+\end{talltblr}
+\end{table}

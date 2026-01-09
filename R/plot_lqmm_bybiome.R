@@ -12,7 +12,7 @@ plot_lqmm_bybiome <- function(data, mod, name, plot_legend = FALSE){
     ~ tibble(
       logQMD = seq(from = min(data$logQMD), to = max(data$logQMD), length.out = 100),
       year = .x,
-      plotID = unique(data$plotID)[1]  # may take any value here, as long as predict(..., level = 0)
+      plotID = "dummy" # unique(data$plotID)[1]  # may take any value here, as long as predict(..., level = 0)
     )
   ) |>
     mutate(
@@ -29,11 +29,12 @@ plot_lqmm_bybiome <- function(data, mod, name, plot_legend = FALSE){
       logQMD_sc = (logQMD - logQMD_mean) / logQMD_sd,
       year_sc = (year - year_mean) / year_sd
     ) |>
+    mutate(`logQMD_sc:year_sc` = logQMD_sc * year_sc) %>%
     mutate(
       pred_90 = predict(
-        fit_lqmm,
+        mod,
         level = 0,
-        newdata = pick(logQMD_sc, year_sc, plotID) # cur_data_all()
+        newdata = . # pick(logQMD_sc, year_sc, logQMD_sc:year_sc, plotID) # cur_data_all()
       )
     ) |>
     mutate(year = as.factor(year))
@@ -109,9 +110,9 @@ plot_lqmm_byqmdbin <- function(df_lqmm_byqmdbin, df_lqmm_byqmdbin_including_dist
                                y_limits = c(-0.56, 0.56),
                                x_breaks = seq(3, 4, 1),
                                y_breaks = seq(-0.4, 0.4, 0.4)) {
-  
+
   ggplot() +
-    
+
     # including disturbed plots — grey
     geom_point(
       aes(
@@ -133,7 +134,7 @@ plot_lqmm_byqmdbin <- function(df_lqmm_byqmdbin, df_lqmm_byqmdbin_including_dist
       width = 0,
       color = "grey"
     ) +
-    
+
     # excluding disturbed plots — black
     geom_point(
       aes(
@@ -153,11 +154,11 @@ plot_lqmm_byqmdbin <- function(df_lqmm_byqmdbin, df_lqmm_byqmdbin_including_dist
       data = df_lqmm_byqmdbin,
       width = 0
     ) +
-    
+
     # Theme + labels
     theme_classic() +
     theme(
-      axis.text = element_text(size = 12), 
+      axis.text = element_text(size = 12),
       axis.title = element_text(size = 12)
     ) +
     geom_hline(yintercept = 0, linetype = "dotted") +
@@ -165,7 +166,7 @@ plot_lqmm_byqmdbin <- function(df_lqmm_byqmdbin, df_lqmm_byqmdbin_including_dist
       x = expression(ln(QMD)),
       y = expression(italic(beta)(year))
     ) +
-    
+
     # Scales
     scale_x_continuous(limits = x_limits, breaks = x_breaks) +
     scale_y_continuous(limits = y_limits, breaks = y_breaks)
