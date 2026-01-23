@@ -1,15 +1,15 @@
 \begin{table}
 \centering
 \scriptsize
-\begin{talltblr}[         %% tabularray outer open
-caption={Regression Results},
-]                     %% tabularray outer close
-{                     %% tabularray inner open
-colspec={Q[]Q[]Q[]Q[]Q[]},
-column{2,3,4,5}={}{halign=c,},
-column{1}={}{halign=l,},
-hline{31}={1,2,3,4,5}{solid, black, 0.05em},
-}                     %% tabularray inner close
+\begin{talltblr}[
+  caption = {Regression Results},   % caption on top
+  label = {tab:regression},        % optional label
+]{
+  colspec={Q[]Q[]Q[]Q[]Q[]},
+  column{2,3,4,5}={halign=c,},
+  column{1}={halign=l,},
+  hline{31}={1,2,3,4,5}{solid, black, 0.05em},
+}
 \toprule
 & Complete & No PBR & No PBR, ORGC & No PBR, C:N \\ \midrule %% TinyTableHeader
 scale(logQMD) & -0.861*** & -0.862*** & -0.862*** & -0.864*** \\

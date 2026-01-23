@@ -46,6 +46,11 @@
 % Set section heading font
 \RequirePackage{titlesec}
 \RequirePackage{helvet}
+
+% Roman numbering for sections everywhere
+\renewcommand{\thesection}{\Roman{section}}
+\renewcommand{\theHsection}{\Roman{section}}
+
 \titleformat{\section}
 %  {\normalfont\sffamily\Large\bfseries}
   {\normalfont\sffamily\Large}
@@ -85,12 +90,20 @@
 % \RequirePackage{bookmarksopen}
 %\RequirePackage{colorlinks}{hyperref}
 
-%% Redefine \maketitle for Nature style
+% Add subtitle support
+\newcommand{\subtitle}[1]{\gdef\@subtitle{#1}}
+\newcommand{\@subtitle}{}
+
+%% Redefine \maketitle for Nature style  
 \def\@maketitle{%
   \newpage\setlength{\parskip}{12pt}%
-    {\huge\bfseries\noindent\sloppy \textsf{\@title} \par}%
-    %{\noindent\sloppy\textsf{\@date} \par}%
-    {\noindent\sloppy\textsf{\@author}}%
+  {\huge\bfseries\noindent\sloppy \textsf{\@title} \par}%
+  % --- NEW: subtitle boxed to prevent breaks
+  {\Large\bfseries\noindent\sloppy
+    \parbox{\textwidth}{\centering \textsf{\@subtitle}}
+    \par
+  }%
+  {\noindent\sloppy\textsf{\@author}}%
 }
 
 %% Define the affiliations environment, list each institution as an \item
