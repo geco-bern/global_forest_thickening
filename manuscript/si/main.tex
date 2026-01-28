@@ -74,8 +74,24 @@
 % Methods S1 %%%%%%%%
 \begin{itemize}
   \item[] {\fontfamily{phv}\selectfont \hspace{-1em}\textbf{Methods S1}}
-  \item \textbf{How to calculate QMD}
-  \item[] text here.
+  \item \textbf{Calculation of quadratic mean diameter}
+  \item[] Quadratic mean diameter (QMD) was derived at the stand level using a harmonised approach across datasets that differed in their level of aggregation. 
+  
+When individual tree measurements were available, stand basal area (BA) and stand density ($N$) were first calculated by aggregating tree-level data by plot and census year. Basal area was computed as the sum of individual tree basal area and expressed per unit ground area, while stand density was calculated as the number of trees per unit area. 
+
+When stand-level data were provided directly, reported values of basal area and stand density were used without further aggregation. 
+
+The QMD was calculated as:
+
+\begin{equation}
+\mathrm{QMD} = \sqrt{\frac{\mathrm{BA}}{k \times N}},
+\end{equation}
+
+where $\mathrm{BA}$ is stand basal area ($\mathrm{m^2\,ha^{-1}}$), $N$ is the number of trees per ha and $k$ is a constant determined by the measurement units. For basal area expressed in square metres and QMD in centimetres, $k = 0.00007854$. 
+
+All variables were harmonised to SI units prior to analysis.
+This formulation ensures full comparability of QMD estimates across inventories differing in measurement units and sampling design.
+
 \end{itemize}
 
 % Table S1 %%%%%%%%

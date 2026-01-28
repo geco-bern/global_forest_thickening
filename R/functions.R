@@ -206,7 +206,7 @@ from_species_data <- function(data) {
     ungroup() |>
     # calculate QMD and logs
     mutate(
-      QMD = sqrt(ba / (0.0000785 * density)),
+      QMD = sqrt(ba / (0.00007854 * density)),
       logDensity = log(density),
       logQMD = log(QMD),
       dataset = datanm
@@ -250,7 +250,7 @@ from_stand_tree_data <- function(data_tree, data_stand) {
   data_agg <- data_stand |>
     # calculate QMD and logs
     mutate(
-      QMD = sqrt(ba / (0.0000785 * density)),
+      QMD = sqrt(ba / (0.00007854 * density)),
       logDensity = log(density),
       logQMD = log(QMD),
       dataset = datanm
@@ -305,7 +305,7 @@ from_stand_data <- function(data) {
     data_agg <- data |>
       # calculate QMD and logs
       mutate(
-        QMD = sqrt(ba / (0.0000785 * density)),
+        QMD = sqrt(ba / (0.00007854 * density)),
         logDensity = log(density),
         logQMD = log(QMD),
         dataset = datanm
@@ -357,7 +357,7 @@ from_tree_data <- function(data) {
     distinct() |>
     # calculate QMD and logs
     mutate(
-      QMD = sqrt(ba / (0.0000785 * density)),
+      QMD = sqrt(ba / (0.00007854 * density)),
       logDensity = log(density),
       logQMD = log(QMD),
       dataset = datanm
