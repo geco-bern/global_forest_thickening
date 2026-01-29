@@ -1,50 +1,104 @@
 \documentclass{myreport}
 
-\usepackage{tabularray}
 \usepackage{float}
 \usepackage{graphicx}
 \usepackage{codehigh}
 \usepackage[normalem]{ulem}
 \usepackage{longtable}
+\usepackage{placeins}
+\usepackage{fancyhdr}
+\usepackage{caption}
+% For normal tables
+\captionsetup[table]{
+  labelfont={bf,small},
+  textfont={small,sf},
+  labelsep=space,
+  justification=raggedright,
+  singlelinecheck=false,
+  position=top
+}
+
+\usepackage{tabularray}
+\UseTblrLibrary{booktabs}
+
+\SetTblrStyle{caption}{
+  justification = raggedright,
+  singlelinecheck = false,
+  caption-side = top
+}
 
 % References
 \bibliographystyle{copernicus.bst}
 
-\begin{document}
-\pagestyle{headings}
+%\pagestyle{headings}
+\pagestyle{fancy}
+\fancyhf{}                              % clear header and footer
+\fancyhead[L]{\bfseries\large} % empty by default
+%\fancyhead[L]{\bfseries\large\nouppercase{\leftmark}} % bigger header
+\fancyfoot[R]{\thepage}                 % page number bottom right
+\renewcommand{\headrulewidth}{0pt}      % remove header line
+\renewcommand{\footrulewidth}{0pt}      % remove footer line
+
+% custom section that updates header but doesn't print title
+\newcommand{\headersection}[1]{%
+  \clearpage
+  \stepcounter{section}
+  \fancyhead[L]{\bfseries\large \thesection\quad #1}
+  \addcontentsline{toc}{section}{\thesection\quad #1}
+}
+\renewcommand{\thesection}{\Roman{section}}
 
 % Change figure (table, section) numbering (e.g., from 'Figure 1' to 'Figure S1')
 \renewcommand{\thefigure}{S\arabic{figure}}
 \renewcommand{\thetable}{S\arabic{table}}
-\renewcommand{\thesection}{S\arabic{section}}
+% \renewcommand{\thesection}{S\arabic{section}}
 \renewcommand{\theequation}{S\arabic{equation}}
 
-% Document must include
-% ---------------------
-%
+\begin{document}
 
 %% Title
-\title{SUPPLEMENTARY INFORMATION:\\
-Global forest thickening}
+\title{Supplementary Information:\\}
+\subtitle{Increasing carbon storage capacity across global forest biomes}
+
 \author{Marqués et al.}
 
 \maketitle
 
 \tableofcontents
 
+\clearpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Data}
+\headersection{Data}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-To be added as text (and equations) here:
-
+% Methods S1 %%%%%%%%
 \begin{itemize}
-\item How QMD derived if not explicitly provided in obtained dataset. % (From ms: The QMD (cm) was calculated as a function of basal area (m2 ha‐1) and stand density (N, trees ha−1).)
+  \item[] {\fontfamily{phv}\selectfont \hspace{-1em}\textbf{Methods S1}}
+  \item \textbf{Calculation of quadratic mean diameter}
+  \item[] Quadratic mean diameter (QMD) was derived at the stand level using a harmonised approach across datasets that differed in their level of aggregation. 
+  
+When individual tree measurements were available, stand basal area (BA) and stand density ($N$) were first calculated by aggregating tree-level data by plot and census year. Basal area was computed as the sum of individual tree basal area and expressed per unit ground area, while stand density was calculated as the number of trees per unit area. 
+
+When stand-level data were provided directly, reported values of basal area and stand density were used without further aggregation. 
+
+The QMD was calculated as:
+
+\begin{equation}
+\mathrm{QMD} = \sqrt{\frac{\mathrm{BA}}{k \times N}},
+\end{equation}
+
+where $\mathrm{BA}$ is stand basal area ($\mathrm{m^2\,ha^{-1}}$), $N$ is the number of trees per ha and $k$ is a constant determined by the measurement units. For basal area expressed in square metres and QMD in centimetres, $k = 0.00007854$. 
+
+All variables were harmonised to SI units prior to analysis.
+This formulation ensures full comparability of QMD estimates across inventories differing in measurement units and sampling design.
+
 \end{itemize}
 
+% Table S1 %%%%%%%%
 \begin{table}
   % \label{tab:datasets}
 \centering
+\caption{Constituent forest dataset sizes and descriptions.}
 \fontsize{8}{10}\selectfont
 \begin{tabular}{llp{4cm}p{4cm}p{4cm}}
   \toprule
@@ -75,12 +129,13 @@ Dataset & N & Description & Filter & Reference \\
   nwfva\_tree & 84 &  Northwest German Forest Research Institute (NW-FVA) & Forest reserves & Restricted data (not publicly available) \\
   \bottomrule
   \end{tabular}
-\caption{Constituent forest dataset sizes and descriptions.}
 \end{table}
 
+% Table S2 %%%%%%%%
 \begin{table}
   % \label{tab:datasets}
 \centering
+\caption{Constituent forest dataset sizes and descriptions.}
 \fontsize{8}{10}\selectfont
 \begin{tabular}{llp{4cm}p{4cm}p{4cm}}
   \toprule
@@ -98,53 +153,62 @@ Dataset & N & Description & Filter & Reference \\
   nbw & 7 & NPV-BW & Forest reserves & Restricted data (not publicly available) \\
   \bottomrule
   \end{tabular}
-\caption{Constituent forest dataset sizes and descriptions.}
 \end{table}
 
 \clearpage
 
+% Figure S1 %%%%%%%%
 \begin{figure}
 \centering
 \includegraphics[width=\textwidth]{../figures/gg_sitepoints.pdf}
-\caption{Distribution of forest plots (red circles) and forest biomes.}
+\caption{Location of forest plots (red circles) and forest biomes.}
 \end{figure}
 
+% Figure S2 %%%%%%%%
 \begin{figure}
 \centering
 \includegraphics[width=0.9\textwidth]{../figures/distribution_length.pdf}
 \caption{Distribution of the total length of the time series per forest plot, separated by biomes. The total length corresponds to the difference in the observation year of the first and last available forest inventory for each plot.}
 \end{figure}
 
+% Figure S3 %%%%%%%%
 \begin{figure}
 \centering
 \includegraphics[width=0.9\textwidth]{../figures/fig_hist_year.pdf}
-\caption{Distribution of forest census data over time, grouped by biome (a-f). Dataset names are explained in Tab. S1.}
+\caption{Distribution of forest census data over time, grouped by biome (a-f). Dataset names are explained in Table S1.}
 \end{figure}
 
 \clearpage
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Self-thinning trends}
+\headersection{Self-thinning trends}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% Figure S4 %%%%%%%%
 \begin{figure}
 \centering
 \includegraphics[width=\textwidth]{../figures/stl_longplots.pdf}
 \caption{Self-thinning relation across biomes with example long-term forest monitoring plots highlighted.}
 \end{figure}
 
+\clearpage
+
+% Figure S5 %%%%%%%%
 \begin{figure}
 \centering
 \includegraphics[width=\textwidth]{../figures/slope_distribution.pdf}
 \caption{Distributions of model slope estimates (logQMD) across biomes.}
 \end{figure}
 
+\clearpage
+
+% Figure S6 %%%%%%%%
 \begin{figure}
 \centering
 \includegraphics[width=\textwidth]{../figures/fig1_lqmm_onlydots.pdf}
 \caption{Effect size of 'year' within bins of quadratic mean diameter for individual biomes (a: Tropical and Subtropical Moist Broadleaf Forests, b: Tropical and Subtropical Dry Broadleaf Forests, c: Temperate Broadleaf and Mixed Forests, d: Temperate Conifer Forests Forest, e: Boreal Forests/Taiga, f: Mediterranean Forests). Grey points represent the same derived from data before the filtering of disturbance-affected plots were removed. Error bars indicate 95\% confidence intervals for the coefficient.}
 \end{figure}
 
+% Figure S7 %%%%%%%%
 \begin{figure}
 \centering
 \includegraphics[width=\textwidth]{../figures/fig1_lqmm_int_onlystl.pdf}
@@ -181,8 +245,11 @@ Dataset & N & Description & Filter & Reference \\
 
 % \input{../tables/table_percentage_change.tex}
 
+% Table S3 %%%%%%%%
 \begin{table}
 \centering
+\caption{Mean estimate and standard error (SE) of percentage change (\%/yr) of forest stand density (number of trees per ha) by biome, determined from quantile regressions on bootstrapped data samples.}
+\fontsize{8}{10}\selectfont
 \begin{tabular}{lll}
   \toprule
 Biome & Mean & SE \\
@@ -195,31 +262,32 @@ Biome & Mean & SE \\
   Tropical Dry Broadleaf Forests & -0.38 & 0.46 \\
   \bottomrule
   \end{tabular}
-\caption{Mean estimate and standard error (SE) of percentage change (\%/yr) of forest stand density (number of trees per ha) by biome, determined from quantile regressions on bootstrapped data samples.}
 \end{table}
 
-
+% Figure S8 %%%%%%%%
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{../figures/hist_percent_change.pdf}
+\captionsetup{justification=raggedright, singlelinecheck=false}
 \caption{Distribution of percentage change (\%/yr) in stand density (number of trees per ha) by biome.}
+\includegraphics[width=\textwidth]{../figures/hist_percent_change.pdf}
 \end{figure}
 
-
+% Figure S9 %%%%%%%%
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{../figures/fdisturbed.pdf}
+% \includegraphics[width=\textwidth]{../figures/fdisturbed.pdf}
 \caption{Trends in the fraction of disturbed forest plots, by biome. Fraction values are logit-transformed. The corresponding un-transformed values are indicated by the right y-axis in each plot. No regression fit is shown for tropical dry broadleaf forests (b) as only two points are available with non-zero values for the disturbed fraction.}
 \end{figure}
 
 \clearpage
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Environmental drivers}
+\headersection{Environmental drivers}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% Table S4 %%%%%%%%
 \input{../tables/mods_env_slopefilter.tex}
 
+% Table S5 %%%%%%%%
 \input{../tables/mods_env_int_slopefilter.tex}
 
 % \input{../tables/mods_env_quantilefilter.tex}
@@ -240,22 +308,20 @@ Biome & Mean & SE \\
 %
 % \clearpage
 
+\clearpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Global C sink}
+\headersection{Global C sink}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% Figure S10 %%%%%%%%
 \begin{figure}[ht!]
 \centering
 \includegraphics[width=\textwidth]{../figures/gg_map_sink_perforestarea_combined.pdf}
 \caption{(a) C sink in aboveground biomass due to temporal changes in the self-thinning relationship. (b) Standard deviation of estimates across bootstraps. Values are expressed per unit forest area (gC m$^{-2}$ yr$^{-1}$).}
 \end{figure}
 
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
 \bibliography{references_global_forest_thickening.bib}
 
-
 \end{document}
-
