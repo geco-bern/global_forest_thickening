@@ -77,20 +77,32 @@
   \item \textbf{Calculation of quadratic mean diameter}
   \item[] Quadratic mean diameter (QMD) was derived at the stand level using a harmonised approach across datasets that differed in their level of aggregation. 
   
-When individual tree measurements were available, stand basal area (BA) and stand density ($N$) were first calculated by aggregating tree-level data by plot and census year. Basal area was computed as the sum of individual tree basal area and expressed per unit ground area, while stand density was calculated as the number of trees per unit area. 
+When individual tree measurements were available, stand basal area (BA) and stand density ($N$) were first calculated by aggregating tree-level data by plot and census year. Basal area was computed as the sum of individual tree basal area and expressed per unit ground area, while stand density was calculated as the number of trees per unit area. When stand-level data were provided directly, reported values of basal area and stand density were used without further aggregation. 
 
-When stand-level data were provided directly, reported values of basal area and stand density were used without further aggregation. 
-
-The QMD was calculated as:
+Stand basal area is related to tree diameters as
 
 \begin{equation}
-\mathrm{QMD} = \sqrt{\frac{\mathrm{BA}}{k \times N}},
+\mathrm{BA} = \frac{\pi}{4} \sum_{i=1}^{N} d_i^2,
+\tag{Eq. S1.1}
 \end{equation}
 
-where $\mathrm{BA}$ is stand basal area ($\mathrm{m^2\,ha^{-1}}$), $N$ is the number of trees per ha and $k$ is a constant determined by the measurement units. For basal area expressed in square metres and QMD in centimetres, $k = 0.00007854$. 
+where $d_i$ is diameter at breast height and $N$ is stand density (trees ha$^{-1}$). 
 
-All variables were harmonised to SI units prior to analysis.
-This formulation ensures full comparability of QMD estimates across inventories differing in measurement units and sampling design.
+Quadratic mean diameter (QMD) represents the diameter corresponding to the mean basal area of all trees in a stand and is defined as
+
+\begin{equation}
+\mathrm{QMD} = \sqrt{\frac{1}{N} \sum_{i=1}^{N} d_i^2}.
+\tag{Eq. S1.2}
+\end{equation}
+
+Substituting the definition of basal area leads to
+
+\begin{equation}
+\mathrm{QMD} = \sqrt{\frac{4\,\mathrm{BA}}{\pi N}}.
+\tag{Eq. S1.3}
+\end{equation}
+
+In practice, QMD was calculated from stand basal area ($\mathrm{m^2\,ha^{-1}}$) and stand density (trees ha$^{-1}$). All variables were harmonised to SI units prior to analysis to ensure comparability across inventories differing in measurement units and sampling design.
 
 \end{itemize}
 
