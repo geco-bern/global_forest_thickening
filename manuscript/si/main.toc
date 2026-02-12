@@ -1,5 +1,0 @@
-\babel@toc {english}{}\relax 
-\contentsline {section}{I\hskip 1em\relax Data}{2}{Doc-Start}%
-\contentsline {section}{II\hskip 1em\relax Self-thinning trends}{14}{figure.caption.5}%
-\contentsline {section}{III\hskip 1em\relax Environmental drivers}{14}{figure.caption.12}%
-\contentsline {section}{IV\hskip 1em\relax Global C sink}{14}{table.5}%

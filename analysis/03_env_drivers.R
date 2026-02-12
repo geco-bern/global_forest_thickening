@@ -180,6 +180,10 @@ if (use_slopefilter){
 
 }
 
+# ## Additional analysis ------------
+#
+# vc_df <- as_tibble(VarCorr(mod_lmer_env_complete))
+
 
 ## Visualise fixed effects -----------------------------------------------------
 tl <- attr(terms(mod_lmer_env), "term.labels")
@@ -218,6 +222,8 @@ saveRDS(mod_lmer_env, file = here("data/mod_lmer_env.rds"))
 saveRDS(df_coef_plot, file = here("data/df_coef_plot.rds"))
 
 ## Plot effects ----------------------------------------------------------------
+df_coef_plot<- read_rds(here("data/df_coef_plot.rds"))
+
 fig2a <- df_coef_plot |>
   filter(eff == "Main effect") |>
   ggplot() +
@@ -236,13 +242,13 @@ fig2a <- df_coef_plot |>
     ),
     width = 0
   ) +
-  labs(x = "", y = "Coefficient (scaled)", title = "Effects on mean") +
+  labs(x = "", y = "Coefficient (scaled)", title = "Main effects") +
   geom_hline(yintercept = 0, linetype = "dotted") +
   theme_classic() +
   scale_x_discrete(
     labels = c(
-      "MAT" = "Mean\n Temperature",
-      "MI" = "Moisture\n Index",
+      "MAT" = "Mean\n temperature",
+      "MI" = "Moisture\n index",
       "ORGC" = "Organic\n carbon",
       "Ndep" = "Nitrogen\n deposition",
       "PBR" = "Phosporus\n availability"
@@ -273,7 +279,7 @@ fig2b <- df_coef_plot |>
     ),
     width = 0
   ) +
-  labs(x = "", y = "Coefficient (scaled)", title = "Effects on trend") +
+  labs(x = "", y = "Coefficient (scaled)", title = expression(paste("Interactions with ", italic("year")))) +
   geom_hline(yintercept = 0, linetype = "dotted") +
   theme_classic() +
   scale_x_discrete(

@@ -1134,6 +1134,33 @@ ggsave(
   height = 15
 )
 
+### Number: years covered -------------
+df_tmp <- read_rds(here("data/data_unm_undist_biome1.rds")) |>
+  bind_rows(
+    read_rds(here("data/data_unm_undist_biome2.rds"))
+  ) |>
+  bind_rows(
+    read_rds(here("data/data_unm_undist_biome4.rds"))
+  ) |>
+  bind_rows(
+    read_rds(here("data/data_unm_undist_biome5.rds"))
+  ) |>
+  bind_rows(
+    read_rds(here("data/data_unm_undist_biome6.rds"))
+  ) |>
+  bind_rows(
+    read_rds(here("data/data_unm_undist_biome12.rds"))
+  )
+
+df_tmp |>
+  ggplot(aes(x = year, y = after_stat(density))) +
+  geom_histogram() +
+  facet_wrap(~biome)
+
+# total years covered
+min(df_tmp$year)
+max(df_tmp$year)
+
 ## SI Figure: Length of repeated observations ----------------------------------
 df_len <- data_unm |>
   group_by(plotID, biome, biomeID) |>
@@ -1202,86 +1229,87 @@ ggsave(
 
 ## SI Figure: Bootstrapped percent change of N per year ------------------------
 # write_rds(df_boot, file = here("data/df_boot.rds"))
-#
-# df_boot |>
-#   mutate(percent_change = 100*(exp(estimate) - 1)) |>
-#   ggplot(aes(x = percent_change, group = biome, color = biome, fill = biome)) +
-#   geom_density(alpha = 0.5) +
-#   scale_fill_manual(
-#     values = c(
-#       "Boreal Forests/Taiga"                                       = "dodgerblue4",
-#       "Mediterranean Forests, Woodlands & Scrub"                   = "orangered3",
-#       "Temperate Broadleaf & Mixed Forests"                        = "darkgreen",
-#       "Temperate Conifer Forests"                                  = "lightseagreen",
-#       "Tropical & Subtropical Dry Broadleaf Forests"               = "goldenrod4",
-#       "Tropical & Subtropical Moist Broadleaf Forests"             = "springgreen3"
-#     ),
-#     na.value = NA,
-#     breaks = ~ .x[!is.na(.x)],
-#     name = ""
-#   ) +
-#   scale_color_manual(
-#     values = c(
-#       "Boreal Forests/Taiga"                                       = "dodgerblue4",
-#       "Mediterranean Forests, Woodlands & Scrub"                   = "orangered3",
-#       "Temperate Broadleaf & Mixed Forests"                        = "darkgreen",
-#       "Temperate Conifer Forests"                                  = "lightseagreen",
-#       "Tropical & Subtropical Dry Broadleaf Forests"               = "goldenrod4",
-#       "Tropical & Subtropical Moist Broadleaf Forests"             = "springgreen3"
-#     ),
-#     na.value = NA,
-#     breaks = ~ .x[!is.na(.x)],
-#     name = ""
-#   ) +
-#   theme_classic() +
-#   labs(
-#     x = expression(paste("Change in density (%"^{-yr}, ")")),
-#     y = "Density",
-#     color = "",
-#     fill = ""
-#     ) +
-#   theme(
-#     legend.position = "bottom"
-#   )
-#
-# ggsave(
-#   filename = here("manuscript/figures/distribution_percent_change.pdf"),
-#   width = 8,
-#   height = 4
-# )
-#
-# # table of bootstrapped estimates for coefficient and percent change
-# summary_stats <- df_boot |>
-#   mutate(percent_change = 100*(exp(estimate) - 1)) |>
-#   ungroup() |>
-#   group_by(biome) %>%
-#   summarise(
-#     estimate_mean = mean(estimate),
-#     estimate_sd = sd(estimate),
-#     estimate_ci_low = quantile(estimate, 0.025),
-#     estimate_ci_high = quantile(estimate, 0.975),
-#
-#     percent_change_mean = mean(percent_change),
-#     percent_change_sd = sd(percent_change),
-#     percent_change_ci_low = quantile(percent_change, 0.025),
-#     percent_change_ci_high = quantile(percent_change, 0.975),
-#
-#     .groups = "drop"
-#   )
-#
-# write_rds(summary_stats, file = here("data/summary_stats.csv"))
-#
-# create_table_latex(
-#   summary_stats |>
-#     select(
-#       Biome = biome,
-#       Mean = percent_change_mean,
-#       SD = percent_change_sd
-#       ),
-#     caption = "Percentage change of forest stand density.",
-#     filn = here("manuscript/tables/table_percentage_change.tex")
-#     # align = c("p{0.1cm}", "p{5cm}", "p{7cm}")
-#     )
+df_boot <- read_rds(here("data/df_boot.rds"))
+
+df_boot |>
+  mutate(percent_change = 100*(exp(estimate) - 1)) |>
+  ggplot(aes(x = percent_change, group = biome, color = biome, fill = biome)) +
+  geom_density(alpha = 0.5) +
+  scale_fill_manual(
+    values = c(
+      "Boreal Forests/Taiga"                                       = "dodgerblue4",
+      "Mediterranean Forests, Woodlands & Scrub"                   = "orangered3",
+      "Temperate Broadleaf & Mixed Forests"                        = "darkgreen",
+      "Temperate Conifer Forests"                                  = "lightseagreen",
+      "Tropical & Subtropical Dry Broadleaf Forests"               = "goldenrod4",
+      "Tropical & Subtropical Moist Broadleaf Forests"             = "springgreen3"
+    ),
+    na.value = NA,
+    breaks = ~ .x[!is.na(.x)],
+    name = ""
+  ) +
+  scale_color_manual(
+    values = c(
+      "Boreal Forests/Taiga"                                       = "dodgerblue4",
+      "Mediterranean Forests, Woodlands & Scrub"                   = "orangered3",
+      "Temperate Broadleaf & Mixed Forests"                        = "darkgreen",
+      "Temperate Conifer Forests"                                  = "lightseagreen",
+      "Tropical & Subtropical Dry Broadleaf Forests"               = "goldenrod4",
+      "Tropical & Subtropical Moist Broadleaf Forests"             = "springgreen3"
+    ),
+    na.value = NA,
+    breaks = ~ .x[!is.na(.x)],
+    name = ""
+  ) +
+  theme_classic() +
+  labs(
+    x = expression(paste("Change in density (%"^{-yr}, ")")),
+    y = "Density",
+    color = "",
+    fill = ""
+    ) +
+  theme(
+    legend.position = "bottom"
+  )
+
+ggsave(
+  filename = here("manuscript/figures/distribution_percent_change.pdf"),
+  width = 8,
+  height = 4
+)
+
+# table of bootstrapped estimates for coefficient and percent change
+summary_stats <- df_boot |>
+  mutate(percent_change = 100*(exp(estimate) - 1)) |>
+  ungroup() |>
+  group_by(biome) %>%
+  summarise(
+    estimate_mean = mean(estimate),
+    estimate_sd = sd(estimate),
+    estimate_ci_low = quantile(estimate, 0.025),
+    estimate_ci_high = quantile(estimate, 0.975),
+
+    percent_change_mean = mean(percent_change),
+    percent_change_sd = sd(percent_change),
+    percent_change_ci_low = quantile(percent_change, 0.025),
+    percent_change_ci_high = quantile(percent_change, 0.975),
+
+    .groups = "drop"
+  )
+
+write_rds(summary_stats, file = here("data/summary_stats.csv"))
+
+create_table_latex(
+  summary_stats |>
+    select(
+      Biome = biome,
+      Mean = percent_change_mean,
+      SD = percent_change_sd
+      ),
+    caption = "Percentage change of forest stand density.",
+    filn = here("manuscript/tables/table_percentage_change.tex")
+    # align = c("p{0.1cm}", "p{5cm}", "p{7cm}")
+    )
 
 ## SI Figure: Disturbed plots --------------------------------------------------
 cowplot::plot_grid(
