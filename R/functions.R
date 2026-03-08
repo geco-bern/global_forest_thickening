@@ -347,12 +347,9 @@ from_tree_data <- function(data) {
     group_by(country, plotID, lon, lat, year, plotsize) |>
     reframe(
       density = n() / plotsize,
-      ba = sum(ba_tree) / plotsize,
+      ba = sum(ba_tree, na.rm = T) / plotsize,
       dbh = mean(dbh, na.rm = T),
-      biomass = sum(biomass, na.rm = F) / plotsize,
-      years_since_management = mean(years_since_management, na.rm = F),
-      management = mean(management, na.rm = F)
-    ) |>
+      biomass = sum(biomass, na.rm = F) / plotsize) |>
     ungroup() |>
     distinct() |>
     # calculate QMD and logs
@@ -393,7 +390,7 @@ biomes_coords_utm <- function(data) {
     as.data.frame()
 
   # sf transformation of df sets coordinate columns and projection epsg
-  if (deparse(substitute(data)) == "data_nfi_spain") {
+  if (deparse(substitute(data)) == "df_nfi_spain") {
     coords_sf <- sf::st_as_sf(
       coords,
       coords = c("lonUTM", "latUTM"),
@@ -417,7 +414,7 @@ biomes_coords_utm <- function(data) {
     )
   }
 
-  if (deparse(substitute(data)) == "data_forst" |
+  if (deparse(substitute(data)) == "df_fvabw" |
     deparse(substitute(data)) == "data_lwf") {
     coords_sf <- sf::st_as_sf(
       coords,
@@ -487,8 +484,8 @@ biomes_coords_utm <- function(data) {
 
   # Select variables to join datasets
   data_agg <- data_agg |>
-    select(dataset, country, plotID, plotsize, lon, lat, census, year, management, years_since_management, ba, dbh, QMD, density, logQMD, logDensity, period, ba_inc, biomass, n_census, species, biomeID, biome, type) %>%
-    relocate(any_of(c("dataset", "country", "plotID", "plotsize", "lon", "lat", "census", "year", "management", "years_since_management", "ba", "dbh", "QMD", "density", "logQMD", "logDensity", "period", "ba_inc", "biomass", "n_census", "species", "biomeID", "biome", "type"))) |>
+    select(dataset, country, plotID, plotsize, lon, lat, census, year, management, management_cat, management_since_census1_yrs, ba, dbh, QMD, density, logQMD, logDensity, period, ba_inc, biomass, n_census, species, biomeID, biome, type) %>%
+    relocate(any_of(c("dataset", "country", "plotID", "plotsize", "lon", "lat", "census", "year", "management", "management_cat","management_since_census1_yrs", "ba", "dbh", "QMD", "density", "logQMD", "logDensity", "period", "ba_inc", "biomass", "n_census", "species", "biomeID", "biome", "type"))) |>
     mutate(
       plotID = as.character(plotID),
       census = as.character(census)
@@ -540,8 +537,8 @@ biomes_coords_latlon <- function(data) {
 
   # Select variables to join datasets
   data_agg <- data_agg |>
-    select(dataset, country, plotID, plotsize, lon, lat, census, year, management, years_since_management, ba, dbh, QMD, density, logQMD, logDensity, period, ba_inc, biomass, n_census, species, biomeID, biome, type) %>%
-    relocate(any_of(c("dataset", "country", "plotID", "plotsize", "lon", "lat", "census", "year", "management", "years_since_management", "ba", "dbh", "QMD", "density", "logQMD", "logDensity", "period", "ba_inc", "biomass", "n_census", "species", "biomeID", "biome", "type"))) |>
+    select(dataset, country, plotID, plotsize, lon, lat, census, year, management, management_cat, management_since_census1_yrs, ba, dbh, QMD, density, logQMD, logDensity, period, ba_inc, biomass, n_census, species, biomeID, biome, type) %>%
+    relocate(any_of(c("dataset", "country", "plotID", "plotsize", "lon", "lat", "census", "year", "management", "management_cat", "management_since_census1_yrs", "ba", "dbh", "QMD", "density", "logQMD", "logDensity", "period", "ba_inc", "biomass", "n_census", "species", "biomeID", "biome", "type"))) |>
     mutate(
       plotID = as.character(plotID),
       census = as.character(census)
