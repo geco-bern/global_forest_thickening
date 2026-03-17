@@ -1,9 +1,9 @@
-filter_stl_slope <- function(df, fit_lqmm){
+filter_stl_slope <- function(df, fit_lqmm, multiplier_sd = 0.5){
   # Filters data based on whether a plot's regression slope of logN ~ logQMD is
   # within a certain margin of the regression slope obtained from the quantile
   # regression mixed effects model.
   df_byplot <- df |>
-    group_by(plotID, dataset) |>
+    group_by(plotID) |>
     nest() |>
     mutate(nobs = purrr::map_int(data, ~nrow(.))) |>
     filter(nobs >= 3) |>  # minimum satisfied by design of data selection, but here for safety
@@ -21,7 +21,10 @@ filter_stl_slope <- function(df, fit_lqmm){
   # subset data based on slope: must be within a certain margin of slope obtained from quantile regression
   # margin defined as half a standard deviation across all slopes
   df_byplot <- df_byplot |>
-    mutate(filter_slope = slope < slope_lqmm + 0.5 * sd_slopes & slope > slope_lqmm - 0.5 * sd_slopes)
+    mutate(filter_slope = 
+      slope < slope_lqmm + multiplier_sd * sd_slopes & 
+      slope > slope_lqmm - multiplier_sd * sd_slopes
+  )
 
   return(df_byplot)
 }

@@ -43,7 +43,7 @@ source(here("R/plot_disturbed.R"))
 data_unm <- readRDS(here("data/inputs/data_unm.rds"))
 
 # optionally subset
-do_subset_primary <- TRUE  # <- manually adjust here
+do_subset_primary <- FALSE  # <- manually adjust here
 
 if (do_subset_primary){
   suffix_subset <- "_SUBSET"
@@ -494,6 +494,11 @@ gg_lqmm_biome4 <- plot_lqmm_bybiome(
   name = bquote(bold("c") ~ ~"Temperate Broadleaf & Mixed Forests")
 )
 gg_lqmm_biome4
+
+gg_lqmm_biome4 + 
+  labs(title = NULL, subtitle = NULL)
+
+ggsave(here("fig/gg_lqmm_biome4.pdf"), width = 4, height = 3)
 
 ### Plot STL from LQMM with interaction ----------------------------------------
 gg_lqmm_int_biome4 <- plot_lqmm_bybiome(
