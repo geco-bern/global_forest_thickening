@@ -86,11 +86,11 @@ data_unm_und_noin <- data_unm_und_noin |>
     )
   )
 
-# df_summ_dataset_major <- data_unm |> 
-#   group_by(dataset_major) |> 
-#   summarise(n = n())
+df_summ_dataset_major <- data_unm_und_noin |> 
+  group_by(dataset_major) |> 
+  summarise(n = n())
 
-# View(df_summ_dataset_major)
+View(df_summ_dataset_major)
 
 ### Remove years based on QMD distribution ------------
 # (at head of time series)
