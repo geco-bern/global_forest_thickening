@@ -6,9 +6,12 @@ plot_lqmm_bybiome <- function(data, mod, name, plot_legend = FALSE){
   year_mean <- mean(data$year)
   year_sd <- sd(data$year)
 
+  # get three round decades that are centered around the available years in the dataset
+  display_years <- get_centered_decades(data$year)
+
   # predict STL as 70% and 90% quantiles from regression fit for three chosen years
   df_pred <- purrr::map_dfr(
-    as.list(c(1985, 2000, 2015)),
+    as.list(display_years),
     ~ tibble(
       logQMD = seq(from = min(data$logQMD), to = max(data$logQMD), length.out = 100),
       year = .x,
@@ -34,7 +37,7 @@ plot_lqmm_bybiome <- function(data, mod, name, plot_legend = FALSE){
       pred_90 = predict(
         mod,
         level = 0,
-        newdata = . # pick(logQMD_sc, year_sc, logQMD_sc:year_sc, plotID) # cur_data_all()
+        newdata = .
       )
     ) |>
     mutate(year = as.factor(year))
@@ -105,35 +108,43 @@ plot_lqmm_bybiome <- function(data, mod, name, plot_legend = FALSE){
 
 }
 
-plot_lqmm_byqmdbin <- function(df_lqmm_byqmdbin, df_lqmm_byqmdbin_including_disturbed,
-                               x_limits = c(2.2, 4.7),
-                               y_limits = c(-0.56, 0.56),
-                               x_breaks = seq(3, 4, 1),
-                               y_breaks = seq(-0.4, 0.4, 0.4)) {
+plot_lqmm_byqmdbin <- function(
+  df_lqmm_byqmdbin, 
+  df_lqmm_byqmdbin_including_disturbed = NULL,
+  x_limits = c(2.2, 4.7),
+  y_limits = c(-0.56, 0.56),
+  x_breaks = seq(3, 4, 1),
+  y_breaks = seq(-0.4, 0.4, 0.4)
+) {
 
-  ggplot() +
+  gg <- ggplot()
+  
+  if (!is.null(df_lqmm_byqmdbin_including_disturbed)){
+    gg <- gg +
+      # including disturbed plots — grey
+      geom_point(
+        aes(
+          as.numeric(as.character(bin_lqmm)),
+          coef_year
+        ),
+        data = df_lqmm_byqmdbin_including_disturbed,
+        size = 1.5,
+        color = "grey"
+      ) +
+      geom_errorbar(
+        aes(
+          as.numeric(as.character(bin_lqmm)),
+          coef_year,
+          ymin = coef_year_lower,
+          ymax = coef_year_upper
+        ),
+        data = df_lqmm_byqmdbin_including_disturbed,
+        width = 0,
+        color = "grey"
+      )
+  }
 
-    # including disturbed plots — grey
-    geom_point(
-      aes(
-        as.numeric(as.character(bin_lqmm)),
-        coef_year
-      ),
-      data = df_lqmm_byqmdbin_including_disturbed,
-      size = 1.5,
-      color = "grey"
-    ) +
-    geom_errorbar(
-      aes(
-        as.numeric(as.character(bin_lqmm)),
-        coef_year,
-        ymin = coef_year_lower,
-        ymax = coef_year_upper
-      ),
-      data = df_lqmm_byqmdbin_including_disturbed,
-      width = 0,
-      color = "grey"
-    ) +
+  gg <- gg +
 
     # excluding disturbed plots — black
     geom_point(
@@ -170,4 +181,22 @@ plot_lqmm_byqmdbin <- function(df_lqmm_byqmdbin, df_lqmm_byqmdbin_including_dist
     # Scales
     scale_x_continuous(limits = x_limits, breaks = x_breaks) +
     scale_y_continuous(limits = y_limits, breaks = y_breaks)
+
+  return(gg)
+}
+
+get_centered_decades <- function(years) {
+  rng <- range(years, na.rm = TRUE)
+  
+  # center and spread
+  mid <- mean(rng)
+  span <- diff(rng)
+  
+  # three evenly spaced points
+  pts <- mid + c(-1, 0, 1) * span / 4
+  
+  # round to nearest 10
+  decades <- round(pts / 10) * 10
+  
+  unique(decades)
 }
