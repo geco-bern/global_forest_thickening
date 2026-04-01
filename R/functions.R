@@ -349,6 +349,7 @@ from_tree_data <- function(data) {
       density = n() / plotsize,
       ba = sum(ba_tree, na.rm = T) / plotsize,
       dbh = mean(dbh, na.rm = T),
+      management_since_census1_yrs = mean(management_since_census1_yrs, na.rm = T),
       biomass = sum(biomass, na.rm = F) / plotsize) |>
     ungroup() |>
     distinct() |>
@@ -398,7 +399,7 @@ biomes_coords_utm <- function(data) {
     ) # 25832 #32630 #EPSG:25830 epsg:32630
   }
 
-  if (deparse(substitute(data)) == "data_nwfva") {
+  if (deparse(substitute(data)) == "df_nwfva") {
     coords_sf <- sf::st_as_sf(
       coords,
       coords = c("lonUTM", "latUTM"),
@@ -406,7 +407,7 @@ biomes_coords_utm <- function(data) {
     ) # 25832 #32630
   }
 
-  if (deparse(substitute(data)) == "data_unito") {
+  if (deparse(substitute(data)) == "df_unito") {
     coords_sf <- sf::st_as_sf(
       coords,
       coords = c("lonUTM", "latUTM"),
@@ -415,7 +416,7 @@ biomes_coords_utm <- function(data) {
   }
 
   if (deparse(substitute(data)) == "df_fvabw" |
-    deparse(substitute(data)) == "data_lwf") {
+    deparse(substitute(data)) == "df_lwf") {
     coords_sf <- sf::st_as_sf(
       coords,
       coords = c("lonUTM", "latUTM"),
