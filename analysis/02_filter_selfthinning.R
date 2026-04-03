@@ -55,20 +55,19 @@ if (do_subset_primary){
 
 ### Remove disturbed plots ---------------------------------------------------
 data_unm_und <- data_unm |>
-  identify_disturbed_plots() |>
-  filter(ndisturbed == 0)
+  identify_disturbed_plots()
 
 ### Remove ingrowth-affected plots -------------------------------------------
 data_unm_und_noin <- data_unm_und |>
-  identify_ingrowth_plots() |>
-  filter(ningrowth == 0)
+  identify_ingrowth_plots()
 
 ## By (major) dataset ----------------------------------------------------------
+### Define major datasets ----------
 # grouping into major based on analysis/01_clean_data.R
 data_unm_und_noin <- data_unm_und_noin |> 
   mutate(
     dataset_major = ifelse(
-      dataset %in% c("bnp", "czu", "forst", "iberbas", "incds", "lwf", "nbw", "nfr", "nwfva", "tuzvo", "ul", "unito", "urk", "wuls"),
+      dataset %in% c("bnp", "czu", "forst", "iberbas", "incds", "lwf", "nbw", "nfr", "nwfva", "tuzvo", "ul", "unito", "urk", "wuls", "tuzvo_tree", "nwfva_tree", "ul_tree"),
       "euforia",
       ifelse(
         dataset %in% c("luquillo", "bci", "scbi", "palanam", "serc", "pasoh", "mudumalai"),
@@ -93,10 +92,28 @@ df_summ_dataset_major <- data_unm_und_noin |>
 View(df_summ_dataset_major)
 
 ### Remove years based on QMD distribution ------------
-# (at head of time series)
+# (at head or tail of time series)
 # Compare pairwise between N-year bins:
 data_unm_und_noin_qmdfilt <- data_unm_und_noin |> 
+  # filter(dataset_major == "aus_plots") |> 
   group_by(dataset_major) |> 
   nest() |> 
-  mutate(data = purrr::map(data, ~identify_badbins(.)))
+  mutate(out = purrr::map2(data, dataset_major, ~identify_badbins(.x, .y))) |> 
+  mutate(
+    gg_badbins = purrr::map(out, "gg"),
+    data = purrr::map(out, "df_binned")
+)
+
+gg_qmdfilter <- cowplot::plot_grid(
+  plotlist = data_unm_und_noin_qmdfilt$gg_badbins,
+  ncol = 4,
+  labels = letters[1:18]
+)
+
+ggsave(
+  here("fig/qmdfilter.pdf"),
+  plot = gg_qmdfilter,
+  width = 12,
+  height = 10
+)
 
