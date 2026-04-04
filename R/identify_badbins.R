@@ -1,4 +1,6 @@
-identify_badbins <- function(df, binwidth = 10){
+identify_badbins <- function(df, dataset_name, binwidth = 10){
+
+  message(unique(df$dataset))
 
   df_binned <- df |> 
     mutate(yearbin = floor(year / binwidth) * binwidth) %>%
@@ -7,7 +9,7 @@ identify_badbins <- function(df, binwidth = 10){
     arrange(yearbin) |> 
     mutate(nobs = purrr::map_int(data, ~nrow(.)))
     # filter(nobs >= 10)
-
+  
   # compare pairwise between bins
   pairs <- expand_grid(b1 = df_binned$yearbin, b2 = df_binned$yearbin) %>%
     filter(b1 < b2) %>%
@@ -16,42 +18,109 @@ identify_badbins <- function(df, binwidth = 10){
         x <- df_binned$data[df_binned$yearbin == .x][[1]]$logQMD
         y <- df_binned$data[df_binned$yearbin == .y][[1]]$logQMD
         
+        # # testing differences of logQMD distributions in pairs of year bins
+        # ks.test(x, y)$p.value
+
         # test measures the distance of the two medians, normalised by the inter-quartile range
-        abs(median(x) - median(y)) / diff(quantile(x, probs = c(0.25, 0.75)))
+        abs(median(x) - median(y)) / diff(quantile(x, probs = c(0.45, 0.65)))
 
       })
     )
 
-  # count how often each bin is “different”
-  bin_scores <- pairs %>%
-    mutate(diff = test > 1.0) %>%
-    pivot_longer(c(b1, b2), values_to = "bin") %>%
-    group_by(bin) %>%
-    summarise(diff_rate = mean(diff), .groups = "drop")
+  if (nrow(pairs) == 1 && pairs$test > 1.0){
+    # drop all data -- excessive QMD shift between the two available bins
+    return(
+      list(
+        df_binned = df_binned,
+        gg = NA
+      )
+    )
+  } else {
 
-  # Remove bins at head (old years) that differ from the majority
-  tmp <- bin_scores %>%
-    filter(diff_rate > 2/3) %>%   # differs from >75% of bins
-    pull(bin)
+    # count how often each bin is “different”
+    bin_scores <- pairs %>%
+      mutate(diff = test > 1.0) %>%   # for normalised median comparisons
+      # mutate(diff = test < 1e-6) %>%  # for ks test
+      pivot_longer(c(b1, b2), values_to = "bin") %>%
+      group_by(bin) %>%
+      summarise(diff_rate = mean(diff), .groups = "drop") |> 
 
-  remove_smaller_equal_yearbin <- ifelse(
-    length(tmp) > 0, 
-    max(tmp),
-    -9999)
+      # cut to bins that
+      # keep only low == TRUE
+      # split into consecutive blocks
+      arrange(bin) %>%
+      mutate(
+        low = diff_rate <= 2/3,
+        grp = cumsum(lag(!low, default = TRUE))
+      )
 
-  out <- df_binned |> 
-    mutate(badqmdbin = yearbin <= remove_smaller_equal_yearbin) |> 
-    ungroup() |> 
-    select(-yearbin, -nobs) |> 
-    unnest(data)
+    # keep the longest block
+    longest_group <- bin_scores %>%
+      filter(low) %>%
+      group_by(grp) %>%
+      summarise(len = n()) |> 
+      arrange(desc(len)) |> 
+      ungroup() |> 
+      slice(1) |> 
+      pull(grp)
 
-  # # visualise bad bin removal
-  # df_binned |> 
-  #   unnest(data) |> 
-  #   mutate(yearbin = as.factor(yearbin)) |> 
-  #   ggplot(aes(yearbin, logQMD, fill = badqmdbin)) +
-  #   geom_boxplot()
+    if (length(longest_group) > 0){
 
-  return(out)
+      keep_bins <- bin_scores |> 
+        filter(grp == longest_group & low) |> 
+        pull(bin)
+
+      df_binned <- df_binned |> 
+        unnest(data) |> 
+        mutate(badqmdbin = !(yearbin %in% keep_bins)) |> 
+        ungroup() |> 
+        select(-nobs)
+
+      # visualise bad bin removal
+      gg <- df_binned |> 
+        mutate(yearbin = as.factor(yearbin)) |> 
+        ggplot(aes(yearbin, logQMD, fill = badqmdbin)) +
+        geom_boxplot() +
+        labs(
+          x = "10-year bin",
+          title = dataset_name
+        ) +
+        scale_fill_manual(values = c("grey40", "tomato")) +
+        theme_minimal() +
+        theme(
+          legend.position = "none"
+        )
+
+    } else {
+      # all are bad bins
+      df_binned <- df_binned |> 
+        unnest(data) |> 
+        mutate(badqmdbin = TRUE) |> 
+        ungroup() |> 
+        select(-nobs)
+
+      gg <- df_binned |> 
+        mutate(yearbin = as.factor(yearbin)) |> 
+        ggplot(aes(yearbin, logQMD, fill = "tomato")) +
+        geom_boxplot() +
+        labs(
+          x = "10-year bin",
+          title = dataset_name
+        ) +
+        theme_minimal() +
+        theme(
+          legend.position = "none"
+        )
+
+    }
+
+  }
+
+  return(
+    list(
+      df_binned = df_binned,
+      gg = gg
+    )
+  )
 
 }

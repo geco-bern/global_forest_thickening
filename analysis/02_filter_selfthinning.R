@@ -18,6 +18,7 @@
 ## Loading ------------------------------------------------------------------
 library(tidyverse)
 library(here)
+library(segmented)
 
 source(here("R/identify_disturbed_plots.R"))
 source(here("R/identify_ingrowth_plots.R"))
@@ -55,20 +56,19 @@ if (do_subset_primary){
 
 ### Remove disturbed plots ---------------------------------------------------
 data_unm_und <- data_unm |>
-  identify_disturbed_plots() |>
-  filter(ndisturbed == 0)
+  identify_disturbed_plots()
 
 ### Remove ingrowth-affected plots -------------------------------------------
 data_unm_und_noin <- data_unm_und |>
-  identify_ingrowth_plots() |>
-  filter(ningrowth == 0)
+  identify_ingrowth_plots()
 
 ## By (major) dataset ----------------------------------------------------------
+### Define major datasets ----------
 # grouping into major based on analysis/01_clean_data.R
 data_unm_und_noin <- data_unm_und_noin |> 
   mutate(
     dataset_major = ifelse(
-      dataset %in% c("bnp", "czu", "forst", "iberbas", "incds", "lwf", "nbw", "nfr", "nwfva", "tuzvo", "ul", "unito", "urk", "wuls"),
+      dataset %in% c("bnp", "czu", "forst", "iberbas", "incds", "lwf", "nbw", "nfr", "nwfva", "tuzvo", "ul", "unito", "urk", "wuls", "tuzvo_tree", "nwfva_tree", "ul_tree"),
       "euforia",
       ifelse(
         dataset %in% c("luquillo", "bci", "scbi", "palanam", "serc", "pasoh", "mudumalai"),
@@ -93,10 +93,88 @@ df_summ_dataset_major <- data_unm_und_noin |>
 View(df_summ_dataset_major)
 
 ### Remove years based on QMD distribution ------------
-# (at head of time series)
+# (at head or tail of time series)
 # Compare pairwise between N-year bins:
 data_unm_und_noin_qmdfilt <- data_unm_und_noin |> 
+  # filter(dataset_major == "aus_plots") |> 
   group_by(dataset_major) |> 
   nest() |> 
-  mutate(data = purrr::map(data, ~identify_badbins(.)))
+  mutate(out = purrr::map2(data, dataset_major, ~identify_badbins(.x, .y))) |> 
+  mutate(
+    gg_badbins = purrr::map(out, "gg"),
+    data = purrr::map(out, "df_binned")
+)
 
+gg_qmdfilter <- cowplot::plot_grid(
+  plotlist = data_unm_und_noin_qmdfilt$gg_badbins,
+  ncol = 4,
+  labels = letters[1:18]
+)
+
+ggsave(
+  here("fig/qmdfilter.pdf"),
+  plot = gg_qmdfilter,
+  width = 12,
+  height = 10
+)
+
+### Filter based on STL slope ----------
+
+filter_stl_slope2 <- function(df){
+
+  df <- data_unm_und_noin_qmdfilt$data[[1]]
+
+  df_byplot <- df |>
+    group_by(plotID) |>
+    nest() |>
+    mutate(nobs = purrr::map_int(data, ~nrow(.))) |>
+    filter(nobs >= 3) |>  # minimum satisfied by design of data selection, but here for safety
+
+    # linear model
+    mutate(
+      linmod = purrr::map(data, ~lm(logDensity ~ logQMD, data = .))
+    ) |>
+    
+    # segmented model (1 breakpoint → 2 segments)
+    mutate(
+      segmod = map(linmod, ~ {
+        tryCatch(
+          segmented(.x, seg.Z = ~logQMD, npsi = 1),
+          error = function(e) NULL
+        )
+      })
+    ) |> 
+    
+    mutate(
+      slope_lin = map_dbl(linmod, ~ coef(.x)[2]),
+      slopes_seg = map(segmod, ~ if (is.null(.x)) NA_real_ else slope(.x)$logQMD_sc[, "Est."])
+    )
+  
+  # Retain only inner 90% of the data by slope from simple linear regression
+  range_accepted <- quantile(df_byplot$slope_lin, c(0.05, 0.95), na.rm = TRUE)
+
+  df_byplot |> 
+    ggplot(aes(slope_lin, after_stat(count))) +
+    geom_histogram(color = "black", fill = "grey70") +
+    xlim(range_accepted + c(-10, 10)) +
+    annotate(
+      "rect",
+      xmin = range_accepted[1], xmax = range_accepted[2],
+      ymin = 0, ymax = Inf,
+      fill = "red",
+      alpha = 0.3  # transparency
+    )
+
+  df <- df_byplot |> 
+    mutate(
+      bad_lin = slope_lin < range_accepted[1] | slope_lin > range_accepted[2],
+      bad_seg = map_lgl(slopes_seg, ~ any(.x < range_accepted[1] | .x > range_accepted[2], na.rm = TRUE))
+    ) |> 
+    mutate(
+      badslope = bad_lin | bad_seg
+    ) %>%
+    select(plotID, badslope, data) |> 
+    unnest(data)
+
+  return(df)
+}
