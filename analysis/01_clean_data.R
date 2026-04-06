@@ -38,244 +38,243 @@ plot_stl(df_nfi_sweeden)
 plot_map(df_nfi_sweeden)
 
 # FIA US ----
-data_fia_us <- readRDS(here::here("data/inputs/data_fia_us.rds"))
-data_fia_us
-plot_stl(data_fia_us)
-plot_map(data_fia_us)
+df_fia_us <- readRDS(here::here("data/inputs/df_fia_us.rds"))
+df_fia_us
+plot_stl(df_fia_us)
+plot_map(df_fia_us)
 
 # NFI Switzerland ----
-data_nfi_switzerland <- readRDS(here::here("data/inputs/data_nfi_swi.rds"))
-data_nfi_switzerland
-plot_stl(data_nfi_switzerland)
-plot_map(data_nfi_switzerland)
+df_nfi_switzerland <- readRDS(here::here("data/inputs/df_nfi_swi.rds"))
+df_nfi_switzerland
+plot_stl(df_nfi_switzerland)
+plot_map(df_nfi_switzerland)
 
 # NFI Norway ----
-data_nfi_norway <- readRDS(here::here("data/inputs/data_nfi_nor.rds"))
-data_nfi_norway
-plot_stl(data_nfi_norway)
-plot_map(data_nfi_norway)
+df_nfi_norway <- readRDS(here::here("data/inputs/df_nfi_nor.rds"))
+df_nfi_norway
+plot_stl(df_nfi_norway)
+plot_map(df_nfi_norway)
 
 # EFM Switzerland ----
-data_efm_swi <- readRDS(here::here("data/inputs/data_efm_swi.rds"))
-data_efm_swi
-plot_stl(data_efm_swi)
-plot_map(data_efm_swi)
+df_efm_swi <- readRDS(here::here("data/inputs/df_efm_swi.rds"))
+df_efm_swi
+plot_stl(df_efm_swi)
+plot_map(df_efm_swi)
 
 # Uholka plot ----
-data_uholka <- readRDS(here::here("data/inputs/data_uholka.rds"))
-data_uholka
-plot_stl(data_uholka)
-plot_map(data_uholka)
+df_uholka <- readRDS(here::here("data/inputs/df_uholka.rds"))
+df_uholka
+plot_stl(df_uholka)
+plot_map(df_uholka)
 
 # Greece sites ----
-data_greece <- readRDS(here::here("data/inputs/data_fp_gre.rds"))
-data_greece
-plot_stl(data_greece)
-plot_map(data_greece)
+df_fep_gre <- readRDS(here::here("data/inputs/df_fep_gre.rds"))
+df_fep_gre
+plot_stl(df_fep_gre)
+plot_map(df_fep_gre)
 
 # France sites ----
-data_france <- readRDS(here::here("data/inputs/data_fp_fra.rds"))
-data_france
-plot_stl(data_france)
-plot_map(data_france)
+df_inrae_lessem <- readRDS(here::here("data/inputs/df_inrae_lessem.rds"))
+df_inrae_lessem
+plot_stl(df_inrae_lessem)
+plot_map(df_inrae_lessem)
 
 # EuFoRia plots ----
 
 ## bnp ----
-data_bnp <- readRDS(here::here("data/inputs/data_euf_bnp.rds"))
-data_bnp
-plot_stl(data_bnp)
-plot_map(data_bnp)
+df_bnp <- readRDS(here::here("data/inputs/df_bnp.rds"))
+df_bnp
+plot_stl(df_bnp)
+plot_map(df_bnp)
 
 ## czu ----
-data_czu <- readRDS(here::here("data/inputs/data_euf_czu.rds"))
-data_czu
-plot_stl(data_czu)
-plot_map(data_czu)
+df_czu <- readRDS(here::here("data/inputs/df_czu.rds"))
+df_czu
+plot_stl(df_czu)
+plot_map(df_czu)
 
-## forst ----
-data_forst <- readRDS(here::here("data/inputs/data_euf_forst.rds"))
-data_forst
-plot_stl(data_forst)
-plot_map(data_forst)
+## fvabw ----
+df_fvabw <- readRDS(here::here("data/inputs/df_fvabw.rds"))
+df_fvabw
+plot_stl(df_fvabw)
+plot_map(df_fvabw)
 
 ## iberbas ----
-data_iberbas <- readRDS(here::here("data/inputs/data_euf_iberbas.rds"))
-data_iberbas
-plot_stl(data_iberbas)
-plot_map(data_iberbas)
+df_iberbas <- readRDS(here::here("data/inputs/df_iberbas.rds"))
+df_iberbas
+plot_stl(df_iberbas)
+plot_map(df_iberbas)
 
-## incds ----
-data_incds <- readRDS(here::here("data/inputs/data_euf_incds.rds"))
-data_incds
-plot_stl(data_incds)
-plot_map(data_incds)
+## unitbv ----
+df_unitbv <- readRDS(here::here("data/inputs/df_unitbv.rds"))
+df_unitbv
+plot_stl(df_unitbv)
+plot_map(df_unitbv)
 
 ## lwf ----
-data_lwf <- readRDS(here::here("data/inputs/data_euf_lwf.rds"))
-data_lwf
-plot_stl(data_lwf)
-plot_map(data_lwf)
+df_lwf <- readRDS(here::here("data/inputs/df_lwf.rds"))
+df_lwf
+plot_stl(df_lwf)
+plot_map(df_lwf)
 
-## nbw ----
-data_nbw <- readRDS(here::here("data/inputs/data_euf_nbw.rds"))
-data_nbw
-plot_stl(data_nbw)
-plot_map(data_nbw)
+## npvbw ----
+df_npvbw <- readRDS(here::here("data/inputs/df_npvbw.rds"))
+df_npvbw
+plot_stl(df_npvbw)
+plot_map(df_npvbw)
 
 ## nfr ----
-data_nfr_swi <- readRDS(here::here("data/inputs/data_nfr_swi.rds"))
-data_nfr_swi
-plot_stl(data_nfr_swi)
-plot_map(data_nfr_swi)
+df_nfr_swi <- readRDS(here::here("data/inputs/df_nfr_swi.rds"))
+df_nfr_swi
+plot_stl(df_nfr_swi)
+plot_map(df_nfr_swi)
 
 ## nwfva ----
-data_nwfva <- readRDS(here::here("data/inputs/data_euf_nwfva.rds"))
-data_nwfva
-plot_stl(data_nwfva)
-plot_map(data_nwfva)
+df_nwfva <- readRDS(here::here("data/inputs/df_nwfva.rds"))
+df_nwfva
+plot_stl(df_nwfva)
+plot_map(df_nwfva)
 
 ## tuzvo ----
-data_tuzvo <- readRDS(here::here("data/inputs/data_euf_tuzvo.rds"))
-data_tuzvo
-plot_stl(data_tuzvo)
-plot_map(data_tuzvo)
+df_tuzvo <- readRDS(here::here("data/inputs/df_tuzvo.rds"))
+df_tuzvo
+plot_stl(df_tuzvo)
+plot_map(df_tuzvo)
 
 ## ul ----
-data_ul <- readRDS(here::here("data/inputs/data_euf_ul.rds"))
-data_ul
-plot_stl(data_ul)
-plot_map(data_ul)
+df_ul <- readRDS(here::here("data/inputs/df_ul.rds"))
+df_ul
+plot_stl(df_ul)
+plot_map(df_ul)
 
 ## unito ----
-data_unito <- readRDS(here::here("data/inputs/data_euf_unito.rds"))
-data_unito
-plot_stl(data_unito)
-plot_map(data_unito)
+df_unito <- readRDS(here::here("data/inputs/df_unito.rds"))
+df_unito
+plot_stl(df_unito)
+plot_map(df_unito)
 
 ## urk ----
-data_urk <- readRDS(here::here("data/inputs/data_euf_urk.rds"))
-data_urk
-plot_stl(data_urk)
-plot_map(data_urk)
+df_urk <- readRDS(here::here("data/inputs/df_urk.rds"))
+df_urk
+plot_stl(df_urk)
+plot_map(df_urk)
 
 ## wuls ----
-data_wuls <- readRDS(here::here("data/inputs/data_euf_wuls.rds"))
-data_wuls
-plot_stl(data_wuls)
-plot_map(data_wuls)
+df_wuls <- readRDS(here::here("data/inputs/df_wuls.rds"))
+df_wuls
+plot_stl(df_wuls)
+plot_map(df_wuls)
 
 # ForestGEO ----
 
 ## Luquillo ----
-data_luquillo <- readRDS(here::here("data/inputs/data_luquillo.rds"))
-data_luquillo
-plot_stl(data_luquillo)
-plot_map(data_luquillo)
+df_luquillo <- readRDS(here::here("data/inputs/df_luquillo.rds")) 
+df_luquillo
+plot_stl(df_luquillo)
+plot_map(df_luquillo)
 
 ## BCI ----
-data_bci <- readRDS(here::here("data/inputs/data_bci.rds"))
-data_bci
-plot_stl(data_bci)
-plot_map(data_bci)
+df_bci <- readRDS(here::here("data/inputs/df_bci.rds"))
+df_bci
+plot_stl(df_bci)
+plot_map(df_bci)
 
 ## SCBI ----
-data_scbi <- readRDS(here::here("data/inputs/data_scbi.rds"))
-data_scbi
-plot_stl(data_scbi)
-plot_map(data_scbi)
+df_scbi <- readRDS(here::here("data/inputs/df_scbi.rds"))
+df_scbi
+plot_stl(df_scbi)
+plot_map(df_scbi)
 
 ## Palanam ----
-data_palanam <- readRDS(here::here("data/inputs/data_palanam.rds"))
-data_palanam
-plot_stl(data_palanam)
-plot_map(data_palanam)
+df_palanam <- readRDS(here::here("data/inputs/df_palanam.rds"))
+df_palanam
+plot_stl(df_palanam)
+plot_map(df_palanam)
 
 ## SERC ----
-data_serc <- readRDS(here::here("data/inputs/data_serc.rds"))
-data_serc
-plot_stl(data_serc)
-plot_map(data_serc)
+df_serc <- readRDS(here::here("data/inputs/df_serc.rds"))
+df_serc
+plot_stl(df_serc)
+plot_map(df_serc)
 
 ## Wytham woods ----
-data_wytham <- readRDS(here::here("data/inputs/data_wytham.rds"))
-data_wytham
-plot_stl(data_wytham)
-plot_map(data_wytham)
+df_wytham <- readRDS(here::here("data/inputs/df_wytham.rds"))
+df_wytham
+plot_stl(df_wytham)
+plot_map(df_wytham)
 
 ## Pasoh woods ----
-data_pasoh <- readRDS(here::here("data/inputs/data_pasoh.rds"))
-data_pasoh
-plot_stl(data_pasoh)
-plot_map(data_pasoh)
-sort(unique(data_pasoh$species))
+df_pasoh <- readRDS(here::here("data/inputs/df_pasoh.rds"))
+df_pasoh
+plot_stl(df_pasoh)
+plot_map(df_pasoh)
 
 ## Mudumalai ----
-data_mudumalai <- readRDS(here::here("data/inputs/data_mudumalai.rds"))
-data_mudumalai
-plot_stl(data_mudumalai)
-plot_map(data_mudumalai)
+df_mudumalai <- readRDS(here::here("data/inputs/df_mudumalai.rds"))
+df_mudumalai
+plot_stl(df_mudumalai)
+plot_map(df_mudumalai)
 
 # Forest plots ----
-data_forestplots <- readRDS(here::here("data/inputs/data_mz_forestplots.rds"))
-data_forestplots
-plot_stl(data_forestplots)
-plot_map(data_forestplots)
+df_forestplots <- readRDS(here::here("data/inputs/df_forestplots.rds"))
+df_forestplots
+plot_stl(df_forestplots)
+plot_map(df_forestplots)
 
 # Australian plots ----
-data_aus <- readRDS(here::here("data/inputs/data_fp_aus.rds"))
-data_aus
-plot_stl(data_aus)
-plot_map(data_aus)
+df_aus <- readRDS(here::here("data/inputs/df_aus.rds"))
+df_aus
+plot_stl(df_aus)
+plot_map(df_aus)
 
 # RAINFOR plots ----
-data_rainfor <- readRDS(file.path(here::here(), "/data/inputs/data_df_rainfor.rds"))
-data_rainfor
-plot_stl(data_rainfor)
-plot_map(data_rainfor)
+df_rainfor <- readRDS(file.path(here::here(), "/data/inputs/df_rainfor.rds"))
+df_rainfor
+plot_stl(df_rainfor)
+plot_map(df_rainfor)
 
 # Write data from all plots ----
 
 # join all datasets
 data_all <- bind_rows(
-  data_nfi_spain,
-  data_nfi_sweeden,
-  data_fia_us,
-  data_nfi_switzerland,
-  data_nfi_norway,
-  data_efm_swi,
-  data_uholka,
-  data_greece,
-  data_france,
-  data_bnp,
-  data_czu,
-  data_forst,
-  data_iberbas,
-  data_incds,
-  data_lwf,
-  data_nbw,
-  data_nfr_swi,
-  data_nwfva,
-  # data_silava,
-  data_tuzvo,
-  data_ul,
-  data_unito,
-  data_urk,
-  data_wuls,
-  data_luquillo,
-  # data_bci,
-  data_scbi,
-  data_palanam,
-  data_serc,
-  data_wytham,
-  data_pasoh,
-  data_mudumalai,
-  data_forestplots,
-  data_aus,
-  data_rainfor
+  df_nfi_spain,
+  df_nfi_sweeden,
+  df_fia_us,
+  df_nfi_switzerland,
+  df_nfi_norway,
+  df_efm_swi,
+  df_uholka,
+  df_fep_gre,
+  df_inrae_lessem,
+  df_bnp,
+  df_czu,
+  df_fvabw,
+  df_iberbas,
+  df_unitbv,
+  df_lwf,
+  df_npvbw,
+  df_nfr_swi,
+  df_nwfva,
+  # df_silava,
+  df_tuzvo,
+  df_ul,
+  df_unito,
+  df_urk,
+  df_wuls,
+  df_luquillo,
+  # df_bci,
+  df_scbi,
+  df_palanam,
+  df_serc,
+  df_wytham,
+  df_pasoh,
+  df_mudumalai,
+  df_forestplots,
+  df_aus,
+  df_rainfor
 )
 
-data_all <- data_all |>
+df_all <- df_all |>
   mutate(ndep = noy + nhx) |>
   # unite plotID and dataset to ensure there are not matches form different sources
   rename(plotIDD = plotID) |>
@@ -288,66 +287,72 @@ data_all <- data_all |>
 #drop_na(density) |>
 #drop_na(QMD) 
 
-saveRDS(data_all, file = here::here("data/inputs/data_all.rds"))
+saveRDS(df_all, file = here::here("data/inputs/df_all.rds"))
 
 # Write unmanaged data ----
-# Select only unmanaged forests
-data_unm <- data_unm_fc(data_all)
-data_unm
-data_unm |>
-  nrow()
-plot_stl(data_unm)
-plot_map(data_unm)
+# NEW APPROACH:
+# Management categories 1,2,3 depending on the knowledge of the forest use history.
 
-saveRDS(data_unm, file = here::here("data/inputs/data_unm.rds"))
+
+
+# THIS WAS THE INITIAL APPROACH:
+# Select only unmanaged forests
+df_unm <- data_unm_fc(df_all)
+df_unm
+df_unm |>
+  nrow()
+plot_stl(df_unm)
+plot_map(df_unm)
+
+saveRDS(df_unm, file = here::here("data/inputs/df_unm.rds"))
 
 # Generate filtered by biomes ----
-# The unmanaged data is divided by biomes, and then for each biome we apply the filter of the upper quantile.d
+# The unmanaged data is divided by biomes, and then for each biome we apply the filter of the upper quantile
 
 # read data written just above
-data_unm <- read_rds(here::here("data/inputs/data_unm.rds"))
+df_unm <- read_rds(here::here("data/inputs/df_unm.rds"))
 
 ## Biome 1 ----
 # Tropical & Subtropical Moist Broadleaf Forests
-data_unm_biome1 <- data_unm |>
+df_unm_biome1 <- df_unm |>
   filter(biomeID == 1)
-data_unm_biome1 |>
+df_unm_biome1 |>
   nrow()
-plot_stl(data_unm_biome1)
+plot_stl(df_unm_biome1)
 
 # filter data with upper quantile
-data_fil75_biome1 <- data_filter75_fc(data_unm_biome1)
-plot_stl(data_fil75_biome1)
-saveRDS(data_fil75_biome1, file = here::here("data/inputs/data_fil75_biome1.rds"))
+df_fil75_biome1 <- df_filter75_fc(df_unm_biome1)
+plot_stl(df_fil75_biome1)
+saveRDS(df_fil75_biome1, file = here::here("data/inputs/df_fil75_biome1.rds"))
 
-data_fil90_biome1 <- data_filter90_fc(data_unm_biome1)
-plot_stl(data_fil90_biome1)
-saveRDS(data_fil90_biome1, file = here::here("data/inputs/data_fil90_biome1.rds"))
+df_fil90_biome1 <- df_filter90_fc(df_unm_biome1)
+plot_stl(df_fil90_biome1)
+saveRDS(df_fil90_biome1, file = here::here("data/inputs/df_fil90_biome1.rds"))
 
-data_fil55_biome1 <- data_filter55_fc(data_unm_biome1)
-plot_stl(data_fil55_biome1)
-saveRDS(data_fil55_biome1, file = here::here("data/inputs/data_fil55_biome1.rds"))
+df_fil55_biome1 <- df_filter55_fc(df_unm_biome1)
+plot_stl(df_fil55_biome1)
+saveRDS(df_fil55_biome1, file = here::here("data/inputs/df_fil55_biome1.rds"))
 
 ## Biome 2 ----
 # Tropical & Subtropical Dry Broadleaf Forests Forest
-data_unm_biome2 <- data_unm |> 
+df_unm_biome2 <- df_unm |> 
   filter(biomeID==2)
-data_unm_biome2 |> 
+df_unm_biome2 |> 
   nrow()
-plot_stl(data_unm_biome2)
+plot_stl(df_unm_biome2)
 
 # filter data with upper quantile
-data_fil75_biome2 <- data_filter75_fc(data_unm_biome2)
-plot_stl(data_fil75_biome2)
-saveRDS(data_fil75_biome2, file = here::here("data/inputs/data_fil75_biome2.rds"))
+df_fil75_biome2 <- df_filter75_fc(df_unm_biome2)
+plot_stl(df_fil75_biome2)
+saveRDS(df_fil75_biome2, file = here::here("data/inputs/df_fil75_biome2.rds"))
 
-data_fil90_biome2 <- data_filter90_fc(data_unm_biome2)
-plot_stl(data_fil90_biome2)
-saveRDS(data_fil90_biome2, file = here::here("data/inputs/data_fil90_biome2.rds"))
+df_fil90_biome2 <- df_filter90_fc(df_unm_biome2)
+plot_stl(df_fil90_biome2)
+saveRDS(df_fil90_biome2, file = here::here("data/inputs/df_fil90_biome2.rds"))
 
-data_fil55_biome2 <- data_filter55_fc(data_unm_biome2)
-plot_stl(data_fil55_biome2)
-saveRDS(data_fil55_biome2, file = here::here("data/inputs/data_fil55_biome2.rds"))
+df_fil55_biome2 <- df_filter55_fc(df_unm_biome2)
+plot_stl(df_fil55_biome2)
+saveRDS(df_fil55_biome2, file = here::here("data/inputs/df_fil55_biome2.rds"))
 
 ## Biome 3 ----
 # Tropical & Subtropical Coniferous Forests Forest
@@ -355,122 +360,122 @@ saveRDS(data_fil55_biome2, file = here::here("data/inputs/data_fil55_biome2.rds"
 
 ## Biome 4 ----
 # Temperate Broadleaf & Mixed Forests Forest
-data_unm_biome4 <- data_unm |>
+df_unm_biome4 <- df_unm |>
   filter(biomeID == 4)
-plot_stl(data_unm_biome4)
+plot_stl(df_unm_biome4)
 
 # filter data with upper quantile
-data_fil75_biome4 <- data_filter75_fc(data_unm_biome4)
-plot_stl(data_fil75_biome4)
-saveRDS(data_fil75_biome4, file = here::here("data/inputs/data_fil75_biome4.rds"))
+df_fil75_biome4 <- df_filter75_fc(df_unm_biome4)
+plot_stl(df_fil75_biome4)
+saveRDS(df_fil75_biome4, file = here::here("data/inputs/df_fil75_biome4.rds"))
 
-data_fil90_biome4 <- data_filter90_fc(data_unm_biome4)
-plot_stl(data_fil90_biome4)
-saveRDS(data_fil90_biome4, file = here::here("data/inputs/data_fil90_biome4.rds"))
+df_fil90_biome4 <- df_filter90_fc(df_unm_biome4)
+plot_stl(df_fil90_biome4)
+saveRDS(df_fil90_biome4, file = here::here("data/inputs/df_fil90_biome4.rds"))
 
-data_fil55_biome4 <- data_filter55_fc(data_unm_biome4)
-plot_stl(data_fil55_biome4)
-saveRDS(data_fil55_biome4, file = here::here("data/inputs/data_fil55_biome4.rds"))
+df_fil55_biome4 <- df_filter55_fc(df_unm_biome4)
+plot_stl(df_fil55_biome4)
+saveRDS(df_fil55_biome4, file = here::here("data/inputs/df_fil55_biome4.rds"))
 
 ## Biome 5 ----
 # Temperate Conifer Forests Forest
-data_unm_biome5 <- data_unm |>
+df_unm_biome5 <- df_unm |>
   filter(biomeID == 5)
-plot_stl(data_unm_biome5)
+plot_stl(df_unm_biome5)
 
 # filter data with upper quantile
-data_fil75_biome5 <- data_filter75_fc(data_unm_biome5)
-plot_stl(data_fil75_biome5)
-saveRDS(data_fil75_biome5, file = here::here("data/inputs/data_fil75_biome5.rds"))
+df_fil75_biome5 <- df_filter75_fc(df_unm_biome5)
+plot_stl(df_fil75_biome5)
+saveRDS(df_fil75_biome5, file = here::here("data/inputs/df_fil75_biome5.rds"))
 
-data_fil90_biome5 <- data_filter90_fc(data_unm_biome5)
-plot_stl(data_fil90_biome5)
-saveRDS(data_fil90_biome5, file = here::here("data/inputs/data_fil90_biome5.rds"))
+df_fil90_biome5 <- df_filter90_fc(df_unm_biome5)
+plot_stl(df_fil90_biome5)
+saveRDS(df_fil90_biome5, file = here::here("data/inputs/df_fil90_biome5.rds"))
 
-data_fil55_biome5 <- data_filter55_fc(data_unm_biome5)
-plot_stl(data_fil55_biome5)
-saveRDS(data_fil55_biome5, file = here::here("data/inputs/data_fil55_biome5.rds"))
+df_fil55_biome5 <- df_filter55_fc(df_unm_biome5)
+plot_stl(df_fil55_biome5)
+saveRDS(df_fil55_biome5, file = here::here("data/inputs/df_fil55_biome5.rds"))
 
 ## Biome 6 ----
 # Boreal Forests/Taiga Forest
-data_unm_biome6 <- data_unm |>
+df_unm_biome6 <- df_unm |>
   filter(biomeID == 6)
-plot_stl(data_unm_biome6)
+plot_stl(df_unm_biome6)
 
 # filter data with upper quantile
-data_fil75_biome6 <- data_filter75_fc(data_unm_biome6)
-plot_stl(data_fil75_biome6)
-saveRDS(data_fil75_biome6, file = here::here("data/inputs/data_fil75_biome6.rds"))
+df_fil75_biome6 <- df_filter75_fc(df_unm_biome6)
+plot_stl(df_fil75_biome6)
+saveRDS(df_fil75_biome6, file = here::here("data/inputs/df_fil75_biome6.rds"))
 
-data_fil90_biome6 <- data_filter90_fc(data_unm_biome6)
-plot_stl(data_fil90_biome6)
-saveRDS(data_fil90_biome6, file = here::here("data/inputs/data_fil90_biome6.rds"))
+df_fil90_biome6 <- df_filter90_fc(df_unm_biome6)
+plot_stl(df_fil90_biome6)
+saveRDS(df_fil90_biome6, file = here::here("data/inputs/df_fil90_biome6.rds"))
 
-data_fil55_biome6 <- data_filter55_fc(data_unm_biome6)
-plot_stl(data_fil55_biome6)
-saveRDS(data_fil55_biome6, file = here::here("data/inputs/data_fil55_biome6.rds"))
+df_fil55_biome6 <- df_filter55_fc(df_unm_biome6)
+plot_stl(df_fil55_biome6)
+saveRDS(df_fil55_biome6, file = here::here("data/inputs/df_fil55_biome6.rds"))
 
 ## Biome 12 ----
 # Mediterranean Forests
-data_unm_biome12 <- data_unm |>
+df_unm_biome12 <- df_unm |>
   filter(biomeID == 12)
-plot_stl(data_unm_biome12)
+plot_stl(df_unm_biome12)
 
 # filter data with upper quantile
-data_fil75_biome12 <- data_filter75_fc(data_unm_biome12)
-plot_stl(data_fil75_biome12)
-saveRDS(data_fil75_biome12, file = here::here("data/inputs/data_fil75_biome12.rds"))
+df_fil75_biome12 <- df_filter75_fc(df_unm_biome12)
+plot_stl(df_fil75_biome12)
+saveRDS(df_fil75_biome12, file = here::here("data/inputs/df_fil75_biome12.rds"))
 
-data_fil90_biome12 <- data_filter90_fc(data_unm_biome12)
-plot_stl(data_fil90_biome12)
-saveRDS(data_fil90_biome12, file = here::here("data/inputs/data_fil90_biome126.rds"))
+df_fil90_biome12 <- df_filter90_fc(df_unm_biome12)
+plot_stl(df_fil90_biome12)
+saveRDS(df_fil90_biome12, file = here::here("data/inputs/df_fil90_biome126.rds"))
 
-data_fil55_biome12 <- data_filter55_fc(data_unm_biome12)
-plot_stl(data_fil55_biome12)
-saveRDS(data_fil55_biome12, file = here::here("data/inputs/data_fil55_biome12.rds"))
+df_fil55_biome12 <- df_filter55_fc(df_unm_biome12)
+plot_stl(df_fil55_biome12)
+saveRDS(df_fil55_biome12, file = here::here("data/inputs/df_fil55_biome12.rds"))
 
 # Write filtered data ----
 # join filtered datasets
-data_fil75_biomes <- bind_rows(
-  data_fil75_biome1,
-  data_fil75_biome2,
-  data_fil75_biome4,
-  data_fil75_biome5,
-  data_fil75_biome6,
-  data_fil75_biome12
+df_fil75_biomes <- bind_rows(
+  df_fil75_biome1,
+  df_fil75_biome2,
+  df_fil75_biome4,
+  df_fil75_biome5,
+  df_fil75_biome6,
+  df_fil75_biome12
 )
-saveRDS(data_fil75_biomes, file = here::here("data/inputs/data_fil75_biomes.rds"))
+saveRDS(df_fil75_biomes, file = here::here("data/inputs/df_fil75_biomes.rds"))
 
-data_fil90_biomes <- bind_rows(
-  data_fil90_biome1,
-  data_fil90_biome2,
-  data_fil90_biome4,
-  data_fil90_biome5,
-  data_fil90_biome6,
-  data_fil90_biome12
+df_fil90_biomes <- bind_rows(
+  df_fil90_biome1,
+  df_fil90_biome2,
+  df_fil90_biome4,
+  df_fil90_biome5,
+  df_fil90_biome6,
+  df_fil90_biome12
 )
-saveRDS(data_fil90_biomes, file = here::here("data/inputs/data_fil90_biomes.rds"))
+saveRDS(df_fil90_biomes, file = here::here("data/inputs/df_fil90_biomes.rds"))
 
-data_fil55_biomes <- bind_rows(
-  data_fil55_biome1,
-  data_fil55_biome2,
-  data_fil55_biome4,
-  data_fil55_biome5,
-  data_fil55_biome6,
-  data_fil55_biome12
+df_fil55_biomes <- bind_rows(
+  df_fil55_biome1,
+  df_fil55_biome2,
+  df_fil55_biome4,
+  df_fil55_biome5,
+  df_fil55_biome6,
+  df_fil55_biome12
 )
-saveRDS(data_fil55_biomes, file = here::here("data/inputs/data_fil55_biomes.rds"))
+saveRDS(df_fil55_biomes, file = here::here("data/inputs/df_fil55_biomes.rds"))
 
 # Plot filtered data --------
-data_fil75_biomes <- read_rds(here::here("data/inputs/data_fil75_biomes.rds"))
+df_fil75_biomes <- read_rds(here::here("data/inputs/df_fil75_biomes.rds"))
 
-data_fil75_biomes |>
+df_fil75_biomes |>
   drop_na(years_since_management) |>
   distinct(dataset)
 
 # Check DBH distributions
 ggplot() +
-  geom_density(data = data_fil75_biomes, aes(QMD, ..density.., col = factor(biome), fill = factor(biome)), alpha = 0.7) +
+  geom_density(data = df_fil75_biomes, aes(QMD, ..density.., col = factor(biome), fill = factor(biome)), alpha = 0.7) +
   theme_classic() +
   # color palette from okabeito_colors()
   scale_fill_manual(name = "Biome", values = c(
@@ -493,8 +498,8 @@ ggplot() +
   scale_x_continuous(limits = c(0, 80)) 
 
 # Table S1 ----
-data <- readRDS(file.path(here::here(), "/data/inputs/data_unm.rds"))
-data <- readRDS(file.path(here::here(), "/data/inputs/data_fil75_biomes.rds"))
+data <- readRDS(file.path(here::here(), "/data/inputs/df_unm.rds"))
+data <- readRDS(file.path(here::here(), "/data/inputs/df_fil75_biomes.rds"))
 
 # Unmanaged years
 data |>
@@ -521,12 +526,12 @@ data %>%
   ungroup() |>
   summarise(mean=mean(year, na.rm=T))
 
-species <- as.data.frame(sort(unique(data_unm$species)))
-length(unique(data_unm$plotID))
-data_unm
+species <- as.data.frame(sort(unique(df_unm$species)))
+length(unique(df_unm$plotID))
+df_unm
 summary(data)
 
-data_unm |>
+df_unm |>
   filter(plotID == "nwfva_tree_03-025_2")
 
 # Table at the plot level

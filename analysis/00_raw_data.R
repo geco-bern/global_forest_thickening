@@ -369,7 +369,7 @@ if (!file.exists(filn)) {
     distinct(plotID, .keep_all = T)
 
   # Join tables
-  data_fia_us <- data_stand |>
+  df_fia_us <- data_stand |>
     left_join(data_cond_sel) |>
     left_join(data_plot_sel) |>
     # rename variable
@@ -384,47 +384,48 @@ if (!file.exists(filn)) {
       management = RESERVCD - 1,
       plotsize = 0.4,
       country = "USA",
-      years_since_management = NA
+      management_since_census1_yrs = NA,
+      management_cat = 2
     ) |>
     # Remove entries with density = 0
     filter(density > 0) |>
     # Remove entries with QMD = 0
     filter(QMD > 0)
 
-  saveRDS(data_fia_us, file = file.path(here::here(), "/data/inputs/data_fia_us.rds"))
+  saveRDS(df_fia_us, file = file.path(here::here(), "/data/inputs/df_fia_us.rds"))
 } else {
-  data_fia_us <- readRDS(file.path(here::here(), "/data/inputs/data_fia_us.rds"))
+  df_fia_us <- readRDS(file.path(here::here(), "/data/inputs/df_fia_us.rds"))
 }
 
 # add coords and biomes
-data_fia_us <- biomes_coords_latlon(data_fia_us)
+df_fia_us <- biomes_coords_latlon(df_fia_us)
 
 # add coords and aridity index
-data_fia_us <- ai_coords_latlon(data_fia_us)
+df_fia_us <- ai_coords_latlon(df_fia_us)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_fia_us <- lai_coords_latlon(data_fia_us)
+df_fia_us <- lai_coords_latlon(df_fia_us)
 
 # add coords and N deposition (Lamarque 2011)
-data_fia_us <- ndep_coords_latlon(data_fia_us)
+df_fia_us <- ndep_coords_latlon(df_fia_us)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_fia_us <- cn_coords_latlon(data_fia_us)
+df_fia_us <- cn_coords_latlon(df_fia_us)
 
 # add coords and Phosphorus P - Bray (PBR)
-data_fia_us <- phos_coords_latlon(data_fia_us)
+df_fia_us <- phos_coords_latlon(df_fia_us)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_fia_us <- orgc_coords_latlon(data_fia_us)
+df_fia_us <- orgc_coords_latlon(df_fia_us)
 
 ggplot() +
-  geom_point(data = data_fia_us, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_fia_us, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_fia_us, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_fia_us, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_fia_us, file = file.path(here::here(), "/data/inputs/data_fia_us.rds"))
+saveRDS(df_fia_us, file = file.path(here::here(), "/data/inputs/df_fia_us.rds"))
 
 # NFI Switzerland ----
 # Data providers: Brigitte Rohner
@@ -1095,6 +1096,7 @@ saveRDS(df_czu, file = file.path(here::here(), "/data/inputs/df_czu.rds"))
 
 ## fvabw ----
 # Data providers: Yannek Käber and Lucia Seebach
+# Before called forst
 # Management:
 # Original: In Table S1 indicated that last management was before the time of designation
 # Confirm what is tsc variable? 
@@ -1224,6 +1226,7 @@ saveRDS(df_iberbas, file = file.path(here::here(), "/data/inputs/df_iberbas.rds"
 
 ## unitbv ----
 # Data providers: Any Mary Petritan, Cătălin Petritan
+# Before called incds
 # Management:
 # Original dataset does not include info on management.
 # In Table S1, management_since_census1_yrs = NA
@@ -3243,4 +3246,4 @@ rbeni::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_rainfor, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_rainfor, file = file.path(here::here(), "/data/inputs/data_df_rainfor.rds"))
+saveRDS(df_rainfor, file = file.path(here::here(), "/data/inputs/df_rainfor.rds"))

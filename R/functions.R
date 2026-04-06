@@ -24,7 +24,7 @@ data_unm_fc <- function(data) {
     filter(type == "Forest") |>
     # filter for unmanaged plots
     filter(management == 0) |>
-    filter(years_since_management >= 30 | is.na(years_since_management)) |>
+    filter(management_since_census1_yrs >= 30 | is.na(management_since_census1_yrs)) |>
     # Filter by min 3 censuses
     group_by(dataset, plotID) |>
     mutate(n_census_unm = n()) |>
