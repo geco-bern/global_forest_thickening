@@ -26,18 +26,16 @@ library(tidyverse)
 source(here::here("R/functions.R"))
 
 # NFI Spain ----
-data_nfi_spain <- readRDS(here::here("data/inputs/data_nfi_spa.rds"))
-data_nfi_spain
-plot_stl(data_nfi_spain)
-plot_map(data_nfi_spain)
-ggplot(data_nfi_spain) +
-  geom_point(aes(year, biomass))
+df_nfi_spain <- readRDS(here::here("data/inputs/df_nfi_spa.rds"))
+df_nfi_spain
+plot_stl(df_nfi_spain)
+plot_map(df_nfi_spain)
 
 # NFI Sweeden ----
-data_nfi_sweeden <- readRDS(here::here("data/inputs/data_nfi_swe.rds"))
-data_nfi_sweeden
-plot_stl(data_nfi_sweeden)
-plot_map(data_nfi_sweeden)
+df_nfi_sweeden <- readRDS(here::here("data/inputs/df_nfi_swe.rds"))
+df_nfi_sweeden
+plot_stl(df_nfi_sweeden)
+plot_map(df_nfi_sweeden)
 
 # FIA US ----
 data_fia_us <- readRDS(here::here("data/inputs/data_fia_us.rds"))
