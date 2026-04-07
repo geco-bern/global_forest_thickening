@@ -31,10 +31,14 @@ identify_badbins <- function(df, dataset_name, binwidth = 10){
     # drop all data -- excessive QMD shift between the two available bins
     return(
       list(
-        df_binned = df_binned,
+        df = df_binned |> 
+          unnest(data) |> 
+          mutate(badqmdbin = TRUE) |> 
+          ungroup(),
         gg = NA
       )
     )
+    
   } else {
 
     # count how often each bin is “different”
@@ -70,14 +74,13 @@ identify_badbins <- function(df, dataset_name, binwidth = 10){
         filter(grp == longest_group & low) |> 
         pull(bin)
 
-      df_binned <- df_binned |> 
+      df <- df_binned |> 
         unnest(data) |> 
         mutate(badqmdbin = !(yearbin %in% keep_bins)) |> 
-        ungroup() |> 
-        select(-nobs)
+        ungroup()
 
       # visualise bad bin removal
-      gg <- df_binned |> 
+      gg <- df |> 
         mutate(yearbin = as.factor(yearbin)) |> 
         ggplot(aes(yearbin, logQMD, fill = badqmdbin)) +
         geom_boxplot() +
@@ -93,13 +96,12 @@ identify_badbins <- function(df, dataset_name, binwidth = 10){
 
     } else {
       # all are bad bins
-      df_binned <- df_binned |> 
+      df <- df_binned |> 
         unnest(data) |> 
         mutate(badqmdbin = TRUE) |> 
-        ungroup() |> 
-        select(-nobs)
+        ungroup()
 
-      gg <- df_binned |> 
+      gg <- df |> 
         mutate(yearbin = as.factor(yearbin)) |> 
         ggplot(aes(yearbin, logQMD, fill = "tomato")) +
         geom_boxplot() +
@@ -118,7 +120,7 @@ identify_badbins <- function(df, dataset_name, binwidth = 10){
 
   return(
     list(
-      df_binned = df_binned,
+      df = df,
       gg = gg
     )
   )
