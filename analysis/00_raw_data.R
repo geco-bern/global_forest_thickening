@@ -1,5 +1,23 @@
 # This script reads raw data from the original forest data files and process them to create the input data.
 
+# To avoid subjective decisions regarding management and forest use history, 
+# we propose classifying each dataset into the following categories based on the information available:
+
+# Variable management_cat:
+
+# 1. Recorded history
+# The time since the last management before the first census is known and recorded.
+# the number of years since the last management before the first census, or
+# the calendar year of the last management intervention is indicated.
+
+# 2. Pristine/primary/old-growth/protected
+# The time since the last management before the first census is unknown. The forest was considered pristine, 
+# primary, old-growth, protected, or minimally used at the time of the first census.
+
+# 3. Unrecorded history
+# The time since the last management before the first census is unknown. The forest may have a history 
+# of substantial past wood harvesting and/or visible signs of forest use before the first census.
+
 # load packages ----
 # library(renv)
 library(readr)
@@ -32,8 +50,13 @@ source(file.path(here::here(), "/R/functions.R"))
 # NFI Spain ----
 # Data providers: Paloma Ruiz-Benito and Veronica Cruz-Alonso
 
+# Management: 
+# Original info: Only plots were management was not registered during the inventory were provided.
+# Management category assigned to 3 for all plots.
+
 # stand-level for species
 nfi_spain <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfi_spa/nfi_spa.csv")
+#nfi_spain <- read.csv("~/data/nfi_spa/nfi_spa.csv")
 
 # rename variables
 nfi_spain <- nfi_spain |>
@@ -50,7 +73,7 @@ nfi_spain <- nfi_spain |>
   mutate(plotsize = 0.20)
 
 # aggregate data from species to stand data
-data_nfi_spain <- from_species_data(nfi_spain) |>
+df_nfi_spain <- from_species_data(nfi_spain) |>
   # create census
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
@@ -58,55 +81,68 @@ data_nfi_spain <- from_species_data(nfi_spain) |>
   relocate(census, .after = year) |>
   mutate(
     management = 0,
-    country = "Spain",
-    years_since_management = NA
+    management_since_census1_yrs = NA,
+    management_cat = 3,
+    country = "Spain"
   )
 
 # add coords and biomes
-data_nfi_spain <- biomes_coords_utm(data_nfi_spain) |>
+df_nfi_spain <- biomes_coords_utm(df_nfi_spain) |>
   as_tibble()
 
 # add coords and aridity index
-data_nfi_spain <- ai_coords_latlon(data_nfi_spain)
+df_nfi_spain <- ai_coords_latlon(df_nfi_spain)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_nfi_spain <- lai_coords_latlon(data_nfi_spain)
+df_nfi_spain <- lai_coords_latlon(df_nfi_spain)
 
 # add coords and N deposition (Lamarque 2011)
-data_nfi_spain <- ndep_coords_latlon(data_nfi_spain)
+df_nfi_spain <- ndep_coords_latlon(df_nfi_spain)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_nfi_spain <- cn_coords_latlon(data_nfi_spain)
+df_nfi_spain <- cn_coords_latlon(df_nfi_spain)
 
 # add coords and Phosphorus P - Bray (PBR)
-data_nfi_spain <- phos_coords_latlon(data_nfi_spain)
+df_nfi_spain <- phos_coords_latlon(df_nfi_spain)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_nfi_spain <- orgc_coords_latlon(data_nfi_spain)
+df_nfi_spain <- orgc_coords_latlon(df_nfi_spain)
 
 ggplot() +
-  geom_point(data = data_nfi_spain, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_nfi_spain, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_nfi_spain, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_nfi_spain, size = 0.5, alpha = 0.5)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = ai), data = data_nfi_spain, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = ai), data = df_nfi_spain, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_nfi_spain, file = file.path(here::here(), "/data/inputs/data_nfi_spa.rds"))
+saveRDS(df_nfi_spain, file = file.path(here::here(), "/data/inputs/df_nfi_spa.rds"))
 
 # NFI Sweeden ----
 # Data providers: Julian Tijerin-Triviño
 
+# Management: 
+# Original info: Plots include the management variable (0-unmanaged, 1-managed).
+# Management category assigned to 3 for all plots.
+# Other variable that could be used: stand age. Plots with stand age > 80 years could indeed be considered as 
+# potentially unmanaged or at least without recent major interventions (Management category 2). 
+# This approach has limitations—some old forests may have experienced selective cuts or other human disturbances 
+# in the past that are not reflected in the current stand age.
+
 # Tree-level for species
 species_code <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfi_swe/swe_sp_code.csv", sep = ",")
+#species_code <- read.csv("~/data/nfi_swe/swe_sp_code.csv")
+
 species_code <- species_code |>
   filter(country == "ES") |>
   rename(species = acceptedname) |>
   select(code, species)
 
 nfi_sweeden_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfi_swe/nfi_swe_tree.csv", sep = ",")
+#nfi_sweeden_tree <- read.csv("~/data/nfi_swe/nfi_swe_tree.csv", sep = ",")
+
 nfi_sweeden_tree <- nfi_sweeden_tree |>
   select(-c(speciescode2, speciescode3)) |>
   rename(
@@ -123,6 +159,7 @@ nfi_sweeden_tree <- nfi_sweeden_tree |>
 
 # Stand-level
 nfi_sweeden <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfi_swe/nfi_swe_stand.csv", sep = ",")
+#nfi_sweeden <- read.csv("~/data/nfi_swe/nfi_swe_stand.csv", sep = ",")
 
 # rename variable
 nfi_sweeden <- nfi_sweeden |>
@@ -141,46 +178,47 @@ nfi_sweeden <- nfi_sweeden |>
   relocate(census, .after = year) |>
   mutate(
     plotsize = NA,
-    country = "Sweeden",
-    years_since_management = NA,
-    biomass = NA
+    biomass = NA,
+    management_since_census1_yrs = NA,
+    management_cat = 3,
+    country = "Sweeden"
   )
 
 # aggregate data from stand to stand data
-data_nfi_sweeden <- from_stand_tree_data(nfi_sweeden_tree, nfi_sweeden)
+df_nfi_sweeden <- from_stand_tree_data(nfi_sweeden_tree, nfi_sweeden)
 
 # add coords and biomes
-data_nfi_sweeden <- biomes_coords_latlon(data_nfi_sweeden)
+df_nfi_sweeden <- biomes_coords_latlon(df_nfi_sweeden)
 
 # add coords and aridity index
-data_nfi_sweeden <- ai_coords_latlon(data_nfi_sweeden)
+df_nfi_sweeden <- ai_coords_latlon(df_nfi_sweeden)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_nfi_sweeden <- lai_coords_latlon(data_nfi_sweeden)
+df_nfi_sweeden <- lai_coords_latlon(df_nfi_sweeden)
 
 # add coords and N deposition (Lamarque 2011)
-data_nfi_sweeden <- ndep_coords_latlon(data_nfi_sweeden)
+df_nfi_sweeden <- ndep_coords_latlon(df_nfi_sweeden)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_nfi_sweeden <- cn_coords_latlon(data_nfi_sweeden)
+df_nfi_sweeden <- cn_coords_latlon(df_nfi_sweeden)
 
 # add coords and Phosphorus P - Bray (PBR)
-data_nfi_sweeden <- phos_coords_latlon(data_nfi_sweeden)
+df_nfi_sweeden <- phos_coords_latlon(df_nfi_sweeden)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_nfi_sweeden <- orgc_coords_latlon(data_nfi_sweeden)
+df_nfi_sweeden <- orgc_coords_latlon(df_nfi_sweeden)
 
 ggplot() +
-  geom_point(data = data_nfi_sweeden, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_nfi_sweeden, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_nfi_sweeden, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_nfi_sweeden, size = 0.5, alpha = 0.5)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = ai), data = data_nfi_sweeden, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = ai), data = df_nfi_sweeden, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_nfi_sweeden, file = file.path(here::here(), "/data/inputs/data_nfi_swe.rds"))
+saveRDS(df_nfi_sweeden, file = file.path(here::here(), "/data/inputs/df_nfi_swe.rds"))
 
 # FIA US ----
 # Data providers: rFIA
@@ -331,7 +369,7 @@ if (!file.exists(filn)) {
     distinct(plotID, .keep_all = T)
 
   # Join tables
-  data_fia_us <- data_stand |>
+  df_fia_us <- data_stand |>
     left_join(data_cond_sel) |>
     left_join(data_plot_sel) |>
     # rename variable
@@ -346,59 +384,73 @@ if (!file.exists(filn)) {
       management = RESERVCD - 1,
       plotsize = 0.4,
       country = "USA",
-      years_since_management = NA
+      management_since_census1_yrs = NA,
+      management_cat = 2
     ) |>
     # Remove entries with density = 0
     filter(density > 0) |>
     # Remove entries with QMD = 0
     filter(QMD > 0)
 
-  saveRDS(data_fia_us, file = file.path(here::here(), "/data/inputs/data_fia_us.rds"))
+  saveRDS(df_fia_us, file = file.path(here::here(), "/data/inputs/df_fia_us.rds"))
 } else {
-  data_fia_us <- readRDS(file.path(here::here(), "/data/inputs/data_fia_us.rds"))
+  df_fia_us <- readRDS(file.path(here::here(), "/data/inputs/df_fia_us.rds"))
 }
 
 # add coords and biomes
-data_fia_us <- biomes_coords_latlon(data_fia_us)
+df_fia_us <- biomes_coords_latlon(df_fia_us)
 
 # add coords and aridity index
-data_fia_us <- ai_coords_latlon(data_fia_us)
+df_fia_us <- ai_coords_latlon(df_fia_us)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_fia_us <- lai_coords_latlon(data_fia_us)
+df_fia_us <- lai_coords_latlon(df_fia_us)
 
 # add coords and N deposition (Lamarque 2011)
-data_fia_us <- ndep_coords_latlon(data_fia_us)
+df_fia_us <- ndep_coords_latlon(df_fia_us)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_fia_us <- cn_coords_latlon(data_fia_us)
+df_fia_us <- cn_coords_latlon(df_fia_us)
 
 # add coords and Phosphorus P - Bray (PBR)
-data_fia_us <- phos_coords_latlon(data_fia_us)
+df_fia_us <- phos_coords_latlon(df_fia_us)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_fia_us <- orgc_coords_latlon(data_fia_us)
+df_fia_us <- orgc_coords_latlon(df_fia_us)
 
 ggplot() +
-  geom_point(data = data_fia_us, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_fia_us, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_fia_us, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_fia_us, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_fia_us, file = file.path(here::here(), "/data/inputs/data_fia_us.rds"))
+saveRDS(df_fia_us, file = file.path(here::here(), "/data/inputs/df_fia_us.rds"))
 
 # NFI Switzerland ----
 # Data providers: Brigitte Rohner
+# Management: 
+# Original info: Each plots provides the variable LETZTENU, which provides information about
+# the number of years since last management before each census (LFI1 to LFI5).
+# LETZTENU: Number of years since the last silvicultural intervention according to the oral survey at the Forest Service (derivation LETZTENU in the Swiss NFI database). 
+# If it is known that no intervention has been carried out on this sample area for a very long time or
+# that it is almost certain that no intervention has ever been carried out, LETZTENU=999. 
+# Calculated variables:
+# - management_since_census1_yrs, sum of LETZTENU years, only when value increase over censuses. If values are not strictly increasing → NA.
+# - management = 1 if management_since_census1_yrs=NA, and management = 0 otherwise.
+# - management_cat = 1 for all plots. (Recorded history)
 
 # Plot characteristics
 lfi_plot_constant <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfi_swi/lfi_plot_constant.csv", sep = ";")
+#lfi_plot_constant <- read.csv("~/data/nfi_swi/lfi_plot_constant.csv", sep = ";")
 
 # Species names
 lfi_species_names <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfi_swi/lfi_species_names.csv", sep = ",")
+#lfi_species_names <- read.csv("~/data/nfi_swi/lfi_species_names.csv", sep = ",")
 
 ## calculate dom_species from tree-level data
 lfi_tree_census <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfi_swi/lfi_tree_census.csv", sep = ",")
+#lfi_tree_census <- read.csv("~/data/nfi_swi/lfi_tree_census.csv", sep = ",")
 
 dom_species <- lfi_tree_census |>
   mutate(year = str_sub(CENSUS_DATE, 7, 10)) |>
@@ -417,12 +469,13 @@ dom_species <- lfi_tree_census |>
 
 # Stand-level data
 lfi_plot_census <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfi_swi/lfi_plot_census.csv", sep = ",")
+#lfi_plot_census <- read.csv("~/data/nfi_swi/lfi_plot_census.csv", sep = ",")
 
 # prepare data
 nfi_switzerland <- lfi_plot_census |>
   left_join(lfi_plot_constant[, c(1:3)]) |>
   # create Year variable from CENSUS_DATE
-  mutate(year = as.numeric(str_sub(CENSUS_DATE, 7, 10))) |>
+  mutate(year = year(as.Date(CENSUS_DATE, format="%d.%m.%Y"))) |>
   left_join(dom_species) |>
   # rename variable
   rename(
@@ -433,62 +486,74 @@ nfi_switzerland <- lfi_plot_census |>
     ba = BASAL_AREA_HA,
     density = NPH,
     dbh = MEAN_DBH_HA,
-    years_since_management = LETZTENU,
     biomass = BIOMASS_VPPS_ABOVEGROUND
   ) |>
-  # create management variable
+  group_by(plotID) |>
   mutate(
-    management = ifelse(years_since_management >= 70, 0, 1),
+    management_since_census1_yrs =
+      if (any(LETZTENU == 999, na.rm = TRUE)) 999        # unmanaged
+    else if (any(is.na(LETZTENU))) NA_real_              # missing data
+    else if (all(diff(LETZTENU) > 0)) sum(LETZTENU)      # strictly increasing
+    else NA_real_                                        # management occurred
+  ) |>
+  ungroup() |>
+  mutate(
+    management = ifelse(is.na(management_since_census1_yrs), 1, 0),
+    management_cat = 1, 
     plotsize = PLOT_AREA_LARGE * 10^-4,
-    country = "Switzerland"
-  )
+    country = "Switzerland")
 
 # aggregate data from stand to stand data
-data_nfi_switzerland <- from_stand_data(nfi_switzerland)
+df_nfi_switzerland <- from_stand_data(nfi_switzerland)
 
 # add coords and biomes
-data_nfi_switzerland <- biomes_coords_latlon(data_nfi_switzerland)
+df_nfi_switzerland <- biomes_coords_latlon(df_nfi_switzerland)
 
 # add coords and aridity index
-data_nfi_switzerland <- ai_coords_latlon(data_nfi_switzerland)
+df_nfi_switzerland <- ai_coords_latlon(df_nfi_switzerland)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_nfi_switzerland <- lai_coords_latlon(data_nfi_switzerland)
+df_nfi_switzerland <- lai_coords_latlon(df_nfi_switzerland)
 
 # add coords and N deposition (Lamarque 2011)
-data_nfi_switzerland <- ndep_coords_latlon(data_nfi_switzerland)
+df_nfi_switzerland <- ndep_coords_latlon(df_nfi_switzerland)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_nfi_switzerland <- cn_coords_latlon(data_nfi_switzerland)
+df_nfi_switzerland <- cn_coords_latlon(df_nfi_switzerland)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_nfi_switzerland <- phos_coords_latlon(data_nfi_switzerland)
+df_nfi_switzerland <- phos_coords_latlon(df_nfi_switzerland)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_nfi_switzerland <- orgc_coords_latlon(data_nfi_switzerland)
+df_nfi_switzerland <- orgc_coords_latlon(df_nfi_switzerland)
 
 ggplot() +
-  geom_point(data = data_nfi_switzerland, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_nfi_switzerland, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_nfi_switzerland, size = 0.5, alpha = 0.5) + theme(legend.position = "bottom")
+  geom_point(aes(lon, lat, color = biome), data = df_nfi_switzerland, size = 0.5, alpha = 0.5) + theme(legend.position = "bottom")
 
 # Save stand-level data
-saveRDS(data_nfi_switzerland, file = file.path(here::here(), "/data/inputs/data_nfi_swi.rds"))
+saveRDS(df_nfi_switzerland, file = file.path(here::here(), "/data/inputs/df_nfi_swi.rds"))
 
 # NFI Norway ----
 # Data providers: Oliver Moen Snoksrud and Johannes Breidenbach
+# Management:
+# Original info: 
+# - management_since_census1_yrs = 64,
+# - management_cat = 1 for all plots. (Recorded history)
 
 # Stand-level data
 nfi_norway <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfi_nor/nfi_nor.csv", sep = ",")
+#nfi_norway <- read.csv("~/data/nfi_nor/nfi_nor.csv", sep = ",")
 
 # rename variable
 nfi_norway <- nfi_norway |>
   filter(class == "F_Forest") |>
-  mutate(
+  mutate( # convert to cm
     dbh = dbh / 10,
     qmd = qmd / 10
-  ) |> # convert to cm
+  ) |> 
   rename(
     ba = basal_area,
     plotsize = area
@@ -497,76 +562,88 @@ nfi_norway <- nfi_norway |>
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
   ungroup() |>
-  relocate(census, .after = year)
-
-# aggregate data from stand
-data_nfi_norway <- from_stand_data(nfi_norway) |>
+  relocate(census, .after = year) |>
   mutate(
     management = 0,
-    years_since_management = 64,
+    management_cat = 1, 
+    management_since_census1_yrs = 64,
     country = "Norway"
   )
 
+# aggregate data from stand
+df_nfi_norway <- from_stand_data(nfi_norway) 
+
 # add coords and biomes
-data_nfi_norway <- biomes_coords_latlon(data_nfi_norway)
+df_nfi_norway <- biomes_coords_latlon(df_nfi_norway)
 
 # add coords and aridity index
-data_nfi_norway <- ai_coords_latlon(data_nfi_norway)
+df_nfi_norway <- ai_coords_latlon(df_nfi_norway)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_nfi_norway <- lai_coords_latlon(data_nfi_norway)
+df_nfi_norway <- lai_coords_latlon(df_nfi_norway)
 
 # add coords and N deposition (Lamarque 2011)
-data_nfi_norway <- ndep_coords_latlon(data_nfi_norway)
+df_nfi_norway <- ndep_coords_latlon(df_nfi_norway)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_nfi_norway <- cn_coords_latlon(data_nfi_norway)
+df_nfi_norway <- cn_coords_latlon(df_nfi_norway)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_nfi_norway <- phos_coords_latlon(data_nfi_norway)
+df_nfi_norway <- phos_coords_latlon(df_nfi_norway)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_nfi_norway <- orgc_coords_latlon(data_nfi_norway)
+df_nfi_norway <- orgc_coords_latlon(df_nfi_norway)
 
 ggplot() +
-  geom_point(data = data_nfi_norway, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_nfi_norway, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_nfi_norway, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_nfi_norway, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_nfi_norway, file = file.path(here::here(), "/data/inputs/data_nfi_nor.rds"))
+saveRDS(df_nfi_norway, file = file.path(here::here(), "/data/inputs/df_nfi_nor.rds"))
 
 # EFM Switzerland ----
 # David Forrester and Jonas Glatthorn
+# Management:
+# Original: The dataset efm_management includes the year_last_intervention variable
+# Calculate: management_since_census1_yrs from year_last_intervention and first_measurement
 
 # Plot characteristics
-efm_metadata <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/VFL_LISTmanual.csv") |>
+efm_metadata <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/VFL_LISTmanual.csv")
+#efm_metadata <- read.csv("~/data/efm/raw/VFL_LISTmanual.csv")
+efm_metadata <- efm_metadata |>
   mutate(FNUM = as.character(FNUM)) |>
   select(-BA)
 
 # Plot area
-efm_area <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/EFM_plot_area.csv") |>
+efm_area <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/EFM_plot_area.csv")
+#efm_area <- read.csv("~/data/efm/raw/EFM_plot_area.csv")
+efm_area <- efm_area |>
   mutate(FNUM = as.character(FNUM))
-efm_locations <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/efm_plot_locations.csv") |>
+
+efm_locations <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/efm_plot_locations.csv")
+#efm_locations <- read.csv("~/data/efm/raw/efm_plot_locations.csv")
+efm_locations <- efm_locations |>
   mutate(FNUM = as.character(FNUM))
 
 # Last management intervention
-efm_management <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/EFM_last_intervention.csv") |>
-  mutate(FNUM = as.character(FNUM))
-
+efm_management <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/EFM_last_intervention.csv")
+#efm_management <- read.csv("~/data/efm/raw/EFM_last_intervention.csv")
+efm_management <- efm_management |>
+  mutate(FNUM = as.character(FNUM),
+         management_since_census1_yrs = first_measurement - year_last_intervention) |>
+  select(FNUM, management_since_census1_yrs)
+  
 # Stand level data (per plot, year and species)
-# EFM_stand_1 <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/EFM_stand_data.RDS")
-# EFM_stand_2 <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/EFM_stand_data6003.RDS")
-# efm_stand <- EFM_stand_1 %>% bind_rows(EFM_stand_2) %>% filter(FNUM!=6003000)
-# saveRDS(efm_stand, file = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/efm_stand.RDS")
-efm_stand <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/efm_stand.RDS") |>
+efm_stand <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/efm_stand.RDS") 
+#efm_stand <- readRDS("~/data/efm/raw/efm_stand.RDS")
+efm_stand <- efm_stand |>
   mutate(FNUM = as.character(FNUM)) |>
   select(-BA)
 
-# Select Stand level data for all species: "All species combined"
+# Select stand level data for all species: "All species combined"
 dom_species_efm <- efm_stand |>
-  mutate(FNUM = as.character(FNUM)) |>
   filter(Latin != "All species combined") |>
   group_by(FNUM, AJ) |>
   top_n(1, BasalAreaAHC1_2_m2perha) |>
@@ -585,8 +662,7 @@ efm_swi <- efm_stand |>
     ba = BasalAreaAHC1_2_m2perha,
     dbh = DBHqAHC1_2_cm,
     plotsize = PlotArea_ha,
-    density = TreesPerHectareAHC1_2,
-    year_last_management = year_last_intervention
+    density = TreesPerHectareAHC1_2
   ) |>
   mutate(
     qmd = sqrt(ba / (0.0000785 * density)),
@@ -602,51 +678,61 @@ efm_swi <- efm_stand |>
   # create management variable
   mutate(
     management = 0,
-    years_since_management = year(Sys.Date()) - year_last_management,
+    management_cat = 1, 
     country = "Switzerland"
   )
 
 # aggregate data from stand
-data_efm_swi <- from_stand_data(efm_swi)
+df_efm_swi <- from_stand_data(efm_swi)
 
 # add coords and biomes
-data_efm_swi <- biomes_coords_latlon(data_efm_swi)
+df_efm_swi <- biomes_coords_latlon(df_efm_swi)
 
 # add coords and aridity index
-data_efm_swi <- ai_coords_latlon(data_efm_swi)
+df_efm_swi <- ai_coords_latlon(df_efm_swi)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_efm_swi <- lai_coords_latlon(data_efm_swi)
+df_efm_swi <- lai_coords_latlon(df_efm_swi)
 
 # add coords and N deposition (Lamarque 2011)
-data_efm_swi <- ndep_coords_latlon(data_efm_swi)
+df_efm_swi <- ndep_coords_latlon(df_efm_swi)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_efm_swi <- cn_coords_latlon(data_efm_swi)
+df_efm_swi <- cn_coords_latlon(df_efm_swi)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_efm_swi <- phos_coords_latlon(data_efm_swi)
+df_efm_swi <- phos_coords_latlon(df_efm_swi)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_efm_swi <- orgc_coords_latlon(data_efm_swi)
+df_efm_swi <- orgc_coords_latlon(df_efm_swi)
 
 ggplot() +
-  geom_point(data = data_efm_swi, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_efm_swi, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_efm_swi, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_efm_swi, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_efm_swi, file = file.path(here::here(), "/data/inputs/data_efm_swi.rds"))
+saveRDS(df_efm_swi, file = file.path(here::here(), "/data/inputs/df_efm_swi.rds"))
 
-# Uholka plot ----
+# uholka ----
 # Data providers: Jonas Stillhard
+# status 1 Tree found (1) or not found (0) during inventory
+# status 2 Tree alive (1) or dead (0)
+# status 3 Tree standing (1) or lying (0) Boolean
+# status 4 Only for dead trees: entire tree (1) or broken tree (snag), (0)
+
+# Management: 
+# Original info: Plots are considered to be primary in the sense that hey have not been managed in the past. 
+# Derived info: Since history is known, we assign management_cat = 1 and management_since_census1_yrs = 999.
 
 # Tree-level data
 uholka <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/uholka/uholka_tree.csv", sep = ",")
+uholka <- read.csv("~/data/uholka/uholka_tree.csv", sep = ",")
 
 # prepare data
 uholka <- uholka |>
+  filter(status_2 == 1) |> # filter alive trees
   rename(
     x = x_local,
     y = y_local,
@@ -659,78 +745,84 @@ uholka <- uholka |>
     plotID = as.numeric(ifelse(nchar(treeID) == 4, substr(treeID, 1, 1), substr(treeID, 1, 2))),
     plotsize = 0.25, # ha
     biomass = NA,
-    years_since_management = NA,
     country = "Ukraine",
-    management = 0
+    management_since_census1_yrs = 999
   ) |>
-  drop_na(dbh) |>
-  filter(status_2 == 1) # alive trees
+  drop_na(dbh) 
 
 # aggregate data from stand to stand data
-data_uholka <- from_tree_data(uholka) |>
+df_uholka <- from_tree_data(uholka) |>
   # create census at the stand level
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
   ungroup() |>
-  relocate(census, .after = year)
+  relocate(census, .after = year) |>
+  mutate(management = 0,
+         management_cat = 1)
 
 # add coords and biomes
-data_uholka <- biomes_coords_latlon(data_uholka)
+df_uholka <- biomes_coords_latlon(df_uholka)
 
 # add coords and aridity index
-data_uholka <- ai_coords_latlon(data_uholka)
+df_uholka <- ai_coords_latlon(df_uholka)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_uholka <- lai_coords_latlon(data_uholka)
+df_uholka <- lai_coords_latlon(df_uholka)
 
 # add coords and N deposition (Lamarque 2011)
-data_uholka <- ndep_coords_latlon(data_uholka)
+df_uholka <- ndep_coords_latlon(df_uholka)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_uholka <- cn_coords_latlon(data_uholka)
+df_uholka <- cn_coords_latlon(df_uholka)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_uholka <- phos_coords_latlon(data_uholka)
+df_uholka <- phos_coords_latlon(df_uholka)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_uholka <- orgc_coords_latlon(data_uholka)
+df_uholka <- orgc_coords_latlon(df_uholka)
 
 ggplot() +
-  geom_point(data = data_uholka, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_uholka, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_uholka, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_uholka, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_uholka, file = file.path(here::here(), "/data/inputs/data_uholka.rds"))
+saveRDS(df_uholka, file = file.path(here::here(), "/data/inputs/df_uholka.rds"))
 
-# Greece fp ----
+# fep gre ----
+# Greece
 # Data providers: Gavriil Spyroglou and Nikolaos Fyllas
+# Management: 
+# The dataset provides year_last_intervention and year of first measurement (plot establishment)
+# Calculated: management_since_census1_yrs = first_measurement - year_last_intervention.
+# Note: Data also includes years_since_management. We did not use this variable.
 
 # tree-level data to estimate dominant species
-greece_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_gre/fp_gre_tree.csv", sep = ",")
+fep_gre_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_gre/fp_gre_tree.csv", sep = ",")
+fep_gre_tree <- read.csv("~/data/fp_gre/fp_gre_tree.csv", sep = ",")
 
-dom_species <- greece_tree |>
+dom_species <- fep_gre_tree |>
+  filter(status == "Alive") |> # filter alive trees
   rename(
     year = census_year,
     plotID = plot_id
   ) |>
   group_by(plotID, year, species) |>
   add_tally() |>
-  mutate(density = n) |>
-  mutate(ba_tree = pi * (dbh * 0.01)^2 / 4 * density) |>
+  mutate(density = n,
+         ba_tree = pi * (dbh * 0.01)^2 / 4 * density) |>
   summarise(ba = sum(ba_tree, na.rm = T)) |>
   slice_max(ba, with_ties = FALSE) |>
   ungroup() |>
   select(plotID, year, species)
-length(unique(dom_species$plotID))
 
 # stand-level data
-greece_stand <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_gre/fp_gre_stand.csv", sep = ",")
-str(greece_stand)
+fep_gre_stand <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_gre/fp_gre_stand.csv", sep = ",")
+fep_gre_stand <- read.csv("~/data/fp_gre/fp_gre_stand.csv", sep = ",")
 
 # rename variable
-greece_stand <- greece_stand |>
+fep_gre_stand <- fep_gre_stand |>
   rename(
     plotID = plot_id,
     lon = Longtidute,
@@ -750,66 +842,75 @@ greece_stand <- greece_stand |>
   relocate(census, .after = year)
 
 # aggregate data from stand
-data_greece <- from_stand_data(greece_stand) |>
+df_fep_gre <- from_stand_data(fep_gre_stand) |>
   mutate(
     management = 0,
+    management_cat = 1,
+    management_since_census1_yrs = first_measurement - year_last_intervention,
     country = "Greece"
   )
 
 # add coords and biomes
-data_greece <- biomes_coords_latlon(data_greece)
+df_fep_gre <- biomes_coords_latlon(df_fep_gre)
 
 # add coords and aridity index
-data_greece <- ai_coords_latlon(data_greece)
+df_fep_gre <- ai_coords_latlon(df_fep_gre)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_greece <- lai_coords_latlon(data_greece)
+df_fep_gre <- lai_coords_latlon(df_fep_gre)
 
 # add coords and N deposition (Lamarque 2011)
-data_greece <- ndep_coords_latlon(data_greece)
+df_fep_gre <- ndep_coords_latlon(df_fep_gre)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_greece <- cn_coords_latlon(data_greece)
+df_fep_gre <- cn_coords_latlon(df_fep_gre)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_greece <- phos_coords_latlon(data_greece)
+df_fep_gre <- phos_coords_latlon(df_fep_gre)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_greece <- orgc_coords_latlon(data_greece)
+df_fep_gre <- orgc_coords_latlon(df_fep_gre)
 
 ggplot() +
-  geom_point(data = data_greece, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_fep_gre, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_greece, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_fep_gre, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_greece, file = file.path(here::here(), "/data/inputs/data_fp_gre.rds"))
+saveRDS(df_fep_gre, file = file.path(here::here(), "/data/inputs/df_fep_gre.rds"))
 
-# France sites ----
+# INRAE LESSEM ----
+# France
 # Data providers: Georges Kunstler
+# Management:
+# Original: no info on management in the table.
+# New information about management included in fp_fra_stand: year_last_intervention and year of first measurement (plot establishment)
+# Includes management info: management_since_census1_yrs = first_measurement - date_last_harvest
 
 # Tree- and -stand level data
-france_plot <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_fra/fp_fra_stand.csv", sep = ",") |> as_tibble()
-france_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_fra/fp_fra_tree.csv", sep = ",") |> as_tibble()
-france_species <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_fra/fra_sp_code.csv", sep = ",") |> as_tibble()
-france_status <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_fra/fra_sta_code.csv", sep = ",") |> as_tibble()
+inrae_lessem_plot <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_fra/fp_fra_stand.csv", sep = ",") |> as_tibble()
+inrae_lessem_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_fra/fp_fra_tree.csv", sep = ",") |> as_tibble()
+inrae_lessem_species <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_fra/fra_sp_code.csv", sep = ",") |> as_tibble()
+inrae_lessem_status <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_fra/fra_sta_code.csv", sep = ",") |> as_tibble()
 
-str(france_tree)
+inrae_lessem_plot <- read.csv("~/data/fp_fra/fp_fra_stand.csv", sep = ",")
+inrae_lessem_tree <- read.csv("~/data/fp_fra/fp_fra_tree.csv", sep = ",")
+inrae_lessem_species <- read.csv("~/data/fp_fra/fra_sp_code.csv", sep = ",")
+inrae_lessem_status <- read.csv("~/data/fp_fra/fra_sta_code.csv", sep = ",")
 
 # prepare data
-france <- france_tree |>
-  left_join(france_plot, by = "plot_id") |>
-  left_join(france_species) |>
-  left_join(france_status) |>
-  filter(status == "alive") |> # alive trees
+inrae_lessem <- inrae_lessem_tree |>
+  left_join(inrae_lessem_plot, by = "plot_id") |>
+  left_join(inrae_lessem_species) |>
+  left_join(inrae_lessem_status) |>
+  # filter alive trees
+  filter(status == "alive") |>
   # calculate basal area
   mutate(
     ba_tree = pi * (dbh * 0.01 / 2)^2,
     biomass = NA,
-    years_since_management = NA,
-    country = "France",
-    management = 0
+    country = "France"
   ) |>
   rename(
     plotsize = area_ha,
@@ -819,50 +920,57 @@ france <- france_tree |>
   )
 
 # aggregate data from stand to stand data
-data_france <- from_tree_data(france) |>
+df_inrae_lessem <- from_tree_data(inrae_lessem) |>
   # create census
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
-  ungroup()
+  ungroup() |>
+  mutate(
+  management = 0,
+  management_cat = 1
+)
 
 # add coords and biomes
-data_france <- biomes_coords_latlon(data_france)
+df_inrae_lessem <- biomes_coords_latlon(df_inrae_lessem)
 
 # add coords and aridity index
-data_france <- ai_coords_latlon(data_france)
+df_inrae_lessem <- ai_coords_latlon(df_inrae_lessem)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_france <- lai_coords_latlon(data_france)
+df_inrae_lessem <- lai_coords_latlon(df_inrae_lessem)
 
 # add coords and N deposition (Lamarque 2011)
-data_france <- ndep_coords_latlon(data_france)
+df_inrae_lessem <- ndep_coords_latlon(df_inrae_lessem)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_france <- cn_coords_latlon(data_france)
+df_inrae_lessem <- cn_coords_latlon(df_inrae_lessem)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_france <- phos_coords_latlon(data_france)
+df_inrae_lessem <- phos_coords_latlon(df_inrae_lessem)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_france <- orgc_coords_latlon(data_france)
+df_inrae_lessem <- orgc_coords_latlon(df_inrae_lessem)
 
 ggplot() +
-  geom_point(data = data_france, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_inrae_lessem, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_france, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_inrae_lessem, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_france, file = file.path(here::here(), "/data/inputs/data_fp_fra.rds"))
+saveRDS(df_inrae_lessem, file = file.path(here::here(), "/data/inputs/df_inrae_lessem.rds"))
 
 # EuFoRia plots ----
 
 ## bnp ----
 # Data providers: Michael Maroschek and Rupert Seidl
+# Management:
+# Original: In dataset, year_last_management. In Table S1, last management intervention prior census 1 = 6
 
 # Stand-level data by species
 bnp <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/bnp/euf_bnp.csv", sep = ",")
-str(bnp)
+bnp <- read.csv("~/data/euforia/bnp/euf_bnp.csv", sep = ",")
+
 # prepare data
 bnp <- bnp |>
   rename(
@@ -871,55 +979,67 @@ bnp <- bnp |>
     dbh = mean_dbh,
     ba = basal_area,
     species = dominant_species
-  ) |>
-  mutate(years_since_management = year(Sys.Date()) - year_last_management)
+  ) 
 
 # aggregate data from stand
-data_bnp <- from_stand_data(bnp) |>
+df_bnp <- from_stand_data(bnp) |>
   mutate(
-    management = 0,
-    country = "Germany",
     biomass = NA,
-    plotsize = 0.05
-  )
+    plotsize = 0.05,
+    management = 0,
+    management_cat = 1,
+    country = "Germany"
+  ) |>
+group_by(plotID) %>%
+  mutate(
+    management_since_census1_yrs = min(year, na.rm = TRUE) - year_last_management
+  ) |>
+  ungroup()
 
 # add coords and biomes
-data_bnp <- biomes_coords_latlon(data_bnp)
+df_bnp <- biomes_coords_latlon(df_bnp)
 
 # add coords and aridity index
-data_bnp <- ai_coords_latlon(data_bnp)
+df_bnp <- ai_coords_latlon(df_bnp)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_bnp <- lai_coords_latlon(data_bnp)
+df_bnp <- lai_coords_latlon(df_bnp)
 
 # add coords and N deposition (Lamarque 2011)
-data_bnp <- ndep_coords_latlon(data_bnp)
+df_bnp <- ndep_coords_latlon(df_bnp)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_bnp <- cn_coords_latlon(data_bnp)
+df_bnp <- cn_coords_latlon(df_bnp)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_bnp <- phos_coords_latlon(data_bnp)
+df_bnp <- phos_coords_latlon(df_bnp)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_bnp <- orgc_coords_latlon(data_bnp)
+df_bnp <- orgc_coords_latlon(df_bnp)
 
 ggplot() +
-  geom_point(data = data_bnp, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_bnp, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_bnp, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_bnp, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_bnp, file = file.path(here::here(), "/data/inputs/data_euf_bnp.rds"))
+saveRDS(df_bnp, file = file.path(here::here(), "/data/inputs/df_bnp.rds"))
 
 ## czu ----
 # Data providers: Miroslav Svoboda
+# Data at tree level not used
+# Management:
+# Original: "Nature reserve established 1955. Low intensity salvage logging of single trees or group of trees till 1990"
+# In Table S1. indicated management_since_census1_yrs = 69. Need to clarify with author.
 
 # Tree- and stand-level data by species
 czu_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/czu/euf_czu_tree.csv", sep = ",")
 czu_stand <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/czu/euf_czu_stand.csv", sep = ",")
-str(czu_tree)
+
+czu_tree <- read.csv("~/data/euforia/czu/euf_czu_tree.csv", sep = ",") 
+czu_stand <- read.csv("~/data/euforia/czu/euf_czu_stand.csv", sep = ",")
+
 # prepare data
 czu <- czu_stand |>
   rename(
@@ -932,55 +1052,62 @@ czu <- czu_stand |>
   mutate(
     dbh = dbh / 10,
     plotsize = plot_size_m2 / 10000,
-    years_since_management = year(Sys.Date()) - 1955
-  )
-
-# aggregate data from stand
-data_czu <- from_stand_data(czu) |>
-  mutate(
-    management = 0,
-    country = "Czech Republic",
     biomass = NA
   )
 
+# aggregate data from stand
+df_czu <- from_stand_data(czu) |>
+  mutate(
+    management = 0,
+    management_cat = 1,
+    management_since_census1_yrs = 69,
+    country = "Czech Republic"
+  )
+
 # add coords and biomes
-data_czu <- biomes_coords_latlon(data_czu)
+df_czu <- biomes_coords_latlon(df_czu)
 
 # add coords and aridity index
-data_czu <- ai_coords_latlon(data_czu)
+df_czu <- ai_coords_latlon(df_czu)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_czu <- lai_coords_latlon(data_czu)
+df_czu <- lai_coords_latlon(df_czu)
 
 # add coords and N deposition (Lamarque 2011)
-data_czu <- ndep_coords_latlon(data_czu)
+df_czu <- ndep_coords_latlon(df_czu)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_czu <- cn_coords_latlon(data_czu)
+df_czu <- cn_coords_latlon(df_czu)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_czu <- phos_coords_latlon(data_czu)
+df_czu <- phos_coords_latlon(df_czu)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_czu <- orgc_coords_latlon(data_czu)
+df_czu <- orgc_coords_latlon(df_czu)
 
 ggplot() +
-  geom_point(data = data_czu, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_czu, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_czu, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_czu, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_czu, file = file.path(here::here(), "/data/inputs/data_euf_czu.rds"))
+saveRDS(df_czu, file = file.path(here::here(), "/data/inputs/df_czu.rds"))
 
-## forst ----
+## fvabw ----
 # Data providers: Yannek Käber and Lucia Seebach
+# Before called forst
+# Management:
+# Original: In Table S1 indicated that last management was before the time of designation
+# Confirm what is tsc variable? 
+# Assigned management_cat = 2
 
 # Stand-level data by species
-forst <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/forst/euf_forst.csv", sep = ",")
-str(forst)
+fvabw <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/forst/euf_forst.csv", sep = ",")
+fvabw <- read.csv("~/data/euforia/forst/euf_forst.csv", sep = ",")
+
 # prepare data
-forst <- forst |>
+fvabw <- fvabw |>
   rename(
     plotID = plot_id,
     lon = utm_x,
@@ -993,111 +1120,122 @@ forst <- forst |>
   mutate(biomass = NA)
 
 # aggregate data from stand to stand data
-data_forst <- from_species_data(forst) |>
+df_fvabw <- from_species_data(fvabw) |>
   # create census
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
   ungroup() |>
   mutate(
     management = 0,
+    management_cat = 2,
+    management_since_census1_yrs = NA,
     country = "Germany",
-    biomass = NA,
-    years_since_management = NA
   )
 
 # add coords and biomes
-data_forst <- biomes_coords_utm(data_forst)
+df_fvabw <- biomes_coords_utm(df_fvabw)
 
 # add coords and aridity index
-data_forst <- ai_coords_latlon(data_forst)
+df_fvabw <- ai_coords_latlon(df_fvabw)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_forst <- lai_coords_latlon(data_forst)
+df_fvabw <- lai_coords_latlon(df_fvabw)
 
 # add coords and N deposition (Lamarque 2011)
-data_forst <- ndep_coords_latlon(data_forst)
+df_fvabw <- ndep_coords_latlon(df_fvabw)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_forst <- cn_coords_latlon(data_forst)
+df_fvabw <- cn_coords_latlon(df_fvabw)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_forst <- phos_coords_latlon(data_forst)
+df_fvabw <- phos_coords_latlon(df_fvabw)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_forst <- orgc_coords_latlon(data_forst)
+df_fvabw <- orgc_coords_latlon(df_fvabw)
 
 ggplot() +
-  geom_point(data = data_forst, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_fvabw, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_forst, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_fvabw, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_forst, file = file.path(here::here(), "/data/inputs/data_euf_forst.rds"))
+saveRDS(df_fvabw, file = file.path(here::here(), "/data/inputs/df_fvabw.rds"))
 
 ## iberbas ----
 # Data providers: Tzvetan Zlatanov
+# Management:
+# Original dataset does not include info on management.
+# In Table S1, management_since_census1_yrs = 70
 
 # Tree-level data
 iberbas <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/iberbas/euf_iberbas.csv", sep = ",")
+iberbas <- read.csv("~/data/euforia/iberbas/euf_iberbas.csv", sep = ",")
 
 # prepare data
 iberbas <- iberbas |>
   filter(dbh != 0) |>
+  rename(plotsize = plot_size) |>
   # calculate basal area
   mutate(
     ba_tree = pi * (dbh * 0.01 / 2)^2,
     biomass = NA,
-    years_since_management = NA,
-    country = "Bulgaria",
-    management = 0
-  ) |>
-  rename(plotsize = plot_size)
+    management_since_census1_yrs = 70,
+    country = "Bulgaria")
 
 # aggregate data from stand to stand data
-data_iberbas <- from_tree_data(iberbas) |>
+df_iberbas <- from_tree_data(iberbas) |>
   # create census
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
-  ungroup()
+  ungroup()  |>
+  mutate(
+    management = 0,
+    management_cat = 1
+  )
 
 # add coords and biomes
-data_iberbas <- biomes_coords_latlon(data_iberbas)
+df_iberbas <- biomes_coords_latlon(df_iberbas)
 
 # add coords and aridity index
-data_iberbas <- ai_coords_latlon(data_iberbas)
+df_iberbas <- ai_coords_latlon(df_iberbas)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_iberbas <- lai_coords_latlon(data_iberbas)
+df_iberbas <- lai_coords_latlon(df_iberbas)
 
 # add coords and N deposition (Lamarque 2011)
-data_iberbas <- ndep_coords_latlon(data_iberbas)
+df_iberbas <- ndep_coords_latlon(df_iberbas)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_iberbas <- cn_coords_latlon(data_iberbas)
+df_iberbas <- cn_coords_latlon(df_iberbas)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_iberbas <- phos_coords_latlon(data_iberbas)
+df_iberbas <- phos_coords_latlon(df_iberbas)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_iberbas <- orgc_coords_latlon(data_iberbas)
+df_iberbas <- orgc_coords_latlon(df_iberbas)
 
 ggplot() +
-  geom_point(data = data_iberbas, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_iberbas, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_iberbas, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_iberbas, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_iberbas, file = file.path(here::here(), "/data/inputs/data_euf_iberbas.rds"))
+saveRDS(df_iberbas, file = file.path(here::here(), "/data/inputs/df_iberbas.rds"))
 
-## incds ----
+## unitbv ----
 # Data providers: Any Mary Petritan, Cătălin Petritan
+# Before called incds
+# Management:
+# Original dataset does not include info on management.
+# In Table S1, management_since_census1_yrs = NA
 
 # Tree-level data
-incds <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/incds/euf_incds.csv", sep = ",")
+unitbv <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/incds/euf_incds.csv", sep = ",")
+unitbv <- read.csv("~/data/euforia/incds/euf_incds.csv", sep = ",")
 
-incds <- incds |>
+unitbv <- unitbv |>
   select(-c(Height2003, Height2013, Height2023)) |>
   pivot_longer(
     cols = c(dbh_2003, dbh_2013, dbh_2023, status_2003, status_2013, status_2023, biomass_2003, biomass_2013, biomass_2023),
@@ -1110,82 +1248,90 @@ incds <- incds |>
 # plotsize = 100 * 100 = 1 ha
 # New plots = 20x20 = 0.04
 
-incds$grid20 <- interaction(
-  cut(incds$X,
+unitbv$grid20 <- interaction(
+  cut(unitbv$X,
     breaks = seq(0, 100, by = 20),
     include.lowest = TRUE
   ),
-  cut(incds$Y,
+  cut(unitbv$Y,
     breaks = seq(0, 100, by = 20),
     include.lowest = TRUE
   ),
   sep = "X"
 )
 # prepare data
-incds <- incds |>
+unitbv <- unitbv |>
   rename(plotIDD = plotID) |>
   group_by(grid20) |>
   mutate(plotID = cur_group_id()) |>
   ungroup()
-ggplot(incds) +
+ggplot(unitbv) +
   geom_point(aes(X, Y, col = plotID))
-length(unique(incds$plotID))
+length(unique(unitbv$plotID))
 
 # prepare data
-incds <- incds |>
+unitbv <- unitbv |>
   filter(status == "alive") |>
   # calculate basal area
   mutate(
     ba_tree = pi * (dbh * 0.01 / 2)^2,
     year = as.numeric(year),
     plotsize = 0.04,
-    years_since_management = NA,
     country = "Rumania",
-    management = 0
+    management_since_census1_yrs = NA
   )
 
 # aggregate data from stand to stand data
-data_incds <- from_tree_data(incds) |>
+df_unitbv <- from_tree_data(unitbv) |>
   # create census
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
-  ungroup()
+  ungroup() |>
+  mutate(
+    management_cat = 2,
+    management = 0
+  )
 
 # add coords and biomes
-data_incds <- biomes_coords_latlon(data_incds)
+df_unitbv <- biomes_coords_latlon(df_unitbv)
 
 # add coords and aridity index
-data_incds <- ai_coords_latlon(data_incds)
+df_unitbv <- ai_coords_latlon(df_unitbv)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_incds <- lai_coords_latlon(data_incds)
+df_unitbv <- lai_coords_latlon(df_unitbv)
 
 # add coords and N deposition (Lamarque 2011)
-data_incds <- ndep_coords_latlon(data_incds)
+df_unitbv <- ndep_coords_latlon(df_unitbv)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_incds <- cn_coords_latlon(data_incds)
+df_unitbv <- cn_coords_latlon(df_unitbv)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_incds <- phos_coords_latlon(data_incds)
+df_unitbv <- phos_coords_latlon(df_unitbv)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_incds <- orgc_coords_latlon(data_incds)
+df_unitbv <- orgc_coords_latlon(df_unitbv)
 
 ggplot() +
-  geom_point(data = data_incds, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_unitbv, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_incds, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_unitbv, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_incds, file = file.path(here::here(), "/data/inputs/data_euf_incds.rds"))
+saveRDS(df_unitbv, file = file.path(here::here(), "/data/inputs/df_unitbv.rds"))
 
 ## lwf ----
 # Data providers: Markus Blaschke
+# Management:
+# Original dataset does not include info on management.
+# In Table S1, management_since_census1_yrs = NA
 
 # Stand-level data
 lwf_stand <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/lwf/euf_lwf_stand.csv", sep = ";")
+lwf_stand <- read.csv("~/data/euforia/lwf/euf_lwf_stand.csv", sep = ";")
+
 lwf_stand <- lwf_stand |>
   rename(
     plotID = Plot_ID,
@@ -1198,15 +1344,16 @@ lwf_stand <- lwf_stand |>
 
 # Tree-level data
 lwf_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/lwf/euf_lwf_tree.csv", sep = ",")
+lwf_tree <- read.csv("~/data/euforia/lwf/euf_lwf_tree.csv", sep = ",")
 
 # prepare data
 lwf_tree <- lwf_tree |>
+  filter(Status == "alive") |>
   mutate(
     ba_tree = pi * (DBH * 0.01 / 2)^2,
     biomass = NA,
-    years_since_management = NA,
-    management = 0,
-    country = "Germany"
+    country = "Germany",
+    management_since_census1_yrs = NA
   ) |>
   rename(
     plotID = Plot_ID,
@@ -1215,62 +1362,68 @@ lwf_tree <- lwf_tree |>
     status = Status,
     dbh = DBH
   ) |>
-  left_join(lwf_stand) |>
-  filter(status == "alive")
+  left_join(lwf_stand) 
 
-# aggregate data from stand to stand data
-data_lwf <- from_tree_data(lwf_tree) |>
+# aggregate data from tree to stand data
+df_lwf <- from_tree_data(lwf_tree) |>
   # create census
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
-  ungroup()
+  ungroup() |>
+  mutate(
+    management_cat = 3,
+    management = 0
+  )
 
 # add coords and biomes
-data_lwf <- biomes_coords_utm(data_lwf)
+df_lwf <- biomes_coords_utm(df_lwf)
 
 # add coords and aridity index
-data_lwf <- ai_coords_latlon(data_lwf)
+df_lwf <- ai_coords_latlon(df_lwf)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_lwf <- lai_coords_latlon(data_lwf)
+df_lwf <- lai_coords_latlon(df_lwf)
 
 # add coords and N deposition (Lamarque 2011)
-data_lwf <- ndep_coords_latlon(data_lwf)
+df_lwf <- ndep_coords_latlon(df_lwf)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_lwf <- cn_coords_latlon(data_lwf)
+df_lwf <- cn_coords_latlon(df_lwf)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_lwf <- phos_coords_latlon(data_lwf)
+df_lwf <- phos_coords_latlon(df_lwf)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_lwf <- orgc_coords_latlon(data_lwf)
+df_lwf <- orgc_coords_latlon(df_lwf)
 
 ggplot() +
-  geom_point(data = data_lwf, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_lwf, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_lwf, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_lwf, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_lwf, file = file.path(here::here(), "/data/inputs/data_euf_lwf.rds"))
+saveRDS(df_lwf, file = file.path(here::here(), "/data/inputs/df_lwf.rds"))
 
-## nbw ----
+## npvbw ----
 # Data from Marco Heurich and Isabelle Klein
+# Management:
+# Original dataset does not include info on management.
+# In Table S1, management_since_census1_yrs = 42
 
 # tree-level data
-nbw <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/nbw/euf_nbw_tree.csv", sep = ",")
+npvbw <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/nbw/euf_nbw_tree.csv", sep = ",")
+npvbw <- read.csv("~/data/euforia/nbw/euf_nbw_tree.csv", sep = ",")
 
 # prepare data
-nbw <- nbw |>
+npvbw <- npvbw |>
   filter(status == "alive") |>
   # calculate basal area
   mutate(
     ba_tree = pi * (dbh * 0.01 / 2)^2,
     biomass = NA,
-    years_since_management = year(Sys.Date()) - year_last_management,
     country = "Germany",
-    management = 0
+    #management_since_census1_yrs = 42
   ) |>
   rename(
     plotsize = plot_size,
@@ -1279,73 +1432,87 @@ nbw <- nbw |>
   group_by(plotID) |>
   mutate(
     lat = mean(latitude),
-    lon = mean(longitude)
+    lon = mean(longitude),
+    management_since_census1_yrs = min(year, na.rm = TRUE) - year_last_management
   ) |>
   ungroup()
 
 # aggregate data from stand to stand data
-data_nbw <- from_tree_data(nbw) |>
+df_npvbw <- from_tree_data(npvbw) |>
   # create census
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
-  ungroup()
+  ungroup() |>
+  mutate(
+    management_cat = 1,
+    management = 0
+  )
 
 # add coords and biomes
-data_nbw <- biomes_coords_latlon(data_nbw)
+df_npvbw <- biomes_coords_latlon(df_npvbw)
 
 # add coords and aridity index
-data_nbw <- ai_coords_latlon(data_nbw)
+df_npvbw <- ai_coords_latlon(df_npvbw)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_nbw <- lai_coords_latlon(data_nbw)
+df_npvbw <- lai_coords_latlon(df_npvbw)
 
 # add coords and N deposition (Lamarque 2011)
-data_nbw <- ndep_coords_latlon(data_nbw)
+df_npvbw <- ndep_coords_latlon(df_npvbw)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_nbw <- cn_coords_latlon(data_nbw)
+df_npvbw <- cn_coords_latlon(df_npvbw)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_nbw <- phos_coords_latlon(data_nbw)
+df_npvbw <- phos_coords_latlon(df_npvbw)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_nbw <- orgc_coords_latlon(data_nbw)
+df_npvbw <- orgc_coords_latlon(df_npvbw)
 
 ggplot() +
-  geom_point(data = data_nbw, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_npvbw, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_nbw, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_npvbw, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_nbw, file = file.path(here::here(), "/data/inputs/data_euf_nbw.rds"))
+saveRDS(df_npvbw, file = file.path(here::here(), "/data/inputs/df_npvbw.rds"))
 
 ## nfr ----
 # Martina Hobi and Harald Bugmann
+# Management:
+# Original dataset includes info on management.
 
 # Metadata
-nfr_Metadata <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfr/raw/NFR_metadata.csv")
-nfr_Metadata <- nfr_Metadata |>
+nfr_metadata <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfr/raw/NFR_metadata.csv")
+nfr_metadata <- read.csv("~/data/euforia/nfr/raw/NFR_metadata.csv", sep = ",")
+
+nfr_metadata <- nfr_metadata |>
   mutate(fg = as.character(fg)) |>
   select(fg, lat, long, ele, temp, precip) |>
   distinct(fg, .keep_all = TRUE)
 
 # Plot area
 nfr_plot_area <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfr/raw/NFR_plot_area.csv")
+nfr_plot_area <- read.csv("~/data/euforia/nfr/raw/NFR_plot_area.csv", sep = ",")
+
 nfr_plot_area <- nfr_plot_area |>
   mutate(
     fg = as.character(fg),
     FNUM = as.character(FNUM)
   ) |>
-  left_join(nfr_Metadata)
+  left_join(nfr_metadata)
 
 # Last management intervention
 nfr_last_intervention <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfr/raw/NFR_last_intervention.csv")
+nfr_last_intervention <- read.csv("~/data/euforia/nfr/raw/NFR_last_intervention.csv", sep = ",")
+
 nfr_last_intervention <- nfr_last_intervention |>
   mutate(fg = as.character(fg))
 
 # Stand level data (per plot, year and species)
 nfr_stand <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfr/raw/NFR_stand_data.RDS") # 291 plots From David Forrester data
+nfr_stand <- readRDS("~/data/euforia/nfr/raw/NFR_stand_data.RDS")
 
 # Select Stand level data for all species: "All species combined"
 dom_species_nfr <- nfr_stand |>
@@ -1368,8 +1535,7 @@ nfr_swi <- nfr_stand |>
     dbh = DBHqAHC1_2_cm,
     lon = long,
     plotsize = PlotArea_ha,
-    density = TreesPerHectareAHC1_2,
-    year_last_management = year_last_intervention
+    density = TreesPerHectareAHC1_2
   ) |>
   mutate(
     qmd = sqrt(ba / (0.0000785 * density)),
@@ -1386,60 +1552,70 @@ nfr_swi <- nfr_stand |>
   relocate(census, .after = year) |>
   # create management variable
   mutate(
-    management = 0,
-    years_since_management = year(Sys.Date()) - year_last_management,
-    country = "Switzerland"
+    country = "Switzerland",
+    management_since_census1_yrs = first_measurement - year_last_intervention
   )
 
 # aggregate data from stand
-data_nfr_swi <- from_stand_data(nfr_swi)
+df_nfr_swi <- from_stand_data(nfr_swi) |>
+  mutate(
+    management_cat = 1,
+    management = 0
+  )
 
 # add coords and biomes
-data_nfr_swi <- biomes_coords_latlon(data_nfr_swi)
+df_nfr_swi <- biomes_coords_latlon(df_nfr_swi)
 
 # add coords and aridity index
-data_nfr_swi <- ai_coords_latlon(data_nfr_swi)
+df_nfr_swi <- ai_coords_latlon(df_nfr_swi)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_nfr_swi <- lai_coords_latlon(data_nfr_swi)
+df_nfr_swi <- lai_coords_latlon(df_nfr_swi)
 
 # add coords and N deposition (Lamarque 2011)
-data_nfr_swi <- ndep_coords_latlon(data_nfr_swi)
+df_nfr_swi <- ndep_coords_latlon(df_nfr_swi)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_nfr_swi <- cn_coords_latlon(data_nfr_swi)
+df_nfr_swi <- cn_coords_latlon(df_nfr_swi)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_nfr_swi <- phos_coords_latlon(data_nfr_swi)
+df_nfr_swi <- phos_coords_latlon(df_nfr_swi)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_nfr_swi <- orgc_coords_latlon(data_nfr_swi)
+df_nfr_swi <- orgc_coords_latlon(df_nfr_swi)
 
 ggplot() +
-  geom_point(data = data_nfr_swi, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_nfr_swi, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_nfr_swi, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_nfr_swi, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_nfr_swi, file = file.path(here::here(), "/data/inputs/data_nfr_swi.rds"))
+saveRDS(df_nfr_swi, file = file.path(here::here(), "/data/inputs/df_nfr_swi.rds"))
 
 ## nwfva ----
 # Data providers: Peter Meyer
+# Original dataset includes info on management. Max management_since_census1_yrs = 10
+# In Table S1, management_since_census1_yrs = 52. Need to contact data providers.
 
 # Stand-level data
 nwfva_stand <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/nwfva/euf_nwfva_stand.csv", sep = ",")
+nwfva_stand <- read.csv("~/data/euforia/nwfva/euf_nwfva_stand.csv", sep = ",")
 
 # Tree-level data
 nwfva_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/nwfva/euf_nwfva_tree.csv", sep = ",")
+nwfva_tree <- read.csv("~/data/euforia/nwfva/euf_nwfva_tree.csv", sep = ",")
 
 # prepare data
 nwfva_stand <- nwfva_stand |>
   as_tibble() |>
   unite(plotID, c("reserve_id", "plot_id")) |>
-  select(plotID, year, census)
+  select(plotID, year, census, year_last_management) |>
+  group_by(plotID) |>
+  mutate(management_since_census1_yrs = min(year, na.rm = TRUE) - year_last_management)
 
 nwfva_tree <- nwfva_tree |>
+  filter(status == "A") |> # alive trees
   as_tibble() |>
   unite(plotID, c("reserve_id", "plot_id")) |>
   left_join(nwfva_stand) |>
@@ -1453,59 +1629,61 @@ nwfva_tree <- nwfva_tree |>
     dbh = dbhmm / 10,
     ba_tree = pi * (dbh * 0.01 / 2)^2,
     year = as.numeric(year),
-    years_since_management = year(Sys.Date()) - year_last_management,
     country = "Germany",
     azimuth_rad = (90 - azimuth) * pi / 180,
     x = distance * cos(azimuth),
-    y = distance * sin(azimuth)
-  ) |>
-  mutate(
-    management = 0,
+    y = distance * sin(azimuth),
     biomass = NA
-  ) |>
-  filter(status == "A") # alive trees
+  ) 
 
 # aggregate data from tree to stand data
-data_nwfva <- from_tree_data(nwfva_tree) |>
+df_nwfva <- from_tree_data(nwfva_tree) |>
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
-  ungroup()
+  ungroup() |>
+  mutate(
+    management_cat = 1,
+    management = 0
+  )
 
 # add coords and biomes
-data_nwfva <- biomes_coords_utm(data_nwfva)
+df_nwfva <- biomes_coords_utm(df_nwfva)
 
 # add coords and aridity index
-data_nwfva <- ai_coords_latlon(data_nwfva)
+df_nwfva <- ai_coords_latlon(df_nwfva)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_nwfva <- lai_coords_latlon(data_nwfva)
+df_nwfva <- lai_coords_latlon(df_nwfva)
 
 # add coords and N deposition (Lamarque 2011)
-data_nwfva <- ndep_coords_latlon(data_nwfva)
+df_nwfva <- ndep_coords_latlon(df_nwfva)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_nwfva <- cn_coords_latlon(data_nwfva)
+df_nwfva <- cn_coords_latlon(df_nwfva)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_nwfva <- phos_coords_latlon(data_nwfva)
+df_nwfva <- phos_coords_latlon(df_nwfva)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_nwfva <- orgc_coords_latlon(data_nwfva)
+df_nwfva <- orgc_coords_latlon(df_nwfva)
 
 ggplot() +
-  geom_point(data = data_nwfva, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_nwfva, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_nwfva, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_nwfva, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_nwfva, file = file.path(here::here(), "/data/inputs/data_euf_nwfva.rds"))
+saveRDS(df_nwfva, file = file.path(here::here(), "/data/inputs/df_nwfva.rds"))
 
 ## tuzvo ----
 # Data providers: Stanislav Kucbel and Peter Jalovia
+# Original dataset does not include info on management. 
+# In Table S1, management_since_census1_yrs = NA, management_cat = 2
 
 # Stand-level data
 tuzvo_stand <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/tuzvo/euf_tuzvo_stand.csv", sep = ",")
+tuzvo_stand <- read.csv("~/data/euforia/tuzvo/euf_tuzvo_stand.csv", sep = ",")
 
 tuzvo_stand <- tuzvo_stand |>
   rename(
@@ -1519,6 +1697,7 @@ tuzvo_stand <- tuzvo_stand |>
 
 # Tree-level data
 tuzvo_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/tuzvo/euf_tuzvo_tree.csv", sep = ",")
+tuzvo_tree <- read.csv("~/data/euforia/tuzvo/euf_tuzvo_tree.csv", sep = ",")
 
 # prepare data
 # we use wood density from the BIOMASS pkg to estimate biomass given volume (m3)
@@ -1537,64 +1716,76 @@ tuzvo_tree <- tuzvo_tree |>
   ) |>
   mutate(
     ba_tree = pi * (dbh * 0.01 / 2)^2,
-    years_since_management = NA,
+    management_since_census1_yrs = NA,
     country = "Slovakia",
-    management = 0,
     biomass = volume * WD$meanWD * 10^3
   ) |>
-  left_join(tuzvo_stand) |>
-  filter(status == "alive") # alive trees
+  filter(status == "alive") |> # alive trees
+  left_join(tuzvo_stand)
 
 # aggregate data from stand to stand data
-data_tuzvo <- from_tree_data(tuzvo_tree) |>
+df_tuzvo <- from_tree_data(tuzvo_tree) |>
   # create census
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
-  ungroup()
+  ungroup() |>
+  mutate(
+    management_cat = 2,
+    management = 0
+  )
 
 # add coords and biomes
-data_tuzvo <- biomes_coords_latlon(data_tuzvo)
+df_tuzvo <- biomes_coords_latlon(df_tuzvo)
 
 # add coords and aridity index
-data_tuzvo <- ai_coords_latlon(data_tuzvo)
+df_tuzvo <- ai_coords_latlon(df_tuzvo)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_tuzvo <- lai_coords_latlon(data_tuzvo)
+df_tuzvo <- lai_coords_latlon(df_tuzvo)
 
 # add coords and N deposition (Lamarque 2011)
-data_tuzvo <- ndep_coords_latlon(data_tuzvo)
+df_tuzvo <- ndep_coords_latlon(df_tuzvo)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_tuzvo <- cn_coords_latlon(data_tuzvo)
+df_tuzvo <- cn_coords_latlon(df_tuzvo)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_tuzvo <- phos_coords_latlon(data_tuzvo)
+df_tuzvo <- phos_coords_latlon(df_tuzvo)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_tuzvo <- orgc_coords_latlon(data_tuzvo)
+df_tuzvo <- orgc_coords_latlon(df_tuzvo)
 
 ggplot() +
-  geom_point(data = data_tuzvo, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_tuzvo, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_tuzvo, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_tuzvo, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_tuzvo, file = file.path(here::here(), "/data/inputs/data_euf_tuzvo.rds"))
+saveRDS(df_tuzvo, file = file.path(here::here(), "/data/inputs/df_tuzvo.rds"))
 
 ## ul ----
 # Thomas Nagel
+# Management: 
+# Original info: Plots are considered to be old forest with no management.
+# Derived info: We assign management_cat = 2 and management_since_census1_yrs = NA
 
 # tree-level data
 ul_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/ul/euf_ul_tree.csv", sep = ",")
+ul_tree <- read.csv("~/data/euforia/ul/euf_ul_tree.csv", sep = ",")
 
 # metadata
 ul_metadata <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/ul/euf_ul_meta.csv", sep = ",")
+ul_metadata <- read.csv("~/data/euforia/ul/euf_ul_meta.csv", sep = ",")
+
 ul_metadata <- ul_metadata |>
   select(plotid, plot_size) |>
   distinct() |>
   rename(plotsize = plot_size)
+
 ul_coords <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/ul/euf_ul_coor.csv", sep = ",")
+ul_coords <- read.csv("~/data/euforia/ul/euf_ul_coor.csv", sep = ",")
+
 ul_coords <- ul_coords |>
   select(plotid, lat, lon)
 
@@ -1605,59 +1796,63 @@ ul_tree <- ul_tree |>
   rename(plotID = plotid) |>
   mutate(
     ba_tree = pi * (dbh * 0.01 / 2)^2,
-    years_since_management = NA,
+    management_since_census1_yrs = NA,
     country = "Slovenia",
-    biomass = NA,
-    management = 0
+    biomass = NA
   ) |>
   filter(status == "alive") # alive trees
 
 # aggregate data from stand to stand data
-data_ul <- from_tree_data(ul_tree) |>
+df_ul <- from_tree_data(ul_tree) |>
   # create census
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
-  ungroup()
+  ungroup() |>
+  mutate(
+    management_cat = 2,
+    management = 0
+  )
 
 # add coords and biomes
-data_ul <- biomes_coords_latlon(data_ul)
+df_ul <- biomes_coords_latlon(df_ul)
 
 # add coords and aridity index
-data_ul <- ai_coords_latlon(data_ul)
+df_ul <- ai_coords_latlon(df_ul)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_ul <- lai_coords_latlon(data_ul)
+df_ul <- lai_coords_latlon(df_ul)
 
 # add coords and N deposition (Lamarque 2011)
-data_ul <- ndep_coords_latlon(data_ul)
+df_ul <- ndep_coords_latlon(df_ul)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_ul <- cn_coords_latlon(data_ul)
+df_ul <- cn_coords_latlon(df_ul)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_ul <- phos_coords_latlon(data_ul)
+df_ul <- phos_coords_latlon(df_ul)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_ul <- orgc_coords_latlon(data_ul)
+df_ul <- orgc_coords_latlon(df_ul)
 
 ggplot() +
-  geom_point(data = data_ul, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_ul, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_ul, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_ul, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_ul, file = file.path(here::here(), "/data/inputs/data_euf_ul.rds"))
-
-## unipd ----
-# Marco Carrer
-# not enough data
+saveRDS(df_ul, file = file.path(here::here(), "/data/inputs/df_ul.rds"))
 
 ## unito ----
 # Renzo Motta
 
+# Management: 
+# Original info: No information
+# Derived info: In Table S1, assign to 50 years. Need to confirm with data providers.
+
 # Tree-level data
 unito <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/unito/euf_unito_tree.csv", sep = ",")
+unito <- read.csv("~/data/euforia/unito/euf_unito_tree.csv", sep = ",")
 
 # Divide plot into grids of different size given the coordinates
 # plotsize = 100 * 100 = 1 ha
@@ -1789,7 +1984,7 @@ unito <- unito |>
   rename(dbh = DBH) |>
   mutate(
     ba_tree = pi * (dbh * 0.01 / 2)^2,
-    years_since_management = NA,
+    management_since_census1_yrs = NA,
     country = "Italy",
     management = 0,
     biomass = volume * WD$meanWD * 10^3,
@@ -1798,90 +1993,107 @@ unito <- unito |>
   filter(status == "A") # alive trees
 
 # aggregate data from stand to stand data
-data_unito <- from_tree_data(unito) |>
+df_unito <- from_tree_data(unito) |>
   # create census
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
-  ungroup()
+  ungroup() |>
+  mutate(
+    management_cat = 2,
+    management = 0
+  )
 
 # add coords and biomes
-data_unito <- biomes_coords_utm(data_unito)
+df_unito <- biomes_coords_utm(df_unito)
 
 # add coords and aridity index
-data_unito <- ai_coords_latlon(data_unito)
+df_unito <- ai_coords_latlon(df_unito)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_unito <- lai_coords_latlon(data_unito)
+df_unito <- lai_coords_latlon(df_unito)
 
 # add coords and N deposition (Lamarque 2011)
-data_unito <- ndep_coords_latlon(data_unito)
+df_unito <- ndep_coords_latlon(df_unito)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_unito <- cn_coords_latlon(data_unito)
+df_unito <- cn_coords_latlon(df_unito)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_unito <- phos_coords_latlon(data_unito)
+df_unito <- phos_coords_latlon(df_unito)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_unito <- orgc_coords_latlon(data_unito)
+df_unito <- orgc_coords_latlon(df_unito)
 
 ggplot() +
-  geom_point(data = data_unito, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_unito, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_unito, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_unito, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_unito, file = file.path(here::here(), "/data/inputs/data_euf_unito.rds"))
+saveRDS(df_unito, file = file.path(here::here(), "/data/inputs/df_unito.rds"))
 
 ## urk ----
 # Data providers: Srdjan Keren and Zbigniew Maciejewski
+# Management:
+# Original info: year_last_management
+# Derived info: In Table S1, assign to NA years. It can be considered a primary/old-growth forests.
 
 # Stand-level data
 urk <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/urk/euf_urk_stand.csv", sep = ",")
+urk <- read.csv("~/data/euforia/urk/euf_urk_stand.csv", sep = ",")
 
 # aggregate data from stand
-data_urk <- from_stand_data(urk) |>
+df_urk <- from_stand_data(urk) |>
   mutate(
-    management = 0,
-    country = "Poland",
     biomass = NA,
-    years_since_management = NA
+    management = 0,
+    management_cat = 1,
+    country = "Poland"
   ) |>
-  rename(plotsize = area_ha)
+  rename(plotsize = area_ha) |>
+  group_by(plotID) %>%
+  mutate(
+    management_since_census1_yrs = min(year, na.rm = TRUE) - year_last_management
+  ) |>
+  ungroup()
 
 # add coords and biomes
-data_urk <- biomes_coords_latlon(data_urk)
+df_urk <- biomes_coords_latlon(df_urk)
 
 # add coords and aridity index
-data_urk <- ai_coords_latlon(data_urk)
+df_urk <- ai_coords_latlon(df_urk)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_urk <- lai_coords_latlon(data_urk)
+df_urk <- lai_coords_latlon(df_urk)
 
 # add coords and N deposition (Lamarque 2011)
-data_urk <- ndep_coords_latlon(data_urk)
+df_urk <- ndep_coords_latlon(df_urk)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_urk <- cn_coords_latlon(data_urk)
+df_urk <- cn_coords_latlon(df_urk)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_urk <- phos_coords_latlon(data_urk)
+df_urk <- phos_coords_latlon(df_urk)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_urk <- orgc_coords_latlon(data_urk)
+df_urk <- orgc_coords_latlon(df_urk)
 
 ggplot() +
-  geom_point(data = data_urk, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_urk, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_urk, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_urk, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_urk, file = file.path(here::here(), "/data/inputs/data_euf_urk.rds"))
+saveRDS(df_urk, file = file.path(here::here(), "/data/inputs/df_urk.rds"))
 
 ## wuls ----
 # Data providers: Bogdan Brzeziecki
+
+# Management:
+# Original info: not management info.
+# Derived info: In Table S1, assign management_since_census1_yrs = ca. 20 years. It can be considered a primary/old-growth forests.
 
 # Tree-level data
 wuls_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/wuls/euf_wuls_tree.csv", sep = ",")
@@ -1889,6 +2101,12 @@ wuls_census <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglo
 wuls_areas <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/wuls/euf_wuls_area.csv", sep = ",")
 wuls_coords <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/wuls/euf_wuls_coor.csv", sep = ",")
 wuls_species <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/wuls/euf_wuls_sp.csv", sep = ",")
+
+wuls_tree <- read.csv("~/data/euforia/wuls/euf_wuls_tree.csv", sep = ",")
+wuls_census <- read.csv("~/data/euforia/wuls/euf_wuls_census.csv", sep = ",")
+wuls_areas <- read.csv("~/data/euforia/wuls/euf_wuls_area.csv", sep = ",")
+wuls_coords <- read.csv("~/data/euforia/wuls/euf_wuls_coor.csv", sep = ",")
+wuls_species <- read.csv("~/data/euforia/wuls/euf_wuls_sp.csv", sep = ",")
 
 wuls <- wuls_tree |>
   select(-c(H1, H2, H3, H4, H5, H6, H7, H8, V1, V2, V3, V4, V5, V6, V7, V8)) |>
@@ -1908,9 +2126,8 @@ wuls <- wuls_tree |>
     census = as.numeric(census),
     ba_tree = pi * (dbh * 0.01 / 2)^2,
     biomass = NA,
-    years_since_management = NA,
-    country = "Poland",
-    management = 0
+    management_since_census1_yrs = NA,
+    country = "Poland"
   ) |>
   unite(plotIDD, transect, plotID, sep = "_", remove = FALSE) |>
   left_join(wuls_census) |>
@@ -1924,47 +2141,58 @@ wuls <- wuls_tree |>
   )
 
 # aggregate data from stand to stand data
-data_wuls <- from_tree_data(wuls) |>
+df_wuls <- from_tree_data(wuls) |>
   # create census
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
-  ungroup()
+  ungroup() |>
+  mutate(
+    management_cat = 2,
+    management = 0
+  )
 
 # add coords and biomes
-data_wuls <- biomes_coords_latlon(data_wuls)
+df_wuls <- biomes_coords_latlon(df_wuls)
 
 # add coords and aridity index
-data_wuls <- ai_coords_latlon(data_wuls)
+df_wuls <- ai_coords_latlon(df_wuls)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_wuls <- lai_coords_latlon(data_wuls)
+df_wuls <- lai_coords_latlon(df_wuls)
 
 # add coords and N deposition (Lamarque 2011)
-data_wuls <- ndep_coords_latlon(data_wuls)
+df_wuls <- ndep_coords_latlon(df_wuls)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_wuls <- cn_coords_latlon(data_wuls)
+df_wuls <- cn_coords_latlon(df_wuls)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_wuls <- phos_coords_latlon(data_wuls)
+df_wuls <- phos_coords_latlon(df_wuls)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_wuls <- orgc_coords_latlon(data_wuls)
+df_wuls <- orgc_coords_latlon(df_wuls)
 
 ggplot() +
-  geom_point(data = data_wuls, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_wuls, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_wuls, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_wuls, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_wuls, file = file.path(here::here(), "/data/inputs/data_euf_wuls.rds"))
+saveRDS(df_wuls, file = file.path(here::here(), "/data/inputs/df_wuls.rds"))
 
 ## Luquillo ----
 # Contact: Jess Zimmerman
+# Management:
+# Not info about management
+# See https://forestgeo.si.edu/sites/north-america/luquillo
 
 # Tree-level data
 luquillo <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/luquillo", full.names = TRUE, pattern = "\\.csv$") |>
+  lapply(read_csv) |>
+  bind_rows()
+
+luquillo <- list.files(path = "~/data/forestgeo/luquillo", full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   bind_rows()
 
@@ -1992,8 +2220,7 @@ luquillo <- luquillo |>
     year = ifelse(census == 5, 2011, year),
     year = ifelse(census == 6, 2016, year),
     biomass = NA,
-    management = 0,
-    years_since_management = NA,
+    management_since_census1_yrs = NA,
     country = "Puerto Rico",
     species = ifelse(species == "Ficus spp", "Ficus spp.", species)
   ) |>
@@ -2003,52 +2230,59 @@ luquillo <- luquillo |>
   drop_na(PY) |>
   drop_na(year)
 
-# check # plots
-luquillo |> distinct(census)
-
 # aggregate data from stand to stand data
-data_luquillo <- from_tree_data(luquillo) |>
+df_luquillo <- from_tree_data(luquillo) |>
   # create census at the stand level
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
-  ungroup()
+  ungroup() |>
+  mutate(
+    management_cat = 2,
+    management = 0
+  )
 
 # add coords and biomes
-data_luquillo <- biomes_coords_latlon(data_luquillo)
+df_luquillo <- biomes_coords_latlon(df_luquillo)
 
 # add coords and aridity index
-data_luquillo <- ai_coords_latlon(data_luquillo)
+df_luquillo <- ai_coords_latlon(df_luquillo)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_luquillo <- lai_coords_latlon(data_luquillo)
+df_luquillo <- lai_coords_latlon(df_luquillo)
 
 # add coords and N deposition (Lamarque 2011)
-data_luquillo <- ndep_coords_latlon(data_luquillo)
+df_luquillo <- ndep_coords_latlon(df_luquillo)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_luquillo <- cn_coords_latlon(data_luquillo)
+df_luquillo <- cn_coords_latlon(df_luquillo)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_luquillo <- phos_coords_latlon(data_luquillo)
+df_luquillo <- phos_coords_latlon(df_luquillo)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_luquillo <- orgc_coords_latlon(data_luquillo)
+df_luquillo <- orgc_coords_latlon(df_luquillo)
 
 ggplot() +
-  geom_point(data = data_luquillo, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_luquillo, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_luquillo, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_luquillo, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_luquillo, file = file.path(here::here(), "/data/inputs/data_luquillo.rds"))
+saveRDS(df_luquillo, file = file.path(here::here(), "/data/inputs/df_luquillo.rds"))
 
 ## BCI ----
 # contact: Salomon Aguilar, technician in BCI
+# finally not added to the global dataset due to difficulty to exclude management (communication with  Salomón Aguilar, Research Technician)
+# https://forestgeo.si.edu/sites/neotropics/barro-colorado-island
 
 bci <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/bci", full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   bind_rows()
+
+bci <- list.files(path = "~/data/forestgeo/bci", full.names = TRUE, pattern = "\\.csv$") |>
+  lapply(read_csv) |>
+  bind_rows() 
 
 ## Prepare data
 bci <- bci |>
@@ -2078,8 +2312,7 @@ bci <- bci |>
     year = ifelse(census == 7, 2010, year),
     year = ifelse(census == 8, 2015, year),
     biomass = NA,
-    management = 0,
-    years_since_management = NA,
+    management_since_census1_yrs = NA,
     country = "Panama"
   ) |>
   filter(dbh > 0) |>
@@ -2092,55 +2325,69 @@ bci <- bci |>
   filter(PY < 320)
 
 # aggregate data from tree to stand data
-data_bci <- from_tree_data(bci) |>
+df_bci <- from_tree_data(bci) |>
   # create census at the stand level
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
-  ungroup()
+  ungroup() |>
+  mutate(
+    management_cat = 3,
+    management = 0
+  )
 
 # check that lianas are excluded
 sp_lianas <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/bci/sp_lianas.csv")
-data_bci <- data_bci %>%
-  filter(!data_bci$species %in% sp_lianas$species)
+df_bci <- df_bci %>%
+  filter(!df_bci$species %in% sp_lianas$species)
 
 # add coords and biomes
-data_bci <- biomes_coords_latlon(data_bci)
+df_bci <- biomes_coords_latlon(df_bci)
 
 # add coords and aridity index
-data_bci <- ai_coords_latlon(data_bci)
+df_bci <- ai_coords_latlon(df_bci)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_bci <- lai_coords_latlon(data_bci)
+df_bci <- lai_coords_latlon(df_bci)
 
 # add coords and N deposition (Lamarque 2011)
-data_bci <- ndep_coords_latlon(data_bci)
+df_bci <- ndep_coords_latlon(df_bci)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_bci <- cn_coords_latlon(data_bci)
+df_bci <- cn_coords_latlon(df_bci)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_bci <- phos_coords_latlon(data_bci)
+df_bci <- phos_coords_latlon(df_bci)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_bci <- orgc_coords_latlon(data_bci)
+df_bci <- orgc_coords_latlon(df_bci)
 
 ggplot() +
-  geom_point(data = data_bci, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_bci, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_bci, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_bci, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_bci, file = file.path(here::here(), "/data/inputs/data_bci.rds"))
+saveRDS(df_bci, file = file.path(here::here(), "/data/inputs/df_bci.rds"))
 
 ## SCBI ----
-# Contact: Kristina J. Anderson-Teixeira , William J. McShea, Norman A. Bourg
+# Contact: Kristina J. Anderson-Teixeira, William J. McShea, Norman A. Bourg
+# https://forestgeo.si.edu/sites/north-america/smithsonian-conservation-biology-institute
+# Management:
+# No info in dataset
+# In Table S1, management_since_census1_yrs = 53, category = 1
 
 scbi <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/scbi", full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   lapply(\(x) mutate(x, across(Tag, as.double))) |>
   lapply(\(x) mutate(x, across(StemTag, as.double))) |>
   bind_rows()
+
+scbi <- list.files(path = "~/data/forestgeo/scbi", full.names = TRUE, pattern = "\\.csv$") |>
+  lapply(read_csv) |>
+  lapply(\(x) mutate(x, across(Tag, as.double))) |>
+  lapply(\(x) mutate(x, across(StemTag, as.double))) |>
+  bind_rows() 
 
 ## Prepare data
 scbi <- scbi |>
@@ -2163,8 +2410,7 @@ scbi <- scbi |>
     year = ifelse(census == 2, 2013, year),
     year = ifelse(census == 3, 2018, year),
     biomass = NA,
-    years_since_management = NA,
-    management = 0,
+    management_since_census1_yrs = 53,
     country = "USA",
     species = ifelse(species == "Carya sp", "Carya spp.", species)
   ) |>
@@ -2175,41 +2421,45 @@ scbi <- scbi |>
   drop_na(year)
 
 # aggregate data from stand to stand data
-data_scbi <- from_tree_data(scbi) |>
+df_scbi <- from_tree_data(scbi) |>
   # create census at the stand level
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
-  ungroup()
+  ungroup() |>
+  mutate(
+    management_cat = 1,
+    management = 0
+  )
 
 # add coords and biomes
-data_scbi <- biomes_coords_latlon(data_scbi)
+df_scbi <- biomes_coords_latlon(df_scbi)
 
 # add coords and aridity index
-data_scbi <- ai_coords_latlon(data_scbi)
+df_scbi <- ai_coords_latlon(df_scbi)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_scbi <- lai_coords_latlon(data_scbi)
+df_scbi <- lai_coords_latlon(df_scbi)
 
 # add coords and N deposition (Lamarque 2011)
-data_scbi <- ndep_coords_latlon(data_scbi)
+df_scbi <- ndep_coords_latlon(df_scbi)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_scbi <- cn_coords_latlon(data_scbi)
+df_scbi <- cn_coords_latlon(df_scbi)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_scbi <- phos_coords_latlon(data_scbi)
+df_scbi <- phos_coords_latlon(df_scbi)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_scbi <- orgc_coords_latlon(data_scbi)
+df_scbi <- orgc_coords_latlon(df_scbi)
 
 ggplot() +
-  geom_point(data = data_scbi, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_scbi, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_scbi, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_scbi, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_scbi, file = file.path(here::here(), "/data/inputs/data_scbi.rds"))
+saveRDS(df_scbi, file = file.path(here::here(), "/data/inputs/df_scbi.rds"))
 
 ## Palanam ----
 # Contact: Perry S. Ong
@@ -2219,6 +2469,12 @@ palanam <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GF
   lapply(\(x) mutate(x, across(Tag, as.double))) |>
   lapply(\(x) mutate(x, across(StemTag, as.double))) |>
   bind_rows()
+
+palanam <- list.files(path = "~/data/forestgeo/palanam", full.names = TRUE, pattern = "\\.csv$") |>
+  lapply(read_csv) |>
+  lapply(\(x) mutate(x, across(Tag, as.double))) |>
+  lapply(\(x) mutate(x, across(StemTag, as.double))) |>
+  bind_rows()  
 
 ## Prepare data
 palanam <- palanam |>
@@ -2238,8 +2494,7 @@ palanam <- palanam |>
     year = year(date),
     year = ifelse(census == 1, 1994, year),
     biomass = NA,
-    years_since_management = NA,
-    management = 0,
+    management_since_census1_yrs = NA,
     country = "Philippines"
   ) |>
   filter(dbh > 0) |>
@@ -2249,51 +2504,60 @@ palanam <- palanam |>
   drop_na(year)
 
 # aggregate data from stand to stand data
-data_palanam <- from_tree_data(palanam) |>
+df_palanam <- from_tree_data(palanam) |>
   # create census at the stand level
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
   ungroup() |>
-  filter(logQMD > 1)
+  filter(logQMD > 1) |>
+  mutate(
+    management_cat = 2,
+    management = 0
+  )
 
 # add coords and biomes
-data_palanam <- biomes_coords_latlon(data_palanam)
+df_palanam <- biomes_coords_latlon(df_palanam)
 
 # add coords and aridity index
-data_palanam <- ai_coords_latlon(data_palanam)
+df_palanam <- ai_coords_latlon(df_palanam)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_palanam <- lai_coords_latlon(data_palanam)
+df_palanam <- lai_coords_latlon(df_palanam)
 
 # add coords and N deposition (Lamarque 2011)
-data_palanam <- ndep_coords_latlon(data_palanam)
+df_palanam <- ndep_coords_latlon(df_palanam)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_palanam <- cn_coords_latlon(data_palanam)
+df_palanam <- cn_coords_latlon(df_palanam)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_palanam <- phos_coords_latlon(data_palanam)
+df_palanam <- phos_coords_latlon(df_palanam)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_palanam <- orgc_coords_latlon(data_palanam)
+df_palanam <- orgc_coords_latlon(df_palanam)
 
 ggplot() +
-  geom_point(data = data_palanam, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_palanam, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_palanam, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_palanam, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_palanam, file = file.path(here::here(), "/data/inputs/data_palanam.rds"))
+saveRDS(df_palanam, file = file.path(here::here(), "/data/inputs/df_palanam.rds"))
 
 ## SERC ----
 # Contact: Sean McMahon
+# https://forestgeo.si.edu/sites/north-america/smithsonian-environmental-research-center
 
 serc <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/serc", full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   bind_rows()
 unique(serc$Census)
 length(unique(serc$Quadrat))
+
+serc <- list.files(path = "~/data/forestgeo/serc", full.names = TRUE, pattern = "\\.csv$") |>
+  lapply(read_csv) |>
+  bind_rows()
 
 # Divide plot into grids of different size given the coordinates
 # 20x20m = 0.04 ha
@@ -2334,8 +2598,7 @@ serc <- serc |>
     year = ifelse(census == 1, 2010, year),
     year = ifelse(census == 3, 2019, year),
     biomass = NA,
-    years_since_management = NA,
-    management = 0,
+    management_since_census1_yrs = NA,
     country = "USA"
   ) |>
   filter(dbh > 0) |>
@@ -2347,49 +2610,58 @@ unique(serc$year)
 unique(serc$census)
 
 # aggregate data from stand to stand data
-data_serc <- from_tree_data(serc) |>
+df_serc <- from_tree_data(serc) |>
   # create census at the stand level
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
   ungroup() |>
-  filter(logQMD > 1)
+  filter(logQMD > 1) |>
+  mutate(
+    management_cat = 2,
+    management = 0
+  )
 
 # add coords and biomes
-data_serc <- biomes_coords_latlon(data_serc)
+df_serc <- biomes_coords_latlon(df_serc)
 
 # add coords and aridity index
-data_serc <- ai_coords_latlon(data_serc)
+df_serc <- ai_coords_latlon(df_serc)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_serc <- lai_coords_latlon(data_serc)
+df_serc <- lai_coords_latlon(df_serc)
 
 # add coords and N deposition (Lamarque 2011)
-data_serc <- ndep_coords_latlon(data_serc)
+df_serc <- ndep_coords_latlon(df_serc)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_serc <- cn_coords_latlon(data_serc)
+df_serc <- cn_coords_latlon(df_serc)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_serc <- phos_coords_latlon(data_serc)
+df_serc <- phos_coords_latlon(df_serc)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_serc <- orgc_coords_latlon(data_serc)
+df_serc <- orgc_coords_latlon(df_serc)
 
 ggplot() +
-  geom_point(data = data_serc, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_serc, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_serc, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_serc, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_serc, file = file.path(here::here(), "/data/inputs/data_serc.rds"))
+saveRDS(df_serc, file = file.path(here::here(), "/data/inputs/df_serc.rds"))
 
 ## Wytham ----
 # Data from Yadvinder Malhi
+# https://forestgeo.si.edu/sites/europe/wytham-woods
+# Management: no information
 
 # tree-level data
 wytham <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/wytham/wytham.csv")
 wytham_sp <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/wytham/wytham_sp.csv")
+
+wytham <- read.csv("~/data/forestgeo/wytham/wytham.csv")
+wytham_sp <- read.csv("~/data/forestgeo/wytham/wytham_sp.csv")
 
 # prepare data
 wytham <- wytham |>
@@ -2409,8 +2681,7 @@ wytham <- wytham |>
     plotsize = 0.04,
     year = as.integer(year),
     biomass = NA,
-    years_since_management = NA,
-    management = 0,
+    management_since_census1_yrs = NA,
     country = "UK"
   ) |>
   filter(dbh > 0) |>
@@ -2420,61 +2691,77 @@ wytham <- wytham |>
   drop_na(year)
 
 # aggregate data from stand to stand data
-data_wytham <- from_tree_data(wytham) |>
+df_wytham <- from_tree_data(wytham) |>
   # create census at the stand level
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
-  ungroup()
+  ungroup() |>
+  mutate(
+    management_cat = 2,
+    management = 0
+  )
 
 # add coords and biomes
-data_wytham <- biomes_coords_latlon(data_wytham)
+df_wytham <- biomes_coords_latlon(df_wytham)
 
 # add coords and aridity index
-data_wytham <- ai_coords_latlon(data_wytham)
+df_wytham <- ai_coords_latlon(df_wytham)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_wytham <- lai_coords_latlon(data_wytham)
+df_wytham <- lai_coords_latlon(df_wytham)
 
 # add coords and N deposition (Lamarque 2011)
-data_wytham <- ndep_coords_latlon(data_wytham)
+df_wytham <- ndep_coords_latlon(df_wytham)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_wytham <- cn_coords_latlon(data_wytham)
+df_wytham <- cn_coords_latlon(df_wytham)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_wytham <- phos_coords_latlon(data_wytham)
+df_wytham <- phos_coords_latlon(df_wytham)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_wytham <- orgc_coords_latlon(data_wytham)
+df_wytham <- orgc_coords_latlon(df_wytham)
 
 ggplot() +
-  geom_point(data = data_wytham, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_wytham, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_wytham, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_wytham, size = 0.5, alpha = 0.5)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = ai), data = data_wytham, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = ai), data = df_wytham, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_wytham, file = file.path(here::here(), "/data/inputs/data_wytham.rds"))
+saveRDS(df_wytham, file = file.path(here::here(), "/data/inputs/df_wytham.rds"))
 
 ## Pasho ----
-# Contact: Musalmah Nasardin
+# Contact: Musalmah Nasardin, Yao Tze Leong
+# https://forestgeo.si.edu/sites/asia/pasoh
 
 # tree-level data
-pasoh_sp <- readRDS("/home/laura/data/forestgeo/pasoh/pasoh_sp.rds")
+pasoh_sp <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/pasoh/pasoh_sp.rds")
+
+pasoh_sp <- readRDS("~/data/forestgeo/pasoh/pasoh_sp.rds")
 pasoh_sp <- pasoh_sp |>
   separate(Latin, c("first", "second"), " ") |>
   mutate(second = tolower(second)) |>
   unite(Latin, first, second, sep = " ")
-pasoh1 <- readRDS("/home/laura/data/forestgeo/pasoh/pasoh1.rds")
-pasoh2 <- readRDS("/home/laura/data/forestgeo/pasoh/pasoh2.rds")
-pasoh3 <- readRDS("/home/laura/data/forestgeo/pasoh/pasoh3.rds")
-pasoh4 <- readRDS("/home/laura/data/forestgeo/pasoh/pasoh4.rds")
-pasoh5 <- readRDS("/home/laura/data/forestgeo/pasoh/pasoh5.rds")
-pasoh6 <- readRDS("/home/laura/data/forestgeo/pasoh/pasoh6.rds")
-pasoh7 <- readRDS("/home/laura/data/forestgeo/pasoh/pasoh7.rds")
+
+pasoh1 <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/pasoh/pasoh1.rds")
+pasoh2 <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/pasoh/pasoh2.rds")
+pasoh3 <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/pasoh/pasoh3.rds")
+pasoh4 <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/pasoh/pasoh4.rds")
+pasoh5 <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/pasoh/pasoh5.rds")
+pasoh6 <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/pasoh/pasoh6.rds")
+pasoh7 <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/pasoh/pasoh7.rds")
+
+pasoh1 <- readRDS("~/data/forestgeo/pasoh/pasoh1.rds")
+pasoh2 <- readRDS("~/data/forestgeo/pasoh/pasoh2.rds")
+pasoh3 <- readRDS("~/data/forestgeo/pasoh/pasoh3.rds")
+pasoh4 <- readRDS("~/data/forestgeo/pasoh/pasoh4.rds")
+pasoh5 <- readRDS("~/data/forestgeo/pasoh/pasoh5.rds")
+pasoh6 <- readRDS("~/data/forestgeo/pasoh/pasoh6.rds")
+pasoh7 <- readRDS("~/data/forestgeo/pasoh/pasoh7.rds")
 
 pasoh <- pasoh1 |>
   bind_rows(pasoh2) |>
@@ -2502,145 +2789,138 @@ pasoh <- pasoh |>
     date = as.Date(ExactDate, "%Y-%m-%d"),
     year = year(date),
     biomass = agb * 10^3,
-    # year = ifelse(census == 1, 1990, year),
-    years_since_management = NA,
-    management = 0,
+    management_since_census1_yrs = NA,
     country = "Malaysia"
   ) |>
   filter(DFstatus == "alive") |>
   filter(dbh > 0) |>
   drop_na(PX) |>
   drop_na(PY) |>
-  drop_na(year)
+  drop_na(year) 
 
 # aggregate data from stand to stand data
-data_pasoh <- from_tree_data(pasoh) |>
+df_pasoh <- from_tree_data(pasoh) |>
   # create census at the stand level
   group_by(plotID) |>
   mutate(
     census = match(year, unique(year)),
     biomass = ifelse(biomass == 0, NA, biomass)
   ) |>
-  ungroup()
+  ungroup()  |>
+  mutate(
+    management_cat = 2,
+    management = 0
+  ) |>
+  filter(logDensity > 7.5) # outliers, possible errors
 
 # add coords and biomes
-data_pasoh <- biomes_coords_latlon(data_pasoh)
+df_pasoh <- biomes_coords_latlon(df_pasoh)
 
 # add coords and aridity index
-data_pasoh <- ai_coords_latlon(data_pasoh)
+df_pasoh <- ai_coords_latlon(df_pasoh)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_pasoh <- lai_coords_latlon(data_pasoh)
+df_pasoh <- lai_coords_latlon(df_pasoh)
 
 # add coords and N deposition (Lamarque 2011)
-data_pasoh <- ndep_coords_latlon(data_pasoh)
+df_pasoh <- ndep_coords_latlon(df_pasoh)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_pasoh <- cn_coords_latlon(data_pasoh)
+df_pasoh <- cn_coords_latlon(df_pasoh)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_pasoh <- phos_coords_latlon(data_pasoh)
+df_pasoh <- phos_coords_latlon(df_pasoh)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_pasoh <- orgc_coords_latlon(data_pasoh)
-
-# Remove the low density plots
-data_pasoh <- data_pasoh |>
-  filter(density > 2000)
-
-# Check number of plots before filtering
-length(unique(data_pasoh$plotID))
-
-# Check min dbh
-min(data_pasoh$QMD)
+df_pasoh <- orgc_coords_latlon(df_pasoh)
 
 ggplot() +
-  geom_point(data = data_pasoh, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_pasoh, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_pasoh, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_pasoh, size = 0.5, alpha = 0.5)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = ai), data = data_pasoh, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = ai), data = df_pasoh, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_pasoh, file = file.path(here::here(), "/data/inputs/data_pasoh.rds"))
+saveRDS(df_pasoh, file = file.path(here::here(), "/data/inputs/df_pasoh.rds"))
 
 ## Mudumalai ----
-# Contact: Prof. Sukumar
+# Contact: Raman Sukumar
+# https://forestgeo.si.edu/sites/asia/mudumalai
 
 # Stand-level data
 mudumalai <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/mudumalai/mudumalai_stand.csv", sep = ",")
+
+mudumalai <- read.csv("~/data/forestgeo/mudumalai/mudumalai_stand.csv")
+
 mudumalai <- mudumalai |>
   mutate(density = nindiv / plotsize) |>
   mutate(ba = ba / plotsize)
 
 # aggregate data from stand
-data_mudumalai <- from_stand_data(mudumalai) |>
+df_mudumalai <- from_stand_data(mudumalai) |>
   # create census
   group_by(plotID) |>
   # mutate(census = match(year, unique(year))) |>
   ungroup() |>
   mutate(
-    management = 0,
+    biomass = 0,
+    management_since_census1_yrs = NA,
     country = "India",
-    years_since_management = NA,
-    biomass = NA
+    management_cat = 2,
+    management = 0
   )
 
 # add coords and biomes
-data_mudumalai <- biomes_coords_latlon(data_mudumalai)
-data_mudumalai |>
-  distinct(biomeID)
+df_mudumalai <- biomes_coords_latlon(df_mudumalai)
 
 # Clasify biome manually as Tropical & Subtropical Dry Broadleaf Forests
-data_mudumalai <- data_mudumalai |>
+df_mudumalai <- df_mudumalai |>
   mutate(
     biomeID = 2,
     biome = "Tropical & Subtropical Dry Broadleaf Forests"
   )
 
 # add coords and aridity index
-data_mudumalai <- ai_coords_latlon(data_mudumalai)
+df_mudumalai <- ai_coords_latlon(df_mudumalai)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_mudumalai <- lai_coords_latlon(data_mudumalai)
+df_mudumalai <- lai_coords_latlon(df_mudumalai)
 
 # add coords and N deposition (Lamarque 2011)
-data_mudumalai <- ndep_coords_latlon(data_mudumalai)
+df_mudumalai <- ndep_coords_latlon(df_mudumalai)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_mudumalai <- cn_coords_latlon(data_mudumalai)
+df_mudumalai <- cn_coords_latlon(df_mudumalai)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_mudumalai <- phos_coords_latlon(data_mudumalai)
+df_mudumalai <- phos_coords_latlon(df_mudumalai)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_mudumalai <- orgc_coords_latlon(data_mudumalai)
-
-# Check number of plots before filtering
-length(unique(data_mudumalai$plotID))
-
-# Check min dbh
-min(data_mudumalai$QMD)
+df_mudumalai <- orgc_coords_latlon(df_mudumalai)
 
 ggplot() +
-  geom_point(data = data_mudumalai, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_mudumalai, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_mudumalai, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_mudumalai, size = 0.5, alpha = 0.5)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = ai), data = data_mudumalai, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = ai), data = df_mudumalai, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_mudumalai, file = file.path(here::here(), "/data/inputs/data_mudumalai.rds"))
+saveRDS(df_mudumalai, file = file.path(here::here(), "/data/inputs/df_mudumalai.rds"))
 
 # Forests plots MZ ----
 # Data provided by Yadvinder Mahli and Huanyuan Zhang
 
 # 0) Metadata
 meta_fp <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestplots/mahli_zhang/fp_mz_metadata.csv")
+
+meta_fp <- read.csv("~/data/forestplots/mahli_zhang/fp_mz_metadata.csv")
+
 meta_fp <- meta_fp |>
   select(Plot_code, Country, Longitude, Latitude, Elevation..m., Plot.Size..ha.) |>
   rename(
@@ -2654,6 +2934,8 @@ meta_fp <- meta_fp |>
 
 # 1) A selection of countries and plots together
 multiplots <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestplots/mahli_zhang/fp_mz_multiplots.csv")
+
+multiplots <- read.csv("~/data/forestplots/mahli_zhang/fp_mz_multiplots.csv")
 
 # select and rename variables
 multiplots <- multiplots |>
@@ -2681,6 +2963,10 @@ gabon <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDY
   lapply(read_csv) |>
   bind_rows()
 
+gabon <- list.files(path = "~/data/forestplots/mahli_zhang/gabon", full.names = TRUE, pattern = "\\.csv$") |>
+  lapply(read_csv) |>
+  bind_rows()
+
 # select and rename variables
 gabon <- gabon |>
   select(country, plot_code, treeID, species, year, dbh) |>
@@ -2688,10 +2974,15 @@ gabon <- gabon |>
   mutate(year = as.integer(year)) |>
   mutate(dbh = dbh / 10) |>
   filter(dbh != 0) |>
-  left_join(meta_fp |> select(-country), by = "plotID")
+  left_join(meta_fp |> 
+  select(-country), by = "plotID")
 
 # 3) Ghana
 ghana <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestplots/mahli_zhang/ghana", full.names = TRUE, pattern = "\\.csv$") |>
+  lapply(read_csv) |>
+  bind_rows()
+
+ghana <- list.files(path = "~/data/forestplots/mahli_zhang/ghana", full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   bind_rows()
 
@@ -2701,10 +2992,15 @@ ghana <- ghana |>
   mutate(year = as.integer(year)) |>
   mutate(dbh = dbh / 10) |>
   filter(dbh != 0) |>
-  left_join(meta_fp |> select(-country), by = "plotID")
+  left_join(meta_fp |> 
+  select(-country), by = "plotID")
 
 # 4) Malaysia
 malaysia <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestplots/mahli_zhang/malaysia", full.names = TRUE, pattern = "\\.csv$") |>
+  lapply(read_csv) |>
+  bind_rows()
+
+malaysia <- list.files(path = "~/data/forestplots/mahli_zhang/malaysia", full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   bind_rows()
 
@@ -2714,10 +3010,11 @@ malaysia <- malaysia |>
   mutate(year = as.integer(year)) |>
   mutate(dbh = dbh / 10) |>
   filter(dbh != 0) |>
-  left_join(meta_fp |> select(-country), by = "plotID")
+  left_join(meta_fp |> 
+  select(-country), by = "plotID")
 
 # Join all plots
-df_forestplots <- multiplots |>
+forestplots <- multiplots |>
   bind_rows(gabon) |>
   bind_rows(ghana) |>
   bind_rows(malaysia) |>
@@ -2725,56 +3022,68 @@ df_forestplots <- multiplots |>
   mutate(
     ba_tree = pi * (dbh * 0.01 / 2)^2,
     biomass = NA,
-    management = 0,
-    years_since_management = NA
+    management_since_census1_yrs = NA
   )
 
 # aggregate data from stand to stand data
-data_forestplots <- from_tree_data(df_forestplots) |>
+df_forestplots <- from_tree_data(forestplots) |>
   # create census
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
-  ungroup()
+  ungroup() |>
+  mutate(
+    management = 0,
+    management_cat = 2
+    ) |>
+  filter(logQMD < 4.5) # remove outliers
 
 # add coords and biomes
-data_forestplots <- biomes_coords_latlon(data_forestplots)
+df_forestplots <- biomes_coords_latlon(df_forestplots)
 
 # add coords and aridity index
-data_forestplots <- ai_coords_latlon(data_forestplots)
+df_forestplots <- ai_coords_latlon(df_forestplots)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_forestplots <- lai_coords_latlon(data_forestplots)
+df_forestplots <- lai_coords_latlon(df_forestplots)
 
 # add coords and N deposition (Lamarque 2011)
-data_forestplots <- ndep_coords_latlon(data_forestplots)
+df_forestplots <- ndep_coords_latlon(df_forestplots)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_forestplots <- cn_coords_latlon(data_forestplots)
+df_forestplots <- cn_coords_latlon(df_forestplots)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_forestplots <- phos_coords_latlon(data_forestplots)
+df_forestplots <- phos_coords_latlon(df_forestplots)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_forestplots <- orgc_coords_latlon(data_forestplots)
-
-# check outliers
-data_forestplots <- data_forestplots |>
-  filter(logQMD < 4.5)
+df_forestplots <- orgc_coords_latlon(df_forestplots)
 
 ggplot() +
-  geom_point(data = data_forestplots, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_forestplots, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_forestplots, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat, color = biome), data = df_forestplots, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(data_forestplots, file = file.path(here::here(), "/data/inputs/data_mz_forestplots.rds"))
+saveRDS(df_forestplots, file = file.path(here::here(), "/data/inputs/df_forestplots.rds"))
 
 # Australian plots ####
-# Data providers: David Forrester and co.
+# Data providers: David Forrester and collaborators:
+# Sustainable Timber Tasmania: David Bartlett or Shaun Suitor or Crispen Marunda
+# Forestry Corporation of NSW: Mike Sutton
+# Queensland data: Michael Ngug or John Neldner
+# Victoria: Andrew Clark
+# TERN: Open 
+# Includes management info.
+# Data has last management intervention. This shows the last year when some of the trees were labelled as thinned. 
+# Many plots did not have any trees labelled as being thinned.
+# If year_last_management = NA, no management among censuses, management_cat = 2
+# If year_last_management is numeric, thinning among censuses, management_cat = 3
 
 # Stand-level data
-aus_plots <- readRDS("/home/laura/data/fp_aus/fp_aus_stand.RDS")
+aus_plots <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_aus/fp_aus_stand.RDS")
+
+aus_plots <- readRDS("~/data/fp_aus/fp_aus_stand.RDS")
 
 # prepare data
 aus_plots <- aus_plots |>
@@ -2790,57 +3099,63 @@ aus_plots <- aus_plots |>
   mutate(
     biomass = AbovegroundAHC1_2_Mgperha * 10^3,
     country = "Australia",
-    years_since_management = year(Sys.Date()) - year_last_management,
-    year = as.integer(year)
+    year = as.integer(year),
+    management_since_census1_yrs = NA,
+    management = 0,
+    management_cat = ifelse(is.na(year_last_management), 2, 3)
   )
 
 # aggregate data from stand to stand data
-data_aus <- from_stand_data(aus_plots) |>
+df_aus <- from_stand_data(aus_plots) |>
   # create census
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
-  ungroup() |>
-  mutate(management = 0)
+  ungroup() 
 
 # add coords and biomes
-data_aus <- biomes_coords_latlon(data_aus)
+df_aus <- biomes_coords_latlon(df_aus)
 
 # add coords and aridity index
-data_aus <- ai_coords_latlon(data_aus)
+df_aus <- ai_coords_latlon(df_aus)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
-data_aus <- lai_coords_latlon(data_aus)
+df_aus <- lai_coords_latlon(df_aus)
 
 # add coords and N deposition (Lamarque 2011)
-data_aus <- ndep_coords_latlon(data_aus)
+df_aus <- ndep_coords_latlon(df_aus)
 
 # add coords and C:N ratio (ISRIC WISE)
-data_aus <- cn_coords_latlon(data_aus)
+df_aus <- cn_coords_latlon(df_aus)
 
 # add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-data_aus <- phos_coords_latlon(data_aus)
+df_aus <- phos_coords_latlon(df_aus)
 
 # add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-data_aus <- orgc_coords_latlon(data_aus)
+df_aus <- orgc_coords_latlon(df_aus)
 
 ggplot() +
-  geom_point(data = data_aus, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_aus, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = data_aus, size = 0.5, alpha = 0.5) +
+  geom_point(aes(lon, lat, color = biome), data = df_aus, size = 0.5, alpha = 0.5) +
   theme(legend.position = "bottom")
 
 # save stand-level data
-saveRDS(data_aus, file = file.path(here::here(), "/data/inputs/data_fp_aus.rds"))
+saveRDS(df_aus, file = file.path(here::here(), "/data/inputs/df_aus.rds"))
 
 # RAINFOR Amazon Forest Inventory Network ----
 # Data from Esquivel-Muelbert, et al. 2025 data published
 # Coordinates of the sites from Bennett et al. 2023
+# no management info
 
 # Stand-level data
 rainfor_plots <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/rainfor/esquivel_etal/full_final_dataset.csv", sep = ",")
 rainfor_bennet <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/rainfor/bennett_etal/table_s3.csv", sep = ",")
 rainfor_brienen <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/rainfor/brienen_etal/table_s1.csv", sep = ",")
+
+rainfor_plots <- read.csv("~/data/rainfor/esquivel_etal/full_final_dataset.csv")
+rainfor_bennet <- read.csv("~/data/rainfor/bennett_etal/table_s3.csv")
+rainfor_brienen <- read.csv("~/data/rainfor/brienen_etal/table_s1.csv")
 
 # select variables from coordinates data
 rainfor_bennet <- rainfor_bennet |>
@@ -2854,7 +3169,7 @@ rainfor_coords <- rainfor_bennet |>
   distinct(plot_code, .keep_all = TRUE)
 
 # rename variables
-df_rainfor <- rainfor_plots |>
+rainfor_plots <- rainfor_plots |>
   rename(
     plot_code = Plot.Code,
     ba = total_BA,
@@ -2865,7 +3180,9 @@ df_rainfor <- rainfor_plots |>
   ) |>
   mutate(
     year = round(census_date),
-    years_since_management = NA,
+    management_since_census1_yrs = NA,
+    management = 0,
+    management_cat = 3,
     species = NA,
     biomass = NA,
     dbh = 100 * sqrt((4 * mean_ba) / pi)
@@ -2874,7 +3191,7 @@ df_rainfor <- rainfor_plots |>
   rename(plotID = plot_code)
 
 # check how many plots are missing coordinates
-df_rainfor %>%
+rainfor_plots %>%
   filter(is.na(lat) | is.na(lon)) %>%
   distinct(plotID)
 
@@ -2884,7 +3201,7 @@ rainfor_prefix <- rainfor_coords |>
   mutate(plot_prefix = str_extract(plot_code, "^[^-]+")) |>
   distinct(plot_prefix, .keep_all = TRUE)
 
-df_rainfor <- df_rainfor |>
+rainfor_plots <- rainfor_plots |>
   mutate(plot_prefix = str_extract(plotID, "^[^-]+")) |>
   left_join(rainfor_prefix |> select(plot_prefix, lon, lat), by = "plot_prefix") |>
   mutate(
@@ -2894,20 +3211,18 @@ df_rainfor <- df_rainfor |>
   select(-lon.x, -lon.y, -lat.x, -lat.y)
 
 # check again how many plots are missing coordinates
-df_rainfor %>%
+rainfor_plots %>%
   filter(is.na(lat) | is.na(lon)) %>%
   distinct(plotID)
 
 # aggregate data from stand
-df_rainfor <- from_stand_data(df_rainfor) |>
-  mutate(management = 0)
+df_rainfor <- from_stand_data(rainfor_plots)
 
 # add coords and biomes
 df_rainfor <- biomes_coords_latlon(df_rainfor)
 
 # add coords and aridity index
 df_rainfor <- ai_coords_latlon(df_rainfor)
-# df_rainfor <- ai_coords_latlon_opt(df_rainfor)
 
 # add coords and LAI Modis or NDVI (0.5 degrees)
 df_rainfor <- lai_coords_latlon(df_rainfor)
@@ -2931,4 +3246,4 @@ rbeni::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_rainfor, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_rainfor, file = file.path(here::here(), "/data/inputs/data_df_rainfor.rds"))
+saveRDS(df_rainfor, file = file.path(here::here(), "/data/inputs/df_rainfor.rds"))
