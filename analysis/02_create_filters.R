@@ -27,15 +27,47 @@ source(here("R/identify_disturbed_plots.R"))
 source(here("R/identify_ingrowth_plots.R"))
 source(here("R/identify_badbins.R"))
 
-# Load data (prepared in analysis/01_clean_data.R)
-# This is after applying function data_unm_fc(), see R/functions.R:
-# - filter for minimum QMD (>=10)
-# - filter for forest type
-# - filter for unmanaged plots
-# - filter for years since last management >= 30 (or no info available)
-# - filter by minimum 3 censuses
-# - remove plots with no change in ln(N)
-data_unm <- read_rds(here("data/inputs/data_unm.rds"))
+# df_all contains information of management:
+# - management_since_census1_yrs (before called years_last_management)
+# - management_cat = 1,2 or 3.
+# - management = 0 (indicating no management between census)
+# 
+# Among management_cat:
+# 1. Recorded history
+#    The time since the last management before the first census is known and recorded.
+#    the number of years since the last management before the first census, or
+#    the calendar year of the last management intervention.
+# 2. Pristine/primary/old-growth/protected
+#    The time since the last management before the first census is unknown. The forest was considered pristine, primary, old-growth, protected, or minimally used at the time of the first census.
+# 3. Unrecorded history
+#    The time since the last management before the first census is unknown. The forest may have a history of substantial past wood harvesting and/or visible signs of forest use before the first census.
+
+# Read data prepared with 01_clean_data.R, line 290
+df_all <- read_rds(here("data/inputs/df_all.rds"))
+
+# Apply filters relevant for all analyses
+df_unm <- df_all |>
+    # filter for min qmd
+    filter(QMD >= 10) |>
+  
+    # filter for forest type
+    filter(type == "Forest") |>
+  
+    # filter for unmanaged plots (between censi)
+    filter(management == 0) |>
+  
+    # Filter by minimum 3 censi
+    group_by(dataset, plotID) |>
+    mutate(n_census_unm = n()) |>
+    filter(n_census_unm >= 3) |>
+  
+    # remove plots with no change in ln(N)
+    mutate(var_logdensity = diff(range(logDensity))) |>
+    filter(var_logdensity > 0.001) |> 
+  
+    # clean up
+    ungroup() |>
+    relocate(n_census_unm, .after = n_census)
 
 # optionally subset
 do_subset_primary <- FALSE  # <- manually adjust here
@@ -48,7 +80,7 @@ if (do_subset_primary){
     filter(`Can be considered primary/old growth forest?` == "YES") |>
     pull(Dataset)
 
-  data_unm <- data_unm |>
+  df_unm <- df_unm |>
     filter(dataset %in% vec_datasets_subset)
 
 } else {
@@ -57,20 +89,20 @@ if (do_subset_primary){
 
 ## By forest plot --------------------------------------------------------------
 
-### Remove disturbed plots ---------------------------------------------------
+### Identify disturbed plots ---------------------------------------------------
 # adds column 'disturbed'
-data_unm <- data_unm |>
+df_unm <- df_unm |>
   identify_disturbed_plots()
 
-### Remove ingrowth-affected plots -------------------------------------------
+### Identify ingrowth-affected plots -------------------------------------------
 # adds column 'ingrowth'
-data_unm <- data_unm |>
+df_unm <- df_unm |>
   identify_ingrowth_plots()
 
 ## By (major) dataset ----------------------------------------------------------
 ### Define major datasets ----------
 # grouping into major based on analysis/01_clean_data.R
-data_unm <- data_unm |> 
+df_unm <- df_unm |> 
   mutate(
     dataset_major = ifelse(
       dataset %in% c("bnp", "czu", "forst", "iberbas", "incds", "lwf", "nbw", "nfr", "nwfva", "tuzvo", "ul", "unito", "urk", "wuls", "tuzvo_tree", "nwfva_tree", "ul_tree"),
@@ -91,15 +123,15 @@ data_unm <- data_unm |>
     )
   )
 
-tmp <- data_unm |> 
+tmp <- df_unm |> 
   group_by(dataset_major) |> 
   summarise(n = n())
 
 View(tmp)
 
-### Remove years based on QMD distribution ------------
+### Identify years (in 10-year bins) based on deviating QMD distribution ------------
 # adds column 'badqmdbin'
-tmp_badbins <- data_unm |> 
+tmp_badbins <- df_unm |> 
   # filter(dataset_major == "aus_plots") |> 
   group_by(dataset_major) |> 
   nest() |> 
@@ -123,15 +155,15 @@ ggsave(
   height = 10
 )
 
-data_unm <- tmp_badbins |> 
+df_unm <- tmp_badbins |> 
   dplyr::select(-gg) |> 
   unnest(data) |> 
   ungroup()
 
-### Filter based on STL slope ----------
+### Identify non-self-thinning plots based on outlying slope ----------
 # separately for each (major) dataset
 # adds column 'badslope'
-tmp_slopefilter <- data_unm |> 
+tmp_slopefilter <- df_unm |> 
   group_by(dataset_major) |> 
   nest() |> 
   mutate(out = purrr::map2(data, dataset_major, ~filter_stl_slope2(.x, .y))) |> 
@@ -154,13 +186,11 @@ ggsave(
   height = 10
 )
 
-data_unm <- tmp_slopefilter |> 
+df_unm <- tmp_slopefilter |> 
   dplyr::select(dataset_major, data) |> 
   unnest(data)
 
-View(data_unm)
-
-write_rds(data_unm, here("data/inputs/data_unm_withfilters.rds"))
+write_rds(df_unm, here("data/inputs/df_unm_withfilters.rds"))
 
 
 
