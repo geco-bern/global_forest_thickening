@@ -26,6 +26,7 @@ library(segmented)
 source(here("R/identify_disturbed_plots.R"))
 source(here("R/identify_ingrowth_plots.R"))
 source(here("R/identify_badbins.R"))
+source(here("R/filter_stl_slope2.R"))
 
 # df_all contains information of management:
 # - management_since_census1_yrs (before called years_last_management)
@@ -105,7 +106,7 @@ df_unm <- df_unm |>
 df_unm <- df_unm |> 
   mutate(
     dataset_major = ifelse(
-      dataset %in% c("bnp", "czu", "forst", "iberbas", "incds", "lwf", "nbw", "nfr", "nwfva", "tuzvo", "ul", "unito", "urk", "wuls", "tuzvo_tree", "nwfva_tree", "ul_tree"),
+      dataset %in% c("bnp", "czu", "forst", "iberbas", "incds", "lwf", "nbw", "nfr", "nwfva", "tuzvo", "ul", "unito", "urk", "wuls", "tuzvo_tree", "nwfva_tree", "ul_tree", "npvbw", "fvabw", "unitbv", "uholka"),
       "euforia",
       ifelse(
         dataset %in% c("luquillo", "bci", "scbi", "palanam", "serc", "pasoh", "mudumalai"),
@@ -192,5 +193,141 @@ df_unm <- tmp_slopefilter |>
 
 write_rds(df_unm, here("data/inputs/df_unm_withfilters.rds"))
 
+# Additional plots ----------
+df_unm <- read_rds(here("data/inputs/df_unm_withfilters.rds"))
 
+## Biome 1 Tropical & Subtropical Moist Broadleaf Forests ----------------------
+gg_hist_year_biome1 <- df_unm |>
+  filter(biomeID == 1) |> 
+  ggplot(aes(x = year, fill = dataset)) +
+  geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
+  theme_bw() +
+  labs(title = "Tropical Moist Broadleaf Forests") +
+  xlim(1970, 2024) +
+  labs(x = "Year", y = "Count", fill = "") +
+  khroma::scale_fill_okabeito() +
+  theme(
+    legend.position = "right"
+  )
 
+## Biome 2 Tropical & Subtropical Dry Broadleaf Forests ------------------------
+gg_hist_year_biome2 <- df_unm |>
+  filter(biomeID == 2) |> 
+  ggplot(aes(x = year, fill = dataset)) +
+  geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
+  theme_bw() +
+  labs(title = "Tropical Dry Broadleaf Forests") +
+  xlim(1990, 2024) +
+  labs(x = "Year", y = "Count", fill = "") +
+  khroma::scale_fill_okabeito() +
+  theme(
+    legend.position = "right"
+  )
+
+## Biome 4 Temperate Broadleaf & Mixed Forests ---------------------------------
+gg_hist_year_biome4 <- df_unm |>
+  filter(biomeID == 4) |> 
+  ggplot(aes(x = year, fill = dataset)) +
+  geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
+  theme_bw() +
+  labs(title = "Temperate Broadleaf & Mixed Forests") +
+  xlim(1960, 2024) +
+  labs(x = "Year", y = "Count", fill = "") +
+  viridis::scale_fill_viridis(discrete = TRUE) +
+  theme(
+    legend.position = "right"
+  )
+
+gg_hist_year_biome4
+
+## Biome 5  Temperate Conifer Forests Forest -----------------------------------
+gg_hist_year_biome5 <- df_unm |>
+  filter(biomeID == 5) |> 
+  ggplot(aes(x = year, fill = dataset)) +
+  geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
+  theme_bw() +
+  labs(title = "Temperate Conifer Forests") +
+  xlim(1970, 2024) +
+  labs(x = "Year", y = "Count", fill = "") +
+  viridis::scale_fill_viridis(discrete = TRUE) +
+  theme(
+    legend.position = "right"
+  )
+
+gg_hist_year_biome5
+
+## Biome 6 Boreal Forests/Taiga ------------------------------------------------
+gg_hist_year_biome6 <- df_unm |>
+  filter(biomeID == 6) |> 
+  ggplot(aes(x = year, fill = dataset)) +
+  geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
+  theme_bw() +
+  labs(title = "Boreal Forests/Taiga") +
+  xlim(1980, 2024) +
+  labs(x = "Year", y = "Count", fill = "") +
+  khroma::scale_fill_okabeito() +
+  theme(
+    legend.position = "right"
+  )
+
+gg_hist_year_biome6
+
+## Biome 12 Mediterranean Forests ----------------------
+gg_hist_year_biome12 <- df_unm |>
+  filter(biomeID == 12) |> 
+  ggplot(aes(x = year, fill = dataset)) +
+  geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
+  theme_bw() +
+  labs(title = "Mediterranean Forests") +
+  xlim(1980, 2024) +
+  labs(x = "Year", y = "Count", fill = "") +
+  khroma::scale_fill_okabeito() +
+  theme(
+    legend.position = "right"
+  )
+
+gg_hist_year_biome12
+
+## SI Figure: Histogram over years ---------------------------------------------
+row1 <- cowplot::plot_grid(
+  gg_hist_year_biome1,
+  gg_hist_year_biome2,
+  ncol = 2,
+  rel_widths = c(1, 0.7),
+  labels = letters[1:2]
+)
+
+row2 <- cowplot::plot_grid(
+  gg_hist_year_biome4,
+  ncol = 1,
+  labels = letters[3]
+)
+
+row3 <- cowplot::plot_grid(
+  gg_hist_year_biome5,
+  ncol = 1,
+  labels = letters[4]
+)
+
+row4 <- cowplot::plot_grid(
+  gg_hist_year_biome6,
+  gg_hist_year_biome12,
+  ncol = 2,
+  labels = letters[5:6]
+)
+
+fig_hist_year <- cowplot::plot_grid(
+  row1,
+  row2,
+  row3,
+  row4,
+  ncol = 1
+)
+fig_hist_year
+
+ggsave(
+  filename = here("manuscript/figures/fig_hist_year2.pdf"),
+  plot = fig_hist_year,
+  width = 9,
+  height = 15
+)

@@ -1,4 +1,4 @@
-plot_lqmm_bybiome <- function(data, mod, name, plot_legend = FALSE){
+plot_lqmm_bybiome <- function(data, mod, name = NULL, plot_legend = FALSE){
 
   # Extract means and SDs from the training data
   logQMD_mean <- mean(data$logQMD)

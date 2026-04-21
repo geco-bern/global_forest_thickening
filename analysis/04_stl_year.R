@@ -1,5 +1,12 @@
 # This script analyses the changes in the STLs over time (calendar year) by biome.
 
+# For each biome
+#   Analyse disturbance trends
+#   Histogram of data availability (to be moved to other script)
+#   Fit quantile regression on data after applying filters up to bad-slope (with and without interaction)
+#   Fit quantile regression for each QMD bin and for each filter level.
+#   Bootstrap quantile regression
+
 # Load packages ----------------------------------------------------------------
 # library(renv)
 library(readr)
@@ -7,17 +14,17 @@ library(dplyr)
 library(ggplot2)
 library(tidyr)
 library(lubridate)
-library(rFIA)
-library(lme4)
-library(lmerTest)
-library(ggeffects)
-library(effects)
-library(sjPlot)
-library(measurements)
+# library(rFIA)
+# library(lme4)
+# library(lmerTest)
+# library(ggeffects)
+# library(effects)
+# library(sjPlot)
+# library(measurements)
 library(lqmm)
-library(ggforce)
-library(MuMIn)
-library(DescTools)
+# library(ggforce)
+# library(MuMIn)
+# library(DescTools)
 library(here)
 library(viridis)
 library(purrr)
@@ -36,8 +43,238 @@ source(here("R/process_cite_lines.R"))
 source(here("R/wrap_fit_lqmm.R"))
 source(here("R/calc_percent_change.R"))
 source(here("R/plot_disturbed.R"))
+source(here("R/fit_model.R"))
+source(here("R/extract_coef.R"))
 
-# Quantile regression ----------------------------------------------------------
+## Define workflow -------------
+analyse_biome <- function(df, biome_name){
+
+  # Analyse disturbance trend (before applying disturbed-filter)
+  breaks <- get_breaks(df$year)
+  gg_fdisturbed <- plot_disturbed(df, biome_name, breaks)
+
+  # Define filter stages --------------
+  list_df_filtered <- list(
+
+    # all data
+    "raw" = df,
+
+    # no disturbance-affecte plots
+    "no_disturbance" = df |>
+      filter(ndisturbed == 0),
+
+    # no data from years with shifted QMD distribution
+    "no_badqmd" = df |>
+      filter(ndisturbed == 0, !badqmdbin), 
+
+    # no data from plots with outlying self-thinning slope
+    "no_badslope" = df |>
+      filter(ndisturbed == 0, !badqmdbin, !badslope),
+
+    # no data from plots without management history and management <30 years prior to first census
+    "no_mgmt_30" = df |>
+      filter(
+        ndisturbed == 0, !badqmdbin, !badslope,
+
+        # recorded history and management > 30 years prior to first census OR pristine
+        (management_cat == 1 & management_since_census1_yrs >= 30) | management_cat == 2
+      ),
+
+    # no data from plots without management history and management <100 years prior to first census
+    "no_mgmt_100" = df |>
+      filter(
+        ndisturbed == 0, !badqmdbin, !badslope,
+
+        # recorded history and management > 30 years prior to first census OR pristine
+        (management_cat == 1 & management_since_census1_yrs >= 100) | management_cat == 2
+      ),
+
+    # only old-growth
+    "primary" = df |> 
+      filter(
+        ndisturbed == 0, !badqmdbin, !badslope,
+
+        # Pristine/primary/old-growth/protected
+        management_cat == 2
+      )
+  )
+
+  # Analyse sensitivity of fit ---------------
+  # (year coefficient) subject filter levels
+  df_filtereffects <- imap_dfr(list_df_filtered, \(df, step_name) {
+    df |>
+      ungroup() |> 
+      nest() |>
+      mutate(
+        n = map_int(data, nrow),
+
+        # store both model + coefficients
+        res = map(data, \(d) {
+          model <- fit_model(d, lqmm = TRUE)
+          coefs <- extract_coef(model, lqmm = TRUE)
+
+          list(
+            model = model,
+            coefs = coefs
+          )
+        })
+      ) |>
+      mutate(
+        fit_lqmm = purrr::map(res, "model"),
+        coef_lqmm = purrr::map(res, "coefs")
+      ) |>     # creates columns: model, coefs
+      tidyr::unnest(coef_lqmm) |>         # expand coefficient table
+      dplyr::select(-data) |>
+      mutate(step = step_name)
+  })
+
+  # Create plot --------------
+  # of coefficient 'year' for all filter levels
+  gg_coef_filters <- df_filtereffects |>
+    mutate(
+      step = fct_relevel(
+        step,
+        "primary",
+        "no_mgmt_100",
+        "no_mgmt_30",
+        "no_badslope",
+        "no_badqmd",
+        "no_disturbance",
+        "raw",
+      )
+    ) |> 
+    ggplot(aes(x = step, y = estimate)) +
+    geom_point(size = 2) +
+    geom_errorbar(aes(ymin = lower, ymax = upper), width = 0) +
+    geom_hline(yintercept = 0, linetype = "dotted") +
+    # geom_text(aes(label = paste0("n=", n)), hjust = -0.9, size = 3) +
+    # scale_y_continuous(expand = expansion(mult = c(0.05, 0.1))) +
+    labs(
+      x = "Filtering step",
+      y = "Coefficient (year)"
+    ) +
+    # Add observation counts to the right of points
+    geom_text(
+      aes(label = n), 
+      y = Inf,
+      hjust = 1.1,
+      size = 3
+    ) + 
+    theme_classic() +
+    ylim(-0.5, 0.5) +
+    theme(
+      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)
+    )
+
+  # Create classic LQMM plot -------------
+  # for filter level no_badslope
+  fit_lqmm <- df_filtereffects |> 
+      filter(step == "no_badslope") |> 
+      pull(fit_lqmm)
+  
+  gg_lqmm <- plot_lqmm_bybiome(
+    list_df_filtered$no_badslope,
+    fit_lqmm[[1]]
+  )
+
+  # LQMM by QMD bin ----------------
+  # for filter no_badslope
+  df_lqmm_byqmdbin <- calc_lqmm_byqmdbin(list_df_filtered$no_badslope)
+  gg_lqmm_byqmdbin <- plot_lqmm_byqmdbin(df_lqmm_byqmdbin$df)
+
+  return(
+    list(
+      gg_fdisturbed = gg_fdisturbed,
+      df_filtereffects = df_filtereffects,
+      gg_lqmm = gg_lqmm,
+      gg_coef_filters = gg_coef_filters,
+      gg_lqmm_byqmdbin = gg_lqmm_byqmdbin
+    )
+  )
+
+}
+
+## Run workflow ---------------------
+# read and process data
+df <- read_rds(here("data/inputs/df_unm_withfilters.rds")) |>
+  mutate(
+    year_sc = scale(year),
+    logQMD_sc = scale(logQMD)
+  ) |> 
+  
+  # Re-define all bnp plots as management_cat == 2 (primary), see email Rupert Seidl, 16.04.2026
+  mutate(management_cat = ifelse(dataset == "bnp", 2, management_cat)) |> 
+
+  # Group biomes
+  mutate(biome_major = ifelse(
+    biomeID %in% c(1, 2), 
+    "Tropical & Subtropical Broadleaf Forests",
+    # biomeID == 1,
+    # "Tropical & Subtropical Moist Broadleaf Forests",
+    # ifelse(
+    #   biomeID == 2,
+    #   "Tropical & Subtropical Dry Broadleaf Forests",
+      ifelse(
+        biomeID %in% c(4, 5), 
+        "Temperate Forests",
+        ifelse(
+          biomeID == 6,
+          "Boreal Forests/Taiga",
+          ifelse(
+            biomeID == 12,
+            "Mediterranean Forests",
+            NA
+          )
+        )
+      )
+    )
+  )
+
+# apply workflow by biome
+df_biome_analysis <- df |> 
+  group_by(biome_major) |> 
+  nest() |> 
+
+  # avoid tropical/subtropical coniferous
+  filter(!is.na(biome_major)) |> 
+    
+  # # xxx test
+  # ungroup() |> 
+  # tail(1) |> 
+  
+  # apply workflow by biome
+  mutate(out = purrr::map2(data, biome_major, ~analyse_biome(df = .x, biome_name = .y)))
+
+# save results
+# (includes fitted models and ggplot objects for each major biome)
+# warning: large file, approx 6 GB
+write_rds(
+  df_biome_analysis,
+  file = here("data/df_biome_analysis.rds")
+)
+ 
+## Plots -------------------------
+# construct panel
+left_panel <- cowplot::plot_grid(
+  gg_lqmm,
+  gg_lqmm_byqmdbin,
+  ncol = 1,
+  rel_heights = c(1, 0.6),
+  align = "v",
+  # labels = c("",  "g"),
+  label_y = 1.1
+)
+
+panel <- cowplot::plot_grid(
+  left_panel,
+  gg_coef_filters,
+  rel_widths = c(1, 0.5)
+)
+
+
+# XXXXXXXXXXXXXXXXXX
+
+# OLD CODE ----------------------------------------------------------
 
 # load data
 data_unm <- readRDS(here("data/inputs/df_unm.rds"))
@@ -60,39 +297,6 @@ if (do_subset_primary){
   suffix_subset <- ""
 }
 
-## Biome 1 Tropical & Subtropical Moist Broadleaf Forests ----------------------
-data_unm_biome <- data_unm |>
-  filter(biomeID == 1) |>
-  mutate(
-    year_sc = scale(year),
-    logQMD_sc = scale(logQMD)
-  )
-
-### Identify disturbed plots ---------------------------------------------------
-data_unm_biome <- data_unm_biome |>
-  identify_disturbed_plots()
-
-### Histogram of data over years -----------------------------------------------
-# gg_hist_year_biome1 <- ggplot(data = data_unm_biome, aes(x = year)) +
-#   geom_histogram(fill = "grey80", color = "black", binwidth = 1) +
-#   theme_bw() +
-#   labs(title = "Tropical Moist Broadleaf Forests") +
-#   xlim(1970, 2024) +
-#   labs(x = "Year", y = "Count")
-
-# distinguishing datasets
-gg_hist_year_biome1 <- ggplot(data = data_unm_biome, aes(x = year, fill = dataset)) +
-  geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
-  theme_bw() +
-  labs(title = "Tropical Moist Broadleaf Forests") +
-  xlim(1970, 2024) +
-  labs(x = "Year", y = "Count", fill = "") +
-  khroma::scale_fill_okabeito() +
-  theme(
-    legend.position = "right"
-  )
-
-gg_hist_year_biome1
 
 ### Plot disturbed plots -------------------------------------------------------
 breaks <- get_breaks(data_unm_biome$year)
@@ -220,39 +424,6 @@ gg_lqmm_biome1_both <- cowplot::plot_grid(
 )
 gg_lqmm_biome1_both
 
-## Biome 2 Tropical & Subtropical Dry Broadleaf Forests ------------------------
-data_unm_biome <- data_unm |>
-  filter(biomeID == 2) |>
-  mutate(
-    year_sc = scale(year),
-    logQMD_sc = scale(logQMD)
-  )
-
-### Identify disturbed plots ---------------------------------------------------
-data_unm_biome <- data_unm_biome |>
-  identify_disturbed_plots()
-
-### Histogram of data over years -----------------------------------------------
-# gg_hist_year_biome2 <- ggplot(data = data_unm_biome, aes(x = year)) +
-#   geom_histogram(fill = "grey80", color = "black", binwidth = 1) +
-#   theme_bw() +
-#   labs(title = "Tropical Dry Broadleaf Forests") +
-#   xlim(1990, 2024) +
-#   labs(x = "Year", y = "Count")
-
-# distinguishing datasets
-gg_hist_year_biome2 <- ggplot(data = data_unm_biome, aes(x = year, fill = dataset)) +
-  geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
-  theme_bw() +
-  labs(title = "Tropical Dry Broadleaf Forests") +
-  xlim(1990, 2024) +
-  labs(x = "Year", y = "Count", fill = "") +
-  khroma::scale_fill_okabeito() +
-  theme(
-    legend.position = "right"
-  )
-
-gg_hist_year_biome2
 
 ### Plot disturbed plots -------------------------------------------------------
 breaks <- get_breaks(data_unm_biome$year)
@@ -379,39 +550,6 @@ gg_lqmm_biome2_both <- cowplot::plot_grid(
 )
 gg_lqmm_biome2_both
 
-## Biome 4 Temperate Broadleaf & Mixed Forests ---------------------------------
-data_unm_biome <- data_unm |>
-  filter(biomeID == 4) |>
-  mutate(
-    year_sc = scale(year),
-    logQMD_sc = scale(logQMD)
-  )
-
-### Identify disturbed plots ---------------------------------------------------
-data_unm_biome <- data_unm_biome |>
-  identify_disturbed_plots()
-
-### Histogram of data over years -----------------------------------------------
-# gg_hist_year_biome4 <- ggplot(data = data_unm_biome, aes(x = year)) +
-#   geom_histogram(fill = "grey80", color = "black", binwidth = 1) +
-#   theme_bw() +
-#   labs(title = "Temperate Broadleaf & Mixed Forests") +
-#   xlim(1930, 2024) +
-#   labs(x = "Year", y = "Count")
-
-# distinguishing datasets
-gg_hist_year_biome4 <- ggplot(data = data_unm_biome, aes(x = year, fill = dataset)) +
-  geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
-  theme_bw() +
-  labs(title = "Temperate Broadleaf & Mixed Forests") +
-  xlim(1960, 2024) +
-  labs(x = "Year", y = "Count", fill = "") +
-  viridis::scale_fill_viridis(discrete = TRUE) +
-  theme(
-    legend.position = "right"
-  )
-
-gg_hist_year_biome4
 
 ### Plot disturbed plots -------------------------------------------------------
 breaks <- get_breaks(data_unm_biome$year)
@@ -535,39 +673,6 @@ gg_lqmm_biome4_both <- cowplot::plot_grid(
 )
 gg_lqmm_biome4_both
 
-## Biome 5  Temperate Conifer Forests Forest -----------------------------------
-data_unm_biome <- data_unm |>
-  filter(biomeID == 5) |>
-  mutate(
-    year_sc = scale(year),
-    logQMD_sc = scale(logQMD)
-  )
-
-### Identify disturbed plots ---------------------------------------------------
-data_unm_biome <- data_unm_biome |>
-  identify_disturbed_plots()
-
-### Histogram of data over years -----------------------------------------------
-# gg_hist_year_biome5 <- ggplot(data = data_unm_biome, aes(x = year)) +
-#   geom_histogram(fill = "grey80", color = "black", binwidth = 1) +
-#   theme_bw() +
-#   labs(title = "Temperate Conifer Forests") +
-#   xlim(1960, 2024) +
-#   labs(x = "Year", y = "Count")
-
-# distinguishing datasets
-gg_hist_year_biome5 <- ggplot(data = data_unm_biome, aes(x = year, fill = dataset)) +
-  geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
-  theme_bw() +
-  labs(title = "Temperate Conifer Forests") +
-  xlim(1970, 2024) +
-  labs(x = "Year", y = "Count", fill = "") +
-  viridis::scale_fill_viridis(discrete = TRUE) +
-  theme(
-    legend.position = "right"
-  )
-
-gg_hist_year_biome5
 
 ### Plot disturbed plots -------------------------------------------------------
 breaks <- get_breaks(data_unm_biome$year)
@@ -686,39 +791,6 @@ gg_lqmm_biome5_both <- cowplot::plot_grid(
 )
 gg_lqmm_biome5_both
 
-## Biome 6 Boreal Forests/Taiga ------------------------------------------------
-data_unm_biome <- data_unm |>
-  filter(biomeID == 6) |>
-  mutate(
-    year_sc = scale(year),
-    logQMD_sc = scale(logQMD)
-  )
-
-### Identify disturbed plots ---------------------------------------------------
-data_unm_biome <- data_unm_biome |>
-  identify_disturbed_plots()
-
-### Histogram of data over years -----------------------------------------------
-# gg_hist_year_biome6 <- ggplot(data = data_unm_biome, aes(x = year)) +
-#   geom_histogram(fill = "grey80", color = "black", binwidth = 1) +
-#   theme_bw() +
-#   labs(title = "Boreal Forests/Taiga") +
-#   xlim(1980, 2024) +
-#   labs(x = "Year", y = "Count")
-
-# distinguishing datasets
-gg_hist_year_biome6 <- ggplot(data = data_unm_biome, aes(x = year, fill = dataset)) +
-  geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
-  theme_bw() +
-  labs(title = "Boreal Forests/Taiga") +
-  xlim(1980, 2024) +
-  labs(x = "Year", y = "Count", fill = "") +
-  khroma::scale_fill_okabeito() +
-  theme(
-    legend.position = "right"
-  )
-
-gg_hist_year_biome6
 
 ### Plot disturbed plots -------------------------------------------------------
 breaks <- get_breaks(data_unm_biome$year)
@@ -842,39 +914,6 @@ gg_lqmm_biome6_both <- cowplot::plot_grid(
 )
 gg_lqmm_biome6_both
 
-## Biome 12 Mediterranean Forests ----------------------
-data_unm_biome <- data_unm |>
-  filter(biomeID == 12) |>
-  mutate(
-    year_sc = scale(year),
-    logQMD_sc = scale(logQMD)
-  )
-
-### Identify disturbed plots ---------------------------------------------------
-data_unm_biome <- data_unm_biome |>
-  identify_disturbed_plots()
-
-### Histogram of data over years -----------------------------------------------
-# gg_hist_year_biome12 <- ggplot(data = data_unm_biome, aes(x = year)) +
-#   geom_histogram(color = "black", fill = "grey80", binwidth = 1) +
-#   theme_bw() +
-#   labs(title = "Mediterranean Forests") +
-#   xlim(1980, 2024) +
-#   labs(x = "Year", y = "Count")
-
-# distinguishing datasets
-gg_hist_year_biome12 <- ggplot(data = data_unm_biome, aes(x = year, fill = dataset)) +
-  geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
-  theme_bw() +
-  labs(title = "Mediterranean Forests") +
-  xlim(1980, 2024) +
-  labs(x = "Year", y = "Count", fill = "") +
-  khroma::scale_fill_okabeito() +
-  theme(
-    legend.position = "right"
-  )
-
-gg_hist_year_biome12
 
 ### Plot disturbed plots -------------------------------------------------------
 breaks <- get_breaks(data_unm_biome$year)
@@ -1125,49 +1164,7 @@ ggsave(
   height = 5
 )
 
-## SI Figure: Histogram over years ---------------------------------------------
-row1 <- cowplot::plot_grid(
-  gg_hist_year_biome1,
-  gg_hist_year_biome2,
-  ncol = 2,
-  rel_widths = c(1, 0.7),
-  labels = letters[1:2]
-)
 
-row2 <- cowplot::plot_grid(
-  gg_hist_year_biome4,
-  ncol = 1,
-  labels = letters[3]
-)
-
-row3 <- cowplot::plot_grid(
-  gg_hist_year_biome5,
-  ncol = 1,
-  labels = letters[4]
-)
-
-row4 <- cowplot::plot_grid(
-  gg_hist_year_biome6,
-  gg_hist_year_biome12,
-  ncol = 2,
-  labels = letters[5:6]
-)
-
-fig_hist_year <- cowplot::plot_grid(
-  row1,
-  row2,
-  row3,
-  row4,
-  ncol = 1
-)
-fig_hist_year
-
-ggsave(
-  filename = here("manuscript/figures/fig_hist_year", suffix_subset, ".pdf")),
-  plot = fig_hist_year,
-  width = 9,
-  height = 15
-)
 
 ### Number: years covered -------------
 df_tmp <- read_rds(here("data/data_unm_undist_biome1", suffix_subset, ".rds"))) |>

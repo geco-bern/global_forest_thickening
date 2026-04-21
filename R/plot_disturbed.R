@@ -1,4 +1,4 @@
-plot_disturbed <- function(df, biome_name){
+plot_disturbed <- function(df, biome_name, breaks){
 
   df_disturbed <- df |>
     mutate(year_bin = cut(

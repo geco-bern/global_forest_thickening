@@ -6,6 +6,35 @@ Global forest growth has increased in recent decades, but its role in sustaining
 
 ![](https://github.com/geco-bern/global_forest_thickening/blob/master/manuscript/figures/fig_4.png)
 
+## Workflow
+
+### Prepare data
+
+`analysis/00_raw_data.R`
+
+`analysis/00_collect_global_drivers.R`
+
+### Process data
+
+`analysis/01_clean_data.R`
+
+- Initial data selection, variable definition, and unit conversions.
+
+`analysis/02_create_filters.R`
+
+- Create filters to reduce to self-thinning dominated stands.
+
+### Analyse data: negative size-density relationship (SDR)
+
+`analysis/03_analyse_filter_effects.R`
+
+- Analyses sensitivity of SDR to management-history by constituent dataset.
+
+`analysis/04_stl_year.R`
+
+- Analyses SDR and sensitivity to management-history by biome.
+
+
 ## Repository use
 
 This repository includes the R scripts to analyse the links between growth and biomass from global forest inventory data.
