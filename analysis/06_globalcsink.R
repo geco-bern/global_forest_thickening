@@ -19,27 +19,28 @@ library(ggplot2)
 library(scales)
 
 ## Load data -------------------------------------------------------------------
+df <- read_rds(here("data/inputs/df_unm_withfilters.rds")) |>
+
+  # variable substitute, needed here
+  mutate(NQMD2 = density * QMD^2) |>
+
+  # # Re-define all bnp plots as management_cat == 2 (primary), see email Rupert Seidl, 16.04.2026
+  # mutate(management_cat = ifelse(dataset == "bnp", 2, management_cat)) |>
+
+  # # filter level: no disturbed, no QMD shifts, no outlier slope
+  # filter(ndisturbed == 0) #, !badqmdbin, !badslope)
+
+  # use only "primary" for global model
+  filter(
+    ndisturbed == 0,
+    !badqmdbin,
+    !badslope,
+
+    # Pristine/primary/old-growth/protected
+    management_cat == 2
+  )
+
 ### Plot data, filtered upper edge ---------------------------------------------
-use_slopefilter <- TRUE
-
-if (use_slopefilter){
-
-  lab_filter <- "slopefilter"
-
-  # filtered by slope
-  data_forest_plots <- read_rds(here("data/data_unm_slopefilter.rds")) |>
-    mutate(NQMD2 = density * QMD^2)
-
-} else {
-
-  lab_filter <- "quantilefilter"
-
-  # Load and engineer data with environmental factors
-  # plot-level data for model fitting, filtered based on quantiles by bin
-  data_forest_plots <- read_rds(here::here("data/inputs/data_fil75_biomes.rds")) |>
-    mutate(NQMD2 = density * QMD^2)
-
-}
 
 ### Maps of environmental covariates -------------------------------------------
 # Load data for upscaling: maps of environmental factors
@@ -51,10 +52,10 @@ grid_drivers <- read_rds(here("data/df_grid.rds")) |>
 ### Fit LMM for STL per bootstrap --------
 # this is hard-coded here based on model selection results from 03_env_drivers.R
 fit_stl_byboot <- function(df) {
-  vars_to_scale <- c("logQMD", "year", "tavg", "ai", "ndep", "ORGC", "CNrt", "PBR")
+  vars_to_scale <- c("logQMD", "year", "tavg", "ai", "ndep")
 
   rec <- recipe(
-    logDensity ~ logQMD + year + tavg + ai + ndep + ORGC + CNrt + PBR + dataset + plotID + species,
+    logDensity ~ logQMD + year + tavg + ai + ndep + dataset + plotID + species,
     data = df |>
       drop_na(
         all_of(
@@ -65,10 +66,10 @@ fit_stl_byboot <- function(df) {
             "tavg",
             "ai",
             "ndep",
-            "ORGC",
-            "CNrt",
-            "PBR",
-            "dataset",
+            # "ORGC",
+            # "CNrt",
+            # "PBR",
+            # "dataset",
             "plotID",
             "species"
           )
@@ -90,10 +91,10 @@ fit_stl_byboot <- function(df) {
       year * tavg +
       year * ai +
       year * ndep +
-      year * ORGC +
-      year * CNrt +
-      year * PBR +
-      (1 | dataset / plotID) + (1 | species),
+      # year * ORGC +
+      # year * CNrt +
+      # year * PBR +
+      (1 | plotID) + (1 | species),
     data = df_scaled
   )
 
@@ -112,7 +113,7 @@ fit_biomass_byboot <- function(df) {
         c(
           "biomass",
           "NQMD2",
-          "dataset",
+          # "dataset",
           "plotID"
         )
       )
@@ -121,7 +122,7 @@ fit_biomass_byboot <- function(df) {
     return(NA)
   } else {
     model <- lmer(
-      biomass ~ NQMD2 + 0 + (1 | dataset / plotID),
+      biomass ~ NQMD2 + 0 + (1 | plotID),
       data = df
     )
     return(model)
@@ -234,8 +235,8 @@ calc_csink_bylat <- function(df, df_info){
 
 ## Create bootstraps ------------
 set.seed(1982)
-n_boot <- 3000
-boot_resamples <- bootstraps(data_forest_plots, times = n_boot)
+n_boot <- 100
+boot_resamples <- bootstraps(df, times = n_boot)
 
 ### Un-parallel version --------------------------
 # tic()
@@ -249,7 +250,7 @@ boot_resamples <- bootstraps(data_forest_plots, times = n_boot)
 #   mutate(
 #     grid_predictions = map(
 #       bundle_stl,
-#       ~ predict_dn(., vec_qmd = data_forest_plots$QMD, df = grid_drivers)
+#       ~ predict_dn(., vec_qmd = df$QMD, df = grid_drivers)
 #     )) |>
 #   select(-bundle_stl) |>
 #   mutate(
@@ -260,111 +261,111 @@ boot_resamples <- bootstraps(data_forest_plots, times = n_boot)
 #     )
 #   ) |>
 #   select(-model_biomass) |>
-#
+
 #   # calculate C sink by latitude (retain to keep sprad across bootstraps)
 #   mutate(db_pgc_global = map_dbl(grid_predictions, ~calc_csink_global(., grid_drivers)))
-#
+
 # toc()
 
-### Parallel version --------------------------
-# ncores <- 4 # parallel::detectCores() - 2
-#
-# cl <- new_cluster(n = ncores) |>
-#   cluster_library(
-#     packages = c(
-#       "dplyr",
-#       "tidyr",
-#       "lme4",
-#       "purrr",
-#       "recipes",
-#       "rsample"
-#     )
-#   ) |>
-#   cluster_assign(
-#     fit_stl_byboot = fit_stl_byboot,
-#     fit_biomass_byboot = fit_biomass_byboot,
-#     predict_dn = predict_dn,
-#     predict_db = predict_db,
-#     data_forest_plots = data_forest_plots,
-#     grid_drivers = grid_drivers,
-#     calc_csink_global = calc_csink_global
-#   )
-#
-# tic()
-# df_boot <- boot_resamples |>
-#   mutate(id = row_number()) |>
-#   partition(cl) |>
-#   mutate(
-#     bundle_stl = map(splits, ~ fit_stl_byboot(analysis(.x))),
-#     model_biomass = map(splits, ~ fit_biomass_byboot(analysis(.x)))
-#   ) |>
-#   select(-splits) |>
-#   mutate(
-#     grid_predictions = map(
-#       bundle_stl,
-#       ~ predict_dn(., vec_qmd = data_forest_plots$QMD, df = grid_drivers)
-#     )) |>
-#   select(-bundle_stl) |>
-#   mutate(
-#     grid_predictions = map2(
-#       grid_predictions,
-#       model_biomass,
-#       ~ predict_db(.x, .y)
-#     )
-#   ) |>
-#   select(-model_biomass) |>
-#
-#   # calculate C sink by latitude (retain to keep sprad across bootstraps)
-#   mutate(db_pgc_global = map_dbl(grid_predictions, ~calc_csink_global(., grid_drivers))) |>
-#
-#   # drop full information to avoid excessive memory use - uncomment only when n_boot is very large
-#   select(-grid_predictions) |>
-#
-#   collect()
-# toc()
-#
-# write_rds(
-#   df_boot,
-#   file = here(paste0("data/df_boot_", lab_filter, "_nboot_", as.character(n_boot),".rds"))
-# )
+## Parallel version --------------------------
+ncores <- 4 # parallel::detectCores() - 2
 
-df_boot <- read_rds(here("data/df_boot_slopefilter_nboot_2000.rds"))
+cl <- new_cluster(n = ncores) |>
+  cluster_library(
+    packages = c(
+      "dplyr",
+      "tidyr",
+      "lme4",
+      "purrr",
+      "recipes",
+      "rsample"
+    )
+  ) |>
+  cluster_assign(
+    fit_stl_byboot = fit_stl_byboot,
+    fit_biomass_byboot = fit_biomass_byboot,
+    predict_dn = predict_dn,
+    predict_db = predict_db,
+    df = df,
+    grid_drivers = grid_drivers,
+    calc_csink_global = calc_csink_global
+  )
+
+tic()
+df_boot <- boot_resamples |>
+  mutate(id = row_number()) |>
+  partition(cl) |>
+  mutate(
+    bundle_stl = map(splits, ~ fit_stl_byboot(analysis(.x))),
+    model_biomass = map(splits, ~ fit_biomass_byboot(analysis(.x)))
+  ) |>
+  select(-splits) |>
+  mutate(
+    grid_predictions = map(
+      bundle_stl,
+      ~ predict_dn(., vec_qmd = df$QMD, df = grid_drivers)
+    )) |>
+  select(-bundle_stl) |>
+  mutate(
+    grid_predictions = map2(
+      grid_predictions,
+      model_biomass,
+      ~ predict_db(.x, .y)
+    )
+  ) |>
+  select(-model_biomass) |>
+
+  # calculate C sink by latitude (retain to keep sprad across bootstraps)
+  mutate(db_pgc_global = map_dbl(grid_predictions, ~calc_csink_global(., grid_drivers))) |>
+
+  # # drop full information to avoid excessive memory use - uncomment when n_boot is very large
+  # select(-grid_predictions) |>
+
+  collect()
+toc()
+
+write_rds(
+  df_boot,
+  file = here(paste0("data/df_boot_nboot_", as.character(n_boot),".rds"))
+)
+
+# df_boot <- read_rds(here("data/df_boot_slopefilter_nboot_2000.rds"))
 
 ### Summarise across bootstraps ------------------------------------------------
-# # stack predictions from all bootstrap samples into (very) long vector
-# df_summ <- df_boot |>
-#   select(-db_pgc_global) |>
-#   unnest(grid_predictions) |>
-#   group_by(lat_i, lon_i) |>
-#   summarise(
-#     db_mean = mean(db, na.rm = TRUE),
-#     db_median = median(db, na.rm = TRUE),
-#     db_sd = sd(db, na.rm = TRUE)
-#   ) |>
-#   drop_na() |>
-#   ungroup() |>
-#   left_join(
-#     grid_drivers,
-#     by = join_by(lon_i, lat_i)
-#   ) |>
-#   mutate(lon = lon_i/4, lat = lat_i/4) |>
-#   mutate(
-#     across(
-#       starts_with("db"),
-#       list(
-#         gc_per_ha_forest   = ~ .x * 1e3 * 0.5,
-#         gc_per_ha_gridcell = ~ (.x * 1e3 * 0.5) * fcf
-#       ),
-#       .names = "{.col}_{.fn}"
-#     )
-#   )
-#
-# write_rds(
-#   df_summ,
-#   here(paste0("data/df_summ_", lab_filter, "_nboot_", as.character(n_boot),".rds"))
-# )
+# stack predictions from all bootstrap samples into (very) long vector
+df_summ <- df_boot |>
+  select(-db_pgc_global) |>
+  unnest(grid_predictions) |>
+  group_by(lat_i, lon_i) |>
+  summarise(
+    db_mean = mean(db, na.rm = TRUE),
+    db_median = median(db, na.rm = TRUE),
+    db_sd = sd(db, na.rm = TRUE)
+  ) |>
+  drop_na() |>
+  ungroup() |>
+  left_join(
+    grid_drivers,
+    by = join_by(lon_i, lat_i)
+  ) |>
+  mutate(lon = lon_i/4, lat = lat_i/4) |>
+  mutate(
+    across(
+      starts_with("db"),
+      list(
+        gc_per_ha_forest   = ~ .x * 1e3 * 0.5,
+        gc_per_ha_gridcell = ~ (.x * 1e3 * 0.5) * fcf
+      ),
+      .names = "{.col}_{.fn}"
+    )
+  )
 
-df_summ <- read_rds(here("data/df_summ_slopefilter_nboot_30.rds"))
+write_rds(
+  df_summ,
+  here(paste0("data/df_summ_", lab_filter, "_nboot_", as.character(n_boot),".rds"))
+)
+
+# df_summ <- read_rds(here("data/df_summ_slopefilter_nboot_30.rds"))
 
 ## Visualisations --------------------------------------------------------------
 ### Distribution of global C sink estimates ------------------------------------
@@ -456,7 +457,7 @@ gg_map_sink_perforestarea <- df_summ |>
     reverse = TRUE,
     midpoint = 0,
     na.value = "grey30", # <- missing data color
-    limits = c(-1.5, 1.5),
+    # limits = c(-1.5, 1.5),
     oob = squish, # clamp values outside limits,
     name = expression(paste("MgC ha"^-1, "yr"^-1)),
   ) +
@@ -549,7 +550,7 @@ gg_map_sink_pergridarea <- df_summ |>
     reverse = TRUE,
     midpoint = 0,
     na.value = "grey30", # <- missing data color
-    limits = c(-1.5, 1.5),
+    # limits = c(-1.5, 1.5),
     oob = squish, # clamp values outside limits,
     name = expression(paste("MgC ha"^-1, "yr"^-1))
   ) +

@@ -19,25 +19,65 @@ library(ggplot2)
 ## Load data -----------
 # note: always use (use_slopefilter = TRUE). Results are consistent for MI and
 # Ndep against alternative filter options, but not for other factors.
+df <- read_rds(here("data/inputs/df_unm_withfilters.rds")) |> 
 
-use_slopefilter <- TRUE
+  # # Re-define all bnp plots as management_cat == 2 (primary), see email Rupert Seidl, 16.04.2026
+  # mutate(management_cat = ifelse(dataset == "bnp", 2, management_cat)) |>
+  
+  # # filter level: no disturbed, no QMD shifts, no outlier slope
+  # filter(ndisturbed == 0) #, !badqmdbin, !badslope)
 
-if (use_slopefilter){
+  # use only "primary" for global model
+  filter(
+    ndisturbed == 0,
+    !badqmdbin,
+    !badslope,
 
-  lab_filter <- "slopefilter"
+    # Pristine/primary/old-growth/protected
+    management_cat == 2
+  )
 
-  # filtered by slope
-  data_fil_biomes <- read_rds(here("data/data_unm_slopefilter.rds"))
+# Downsample for even distribution.
+# Perform a stratified random sampling, where strata are defined by all
+# combinations of three levels in tavg, ai, and ndep. The number of
+# sampled points per stratum should be equal to the total number of
+# points in the sparsest stratum.
 
-} else {
+# # Create 3-level strata for each variable
+# df_strat <- df %>%
+#   ungroup() |>
+#   select(plotID, tavg, ai, ndep) |>
+#   distinct(plotID, .keep_all = TRUE) |>
+#   mutate(
+#     tavg_strata = ntile(tavg, 3),
+#     ai_strata = ntile(ai, 3),
+#     ndep_strata = ntile(ndep, 3)
+#   )
 
-  lab_filter <- "quantilefilter"
+# # Find the size of the smallest stratum
+# min_n <- df_strat %>%
+#   count(tavg_strata, ai_strata, ndep_strata) %>%
+#   summarise(min_n = quantile(n, 0.25)) %>%
+#   pull(min_n)
 
-  # Load and engineer data with environmental factors
-  # plot-level data for model fitting, filtered based on quantiles by bin
-  data_fil_biomes <- read_rds(here::here("data/inputs/data_fil75_biomes.rds"))
+# # Perform stratified sampling
+# set.seed(123)
+# df_sampled <- df_strat %>%
+#   group_by(tavg_strata, ai_strata, ndep_strata) %>%
+#   slice_sample(n = min_n) %>%
+#   ungroup()
 
-}
+# # Check balance
+# df_sampled %>%
+#   count(tavg_strata, ai_strata, ndep_strata) |> 
+#   View()
+
+# # subset original data frame to sampled plots
+# df <- df |> 
+#   filter(plotID %in% df_sampled$plotID)
+
+# # xxx try
+# df <- read_rds(here("data/data_unm_slopefilter.rds"))
 
 # LMM with lmer() --------------------------------------------------------------
 ## Fit model -------------------------------------------------------------------
@@ -52,11 +92,29 @@ mod_lmer_env_complete <- lmer(
     scale(year) * scale(PBR) +
     scale(year) * scale(CNrt) +
     (1 | plotID) + (1 | species),
-  data = data_fil_biomes,
+  data = df,
   na.action = "na.exclude"
 )
 
+summary(mod_lmer_env_complete)
+
 write_rds(mod_lmer_env_complete, file = here("data/mod_lmer_env_complete.rds"))
+
+### no soil variables ----------
+mod_lmer_env_nosoil <- lmer(
+  logDensity ~ scale(logQMD) +
+    scale(year) * scale(tavg) +
+    scale(year) * scale(ai) +
+    scale(year) * scale(ndep) +
+    (1 | plotID) + (1 | species),
+  data = df,
+  na.action = "na.exclude"
+)
+
+summary(mod_lmer_env_nosoil)
+
+write_rds(mod_lmer_env_nosoil, file = here("data/mod_lmer_env_nosoil.rds"))
+
 
 ### no PBR ---------
 # fit model without PBR - this turns out as the best one
@@ -69,7 +127,7 @@ mod_lmer_env_nopbr <- lmer(
     # scale(year) * scale(PBR) + # excluded because neither fixed nor interactive effect is significant
     scale(year) * scale(CNrt) +
     (1 | plotID) + (1 | species),
-  data = data_fil_biomes,
+  data = df,
   na.action = "na.exclude"
 )
 
@@ -86,7 +144,7 @@ mod_lmer_env_nopbr_noorgc <- lmer(
     # scale(year) * scale(PBR) + # excluded because neither fixed nor interactive effect is significant
     scale(year) * scale(CNrt) +
     (1 | plotID) + (1 | species),
-  data = data_fil_biomes,
+  data = df,
   na.action = "na.exclude"
 )
 
@@ -103,7 +161,7 @@ mod_lmer_env_nopbr_nocn <- lmer(
     # scale(year) * scale(PBR) + # excluded because neither fixed nor interactive effect is significant
     # scale(year) * scale(CNrt) +
     (1 | plotID) + (1 | species),
-  data = data_fil_biomes,
+  data = df,
   na.action = "na.exclude"
 )
 
@@ -118,22 +176,24 @@ mod_lmer_env_complete_interactions <- lmer(
     scale(year) * scale(tavg) +
     scale(year) * scale(ai) +
     scale(year) * scale(ndep) +
-    scale(year) * scale(ORGC) +
-    scale(year) * scale(PBR) +
-    scale(year) * scale(CNrt) +
+    # scale(year) * scale(ORGC) +
+    # scale(year) * scale(PBR) +
+    # scale(year) * scale(CNrt) +
 
     # logQMD × environment interactions
     scale(logQMD) * scale(tavg) +
     scale(logQMD) * scale(ai) +
     scale(logQMD) * scale(ndep) +
-    scale(logQMD) * scale(ORGC) +
-    scale(logQMD) * scale(PBR) +
-    scale(logQMD) * scale(CNrt) +
+    # scale(logQMD) * scale(ORGC) +
+    # scale(logQMD) * scale(PBR) +
+    # scale(logQMD) * scale(CNrt) +
 
     (1 | plotID) + (1 | species),
-  data = data_fil_biomes,
+  data = df,
   na.action = "na.exclude"
 )
+
+summary(mod_lmer_env_complete_interactions)
 
 ## Write summary of model fits to latex table
 options("modelsummary_format_numeric_latex" = "plain")
@@ -142,11 +202,10 @@ options("modelsummary_format_numeric_latex" = "plain")
 modelsummary(
   list(
     "Complete" = mod_lmer_env_complete,
-    "No PBR" = mod_lmer_env_nopbr,
-    "No PBR, ORGC" = mod_lmer_env_nopbr_noorgc,
-    "No PBR, C:N" = mod_lmer_env_nopbr_nocn
+    "No soil" = mod_lmer_env_nosoil,
+    "Complete with interactions" = mod_lmer_env_complete_interactions
   ),
-  output = here(paste0("manuscript/tables/mods_env_", lab_filter, ".tex")),
+  output = here(paste0("manuscript/tables/mods_env.tex")),
   # estimate  = "p.value",
   estimate = "{estimate}{stars}",
   # estimate  = "{estimate} [{conf.low}, {conf.high}], {p.value}",
@@ -170,20 +229,7 @@ modelsummary(
 )
 
 # Warning: this is not dynamic
-if (use_slopefilter){
-  # select best model for further analyses looking at AIC and BIC in latex table
-  mod_lmer_env <- mod_lmer_env_complete  # based on slope filter
-
-} else {
-  # select best model for further analyses looking at AIC and BIC in latex table
-  mod_lmer_env <- mod_lmer_env_nopbr  # based on quantile filter
-
-}
-
-# ## Additional analysis ------------
-#
-# vc_df <- as_tibble(VarCorr(mod_lmer_env_complete))
-
+mod_lmer_env <- mod_lmer_env_nosoil  # based on slope filter
 
 ## Visualise fixed effects -----------------------------------------------------
 tl <- attr(terms(mod_lmer_env), "term.labels")
@@ -300,14 +346,14 @@ cowplot::plot_grid(
 )
 
 ggsave(
-  here(paste0("manuscript/figures/coefs_env_", lab_filter, ".png")),
+  here(paste0("manuscript/figures/coefs_env.png")),
   width = 6,
   height = 3,
   dpi = 500
   )
 
 ggsave(
-  here(paste0("manuscript/figures/coefs_env_", lab_filter, ".pdf")),
+  here(paste0("manuscript/figures/coefs_env.pdf")),
   width = 6,
   height = 3
 )

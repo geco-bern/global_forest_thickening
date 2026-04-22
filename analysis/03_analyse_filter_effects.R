@@ -29,15 +29,7 @@ library(rnaturalearth)
 source(here("R/fit_model.R"))
 source(here("R/extract_coef.R"))
 
-df_unm <- read_rds(here("data/inputs/df_unm_withfilters.rds")) |>
-  mutate(
-    year_sc = scale(year),
-    logQMD_sc = scale(logQMD)
-  ) |> 
-  
-  # Re-define all bnp plots as management_cat == 2 (primary), see email Rupert Seidl, 16.04.2026
-  mutate(management_cat = ifelse(dataset == "bnp", 2, management_cat))
-
+df_unm <- read_rds(here("data/inputs/df_unm_withfilters.rds"))
 
 # Define filter stages
 list_df_filtered <- list(
@@ -93,7 +85,10 @@ df_filtereffects <- imap_dfr(list_df_filtered, \(df, step_name) {
     group_by(dataset_major) |>
     nest() |>
     mutate(
-      n = map_int(data, nrow),
+      n = map_int(data, nrow)
+    ) |> 
+    filter(n > 30) |> 
+    mutate(
       res = map(data, \(d) {
         d |>
           fit_model(lqmm = TRUE) |>

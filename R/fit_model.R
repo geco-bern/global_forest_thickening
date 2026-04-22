@@ -12,7 +12,7 @@ fit_model <- function(df, lqmm = TRUE) {
       data = df,
       type = "normal",
       control = lqmmControl(
-        LP_max_iter = 500, # xxx TEST: revert back to 500,
+        LP_max_iter = 500,
         LP_tol_ll   = 1e-05,
         startQR     = TRUE
       )

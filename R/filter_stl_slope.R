@@ -1,7 +1,7 @@
 filter_stl_slope <- function(df, fit_lqmm, multiplier_sd = 0.5){
   # Filters data based on whether a plot's regression slope of logN ~ logQMD is
   # within a certain margin of the regression slope obtained from the quantile
-  # regression mixed effects model.
+  # regression mixed effects model of the given biome.
   df_byplot <- df |>
     group_by(plotID) |>
     nest() |>

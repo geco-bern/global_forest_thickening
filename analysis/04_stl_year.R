@@ -195,42 +195,10 @@ analyse_biome <- function(df, biome_name){
 }
 
 ## Run workflow ---------------------
-# read and process data
-df <- read_rds(here("data/inputs/df_unm_withfilters.rds")) |>
-  mutate(
-    year_sc = scale(year),
-    logQMD_sc = scale(logQMD)
-  ) |> 
-  
-  # Re-define all bnp plots as management_cat == 2 (primary), see email Rupert Seidl, 16.04.2026
-  mutate(management_cat = ifelse(dataset == "bnp", 2, management_cat)) |> 
+### Read and process data ------------
+df <- read_rds(here("data/inputs/df_unm_withfilters.rds"))
 
-  # Group biomes
-  mutate(biome_major = ifelse(
-    biomeID %in% c(1, 2), 
-    "Tropical & Subtropical Broadleaf Forests",
-    # biomeID == 1,
-    # "Tropical & Subtropical Moist Broadleaf Forests",
-    # ifelse(
-    #   biomeID == 2,
-    #   "Tropical & Subtropical Dry Broadleaf Forests",
-      ifelse(
-        biomeID %in% c(4, 5), 
-        "Temperate Forests",
-        ifelse(
-          biomeID == 6,
-          "Boreal Forests/Taiga",
-          ifelse(
-            biomeID == 12,
-            "Mediterranean Forests",
-            NA
-          )
-        )
-      )
-    )
-  )
-
-# apply workflow by biome
+### Apply workflow by biome -------------
 df_biome_analysis <- df |> 
   group_by(biome_major) |> 
   nest() |> 
@@ -245,7 +213,7 @@ df_biome_analysis <- df |>
   # apply workflow by biome
   mutate(out = purrr::map2(data, biome_major, ~analyse_biome(df = .x, biome_name = .y)))
 
-# save results
+### Save results -------------
 # (includes fitted models and ggplot objects for each major biome)
 # warning: large file, approx 6 GB
 write_rds(
@@ -253,781 +221,781 @@ write_rds(
   file = here("data/df_biome_analysis.rds")
 )
  
-## Plots -------------------------
-# construct panel
-left_panel <- cowplot::plot_grid(
-  gg_lqmm,
-  gg_lqmm_byqmdbin,
-  ncol = 1,
-  rel_heights = c(1, 0.6),
-  align = "v",
-  # labels = c("",  "g"),
-  label_y = 1.1
-)
+# ## Plots -------------------------
+# # construct panel
+# left_panel <- cowplot::plot_grid(
+#   gg_lqmm,
+#   gg_lqmm_byqmdbin,
+#   ncol = 1,
+#   rel_heights = c(1, 0.6),
+#   align = "v",
+#   # labels = c("",  "g"),
+#   label_y = 1.1
+# )
 
-panel <- cowplot::plot_grid(
-  left_panel,
-  gg_coef_filters,
-  rel_widths = c(1, 0.5)
-)
+# panel <- cowplot::plot_grid(
+#   left_panel,
+#   gg_coef_filters,
+#   rel_widths = c(1, 0.5)
+# )
 
 
 # XXXXXXXXXXXXXXXXXX
 
-# OLD CODE ----------------------------------------------------------
+# OLD CODE BELOW ----------------------------------------------------------
 
-# load data
-data_unm <- readRDS(here("data/inputs/df_unm.rds"))
+# # load data
+# data_unm <- readRDS(here("data/inputs/df_unm.rds"))
 
-# optionally subset
-do_subset_primary <- FALSE  # <- manually adjust here
+# # optionally subset
+# do_subset_primary <- FALSE  # <- manually adjust here
 
-if (do_subset_primary){
-  suffix_subset <- "_SUBSET"
+# if (do_subset_primary){
+#   suffix_subset <- "_SUBSET"
 
-  table_s1 <- read_csv(here("data/table_s1_exported.csv"))
-  vec_datasets_subset <- table_s1 |>
-    filter(`Can be considered primary/old growth forest?` == "YES") |>
-    pull(Dataset)
+#   table_s1 <- read_csv(here("data/table_s1_exported.csv"))
+#   vec_datasets_subset <- table_s1 |>
+#     filter(`Can be considered primary/old growth forest?` == "YES") |>
+#     pull(Dataset)
 
-  data_unm <- data_unm |>
-    filter(dataset %in% vec_datasets_subset)
+#   data_unm <- data_unm |>
+#     filter(dataset %in% vec_datasets_subset)
 
-} else {
-  suffix_subset <- ""
-}
-
-
-### Plot disturbed plots -------------------------------------------------------
-breaks <- get_breaks(data_unm_biome$year)
-
-gg_fdisturbed_biome1 <- plot_disturbed(
-  data_unm_biome,
-  "Tropical & Subtropical Moist Broadleaf Forests"
-  )
-
-### Remove disturbed plots -----------------------------------------------------
-data_unm_biome_including_disturbed <- data_unm_biome
-data_unm_biome <- data_unm_biome |>
-  filter(ndisturbed == 0)
-
-write_rds(
-  data_unm_biome,
-  file = here(paste0("data/data_unm_undist_biome1", suffix_subset, ".rds"))
-)
-
-### LQMM fit -------------------------------------------------------------------
-set.seed(123)
-fit_lqmm <- lqmm(
-  logDensity ~ logQMD_sc + year_sc,
-  random = ~1,
-  group = plotID,
-  tau = 0.9, # c(0.75, 0.90),
-  data = data_unm_biome,
-  type = "normal",
-  control = lqmmControl(
-    LP_max_iter = 500, # inner loop iterations
-    LP_tol_ll   = 1e-05, # inner loop tolerance
-    startQR     = TRUE
-  )
-)
-# summary(fit_lqmm)
-
-write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome1", suffix_subset, ".rds")))
-
-### LQMM fit with interaction --------------------------------------------------
-set.seed(123)
-fit_lqmm_int <- lqmm(
-  logDensity ~ logQMD_sc * year_sc,
-  random = ~1,
-  group = plotID,
-  tau = 0.9, # c(0.75, 0.90),
-  data = data_unm_biome,
-  type = "normal",
-  control = lqmmControl(
-    LP_max_iter = 500, # inner loop iterations
-    LP_tol_ll   = 1e-05, # inner loop tolerance
-    startQR     = TRUE
-  )
-)
-# summary(fit_lqmm_int)
-
-write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome1", suffix_subset, ".rds")))
-
-#### STL shift -----------------------------------------------------------------
-# Opt 2: predicted logDensity at two years differing by one year (in scaled units)
-percent_change <- calc_percent_change(data_unm_biome, fit_lqmm)
-
-#### Bootstrapping LQMM fit ----------------------------------------------------
-# boot_data <- rsample::bootstraps(
-#   data_unm_biome %>%
-#     group_by(plotID),
-#   times = 500,
-#   apparent = FALSE
-# )
-#
-# # Apply model to each bootstrap sample
-# boot_results <- boot_data %>%
-#   mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
-#   filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
-#   unnest(coefs) |>
-#   dplyr::select(-splits)
-#
-# write_rds(boot_results, file = here(paste0("data/boot_results_biome1", suffix_subset, ".rds")))
-#
-# df_boot <- boot_results |>
-#   filter(term == "year") |>
-#   mutate(biome = "Tropical & Subtropical Moist Broadleaf Forests")
-#
-# boot_results <- read_rds(file = here(paste0("data/boot_results_biome1", suffix_subset, ".rds")))
-
-### Plot STL from LQMM ---------------------------------------------------------
-gg_lqmm_biome1 <- plot_lqmm_bybiome(
-  data_unm_biome,
-  fit_lqmm,
-  name = bquote(bold("a") ~ ~"Tropical Moist Broadleaf Forests")
-)
-gg_lqmm_biome1
-
-### Plot STL-interaction from LQMM ---------------------------------------------
-gg_lqmm_int_biome1 <- plot_lqmm_bybiome(
-  data_unm_biome,
-  fit_lqmm_int,
-  name = bquote(bold("a") ~ ~"Tropical Moist Broadleaf Forests")
-)
-gg_lqmm_int_biome1
-
-### Within QMD bins ------------------------------------------------------------
-# Test whether upward shift of 90% quantile is significant within logQMD-bins
-# returns data frame with pval indicating significance level of a positive
-# effect of year.
-df_lqmm_byqmdbin <- calc_lqmm_byqmdbin(data_unm_biome)
-df_lqmm_byqmdbin_including_disturbed <- calc_lqmm_byqmdbin(
-  data_unm_biome_including_disturbed,
-  breaks = df_lqmm_byqmdbin$breaks
-)
-
-# Build the plot to access internal structure
-gg_lqmm_biome1_byqmdbin <- plot_lqmm_byqmdbin(
-  df_lqmm_byqmdbin$df,
-  df_lqmm_byqmdbin_including_disturbed$df
-  )
-
-gg_lqmm_biome1_both <- cowplot::plot_grid(
-  gg_lqmm_biome1,
-  gg_lqmm_biome1_byqmdbin,
-  ncol = 1,
-  rel_heights = c(1, 0.6),
-  align = "v",
-  # labels = c("",  "g"),
-  label_y = 1.1
-)
-gg_lqmm_biome1_both
+# } else {
+#   suffix_subset <- ""
+# }
 
 
-### Plot disturbed plots -------------------------------------------------------
-breaks <- get_breaks(data_unm_biome$year)
+# ### Plot disturbed plots -------------------------------------------------------
+# breaks <- get_breaks(data_unm_biome$year)
 
-gg_fdisturbed_biome2 <- plot_disturbed(
-  data_unm_biome,
-  "Tropical Dry Broadleaf Forests"
-)
+# gg_fdisturbed_biome1 <- plot_disturbed(
+#   data_unm_biome,
+#   "Tropical & Subtropical Moist Broadleaf Forests"
+#   )
 
-gg_fdisturbed_biome2
+# ### Remove disturbed plots -----------------------------------------------------
+# data_unm_biome_including_disturbed <- data_unm_biome
+# data_unm_biome <- data_unm_biome |>
+#   filter(ndisturbed == 0)
 
-### Remove disturbed plots -----------------------------------------------------
-data_unm_biome_including_disturbed <- data_unm_biome
-data_unm_biome <- data_unm_biome |>
-  filter(ndisturbed == 0)
-
-write_rds(
-  data_unm_biome,
-  file = here(paste0("data/data_unm_undist_biome2", suffix_subset, ".rds"))
-)
-
-### LQMM fit -------------------------------------------------------------------
-set.seed(123)
-fit_lqmm <- lqmm(
-  logDensity ~ logQMD_sc + year_sc,
-  random = ~1,
-  group = plotID,
-  tau = 0.90,
-  data = data_unm_biome,
-  type = "normal",
-  control = lqmmControl(
-    LP_max_iter = 500, # inner loop iterations
-    LP_tol_ll   = 1e-05, # inner loop tolerance
-    startQR     = TRUE
-  )
-)
-# summary(fit_lqmm)
-
-write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome2", suffix_subset, ".rds")))
-
-### LQMM interaction fit -------------------------------------------------------
-set.seed(123)
-fit_lqmm_int <- lqmm(
-  logDensity ~ logQMD_sc * year_sc,
-  random = ~1,
-  group = plotID,
-  tau = 0.90,
-  data = data_unm_biome,
-  type = "normal",
-  control = lqmmControl(
-    LP_max_iter = 500, # inner loop iterations
-    LP_tol_ll   = 1e-05, # inner loop tolerance
-    startQR     = TRUE
-  )
-)
-# summary(fit_lqmm_int)
-
-write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome2", suffix_subset, ".rds")))
-
-#### Bootstrapping LQMM fit -----------------------------------------------------
-# boot_data <- rsample::bootstraps(
-#   data_unm_biome %>%
-#     group_by(plotID),
-#   times = 500,
-#   apparent = FALSE
-# )
-#
-# # Apply model to each bootstrap sample
-# boot_results <- boot_data %>%
-#   mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
-#   filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
-#   unnest(coefs) |>
-#   dplyr::select(-splits)
-#
-# write_rds(boot_results, file = here(paste0("data/boot_results_biome2", suffix_subset, ".rds")))
-#
-# df_boot <- bind_rows(
-#   df_boot,
-#   boot_results |>
-#     filter(term == "year") |>
-#     mutate(biome = "Tropical Dry Broadleaf Forests")
+# write_rds(
+#   data_unm_biome,
+#   file = here(paste0("data/data_unm_undist_biome1", suffix_subset, ".rds"))
 # )
 
-### Plot STL from LQMM ---------------------------------------------------------
-gg_lqmm_biome2 <- plot_lqmm_bybiome(
-  data_unm_biome,
-  fit_lqmm,
-  name = bquote(bold("b") ~ ~"Tropical Dry Broadleaf Forests")
-)
-gg_lqmm_biome2
-
-### Plot STL-interaction from LQMM ---------------------------------------------
-gg_lqmm_int_biome2 <- plot_lqmm_bybiome(
-  data_unm_biome,
-  fit_lqmm_int,
-  name = bquote(bold("b") ~ ~"Tropical Dry Broadleaf Forests")
-)
-gg_lqmm_int_biome2
-
-### Within QMD bins ----------------------------------------
-# Test whether upward shift of 90% quantile is significant within logQMD-bins
-# returns data frame with pval indicating significance level of a positive
-# effect of year.
-df_lqmm_byqmdbin <- calc_lqmm_byqmdbin(data_unm_biome)
-df_lqmm_byqmdbin_including_disturbed <- calc_lqmm_byqmdbin(
-  data_unm_biome_including_disturbed,
-  breaks = df_lqmm_byqmdbin$breaks
-)
-
-# Build the plot to access internal structure
-gg_lqmm_biome2_byqmdbin <- plot_lqmm_byqmdbin(
-  df_lqmm_byqmdbin$df,
-  df_lqmm_byqmdbin_including_disturbed$df
-  )
-
-gg_lqmm_biome2_both <- cowplot::plot_grid(
-  gg_lqmm_biome2,
-  gg_lqmm_biome2_byqmdbin,
-  ncol = 1,
-  rel_heights = c(1, 0.6),
-  align = "v",
-  # labels = c("",  "h"),
-  label_y = 1.1
-)
-gg_lqmm_biome2_both
-
-
-### Plot disturbed plots -------------------------------------------------------
-breaks <- get_breaks(data_unm_biome$year)
-
-gg_fdisturbed_biome4 <- plot_disturbed(
-  data_unm_biome,
-  "Temperate Broadleaf & Mixed Forests"
-)
-
-gg_fdisturbed_biome4
-
-### Remove disturbed plots -----------------------------------------------------
-data_unm_biome_including_disturbed <- data_unm_biome
-data_unm_biome <- data_unm_biome |>
-  filter(ndisturbed == 0)
-
-write_rds(
-  data_unm_biome,
-  file = here(paste0("data/data_unm_undist_biome4", suffix_subset, ".rds"))
-  )
-
-### LQMM fit -------------------------------------------------------------------
-set.seed(123)
-fit_lqmm <- lqmm(
-  logDensity ~ logQMD_sc + year_sc,
-  random = ~1,
-  group = plotID,
-  tau = 0.90,
-  data = data_unm_biome,
-  type = "normal",
-  control = lqmmControl(startQR = TRUE)
-)
-# summary(fit_lqmm)
-
-write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome4", suffix_subset, ".rds")))
-
-### LQMM with interaction fit -------------------------------------------------------------------
-set.seed(123)
-fit_lqmm_int <- lqmm(
-  logDensity ~ logQMD_sc * year_sc,
-  random = ~1,
-  group = plotID,
-  tau = 0.90,
-  data = data_unm_biome,
-  type = "normal",
-  control = lqmmControl(startQR = TRUE)
-)
-# summary(fit_lqmm_int)
-
-write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome4", suffix_subset, ".rds")))
-
-#### Bootstrapping LQMM fit -----------------------------------------------------
-# boot_data <- rsample::bootstraps(
-#   data_unm_biome %>%
-#     group_by(plotID),
-#   times = 500,
-#   apparent = FALSE
+# ### LQMM fit -------------------------------------------------------------------
+# set.seed(123)
+# fit_lqmm <- lqmm(
+#   logDensity ~ logQMD_sc + year_sc,
+#   random = ~1,
+#   group = plotID,
+#   tau = 0.9, # c(0.75, 0.90),
+#   data = data_unm_biome,
+#   type = "normal",
+#   control = lqmmControl(
+#     LP_max_iter = 500, # inner loop iterations
+#     LP_tol_ll   = 1e-05, # inner loop tolerance
+#     startQR     = TRUE
+#   )
 # )
-#
-# # Apply model to each bootstrap sample
-# boot_results <- boot_data %>%
-#   mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
-#   filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
-#   unnest(coefs) |>
-#   dplyr::select(-splits)
-#
-# write_rds(boot_results, file = here(paste0("data/boot_results_biome4", suffix_subset, ".rds")))
-#
-# df_boot <- bind_rows(
-#   df_boot,
-#   boot_results |>
-#     filter(term == "year") |>
-#     mutate(biome = "Temperate Broadleaf & Mixed Forests")
+# # summary(fit_lqmm)
+
+# write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome1", suffix_subset, ".rds")))
+
+# ### LQMM fit with interaction --------------------------------------------------
+# set.seed(123)
+# fit_lqmm_int <- lqmm(
+#   logDensity ~ logQMD_sc * year_sc,
+#   random = ~1,
+#   group = plotID,
+#   tau = 0.9, # c(0.75, 0.90),
+#   data = data_unm_biome,
+#   type = "normal",
+#   control = lqmmControl(
+#     LP_max_iter = 500, # inner loop iterations
+#     LP_tol_ll   = 1e-05, # inner loop tolerance
+#     startQR     = TRUE
+#   )
+# )
+# # summary(fit_lqmm_int)
+
+# write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome1", suffix_subset, ".rds")))
+
+# #### STL shift -----------------------------------------------------------------
+# # Opt 2: predicted logDensity at two years differing by one year (in scaled units)
+# percent_change <- calc_percent_change(data_unm_biome, fit_lqmm)
+
+# #### Bootstrapping LQMM fit ----------------------------------------------------
+# # boot_data <- rsample::bootstraps(
+# #   data_unm_biome %>%
+# #     group_by(plotID),
+# #   times = 500,
+# #   apparent = FALSE
+# # )
+# #
+# # # Apply model to each bootstrap sample
+# # boot_results <- boot_data %>%
+# #   mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
+# #   filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
+# #   unnest(coefs) |>
+# #   dplyr::select(-splits)
+# #
+# # write_rds(boot_results, file = here(paste0("data/boot_results_biome1", suffix_subset, ".rds")))
+# #
+# # df_boot <- boot_results |>
+# #   filter(term == "year") |>
+# #   mutate(biome = "Tropical & Subtropical Moist Broadleaf Forests")
+# #
+# # boot_results <- read_rds(file = here(paste0("data/boot_results_biome1", suffix_subset, ".rds")))
+
+# ### Plot STL from LQMM ---------------------------------------------------------
+# gg_lqmm_biome1 <- plot_lqmm_bybiome(
+#   data_unm_biome,
+#   fit_lqmm,
+#   name = bquote(bold("a") ~ ~"Tropical Moist Broadleaf Forests")
+# )
+# gg_lqmm_biome1
+
+# ### Plot STL-interaction from LQMM ---------------------------------------------
+# gg_lqmm_int_biome1 <- plot_lqmm_bybiome(
+#   data_unm_biome,
+#   fit_lqmm_int,
+#   name = bquote(bold("a") ~ ~"Tropical Moist Broadleaf Forests")
+# )
+# gg_lqmm_int_biome1
+
+# ### Within QMD bins ------------------------------------------------------------
+# # Test whether upward shift of 90% quantile is significant within logQMD-bins
+# # returns data frame with pval indicating significance level of a positive
+# # effect of year.
+# df_lqmm_byqmdbin <- calc_lqmm_byqmdbin(data_unm_biome)
+# df_lqmm_byqmdbin_including_disturbed <- calc_lqmm_byqmdbin(
+#   data_unm_biome_including_disturbed,
+#   breaks = df_lqmm_byqmdbin$breaks
 # )
 
-### Plot STL from LQMM ---------------------------------------------------------
-gg_lqmm_biome4 <- plot_lqmm_bybiome(
-  data_unm_biome,
-  fit_lqmm,
-  name = bquote(bold("c") ~ ~"Temperate Broadleaf & Mixed Forests")
-)
-gg_lqmm_biome4
+# # Build the plot to access internal structure
+# gg_lqmm_biome1_byqmdbin <- plot_lqmm_byqmdbin(
+#   df_lqmm_byqmdbin$df,
+#   df_lqmm_byqmdbin_including_disturbed$df
+#   )
 
-gg_lqmm_biome4 + 
-  labs(title = NULL, subtitle = NULL)
-
-ggsave(here("fig/gg_lqmm_biome4.pdf"), width = 4, height = 3)
-
-### Plot STL from LQMM with interaction ----------------------------------------
-gg_lqmm_int_biome4 <- plot_lqmm_bybiome(
-  data_unm_biome,
-  fit_lqmm_int,
-  name = bquote(bold("c") ~ ~"Temperate Broadleaf & Mixed Forests")
-)
-gg_lqmm_int_biome4
-
-### Within QMD bins ----------------------------------------
-# Test whether upward shift of 90% quantile is significant within logQMD-bins
-# returns data frame with pval indicating significance level of a positive
-# effect of year.
-df_lqmm_byqmdbin <- calc_lqmm_byqmdbin(data_unm_biome)
-df_lqmm_byqmdbin_including_disturbed <- calc_lqmm_byqmdbin(
-  data_unm_biome_including_disturbed,
-  breaks = df_lqmm_byqmdbin$breaks
-)
-
-# Build the plot to access internal structure
-gg_lqmm_biome4_byqmdbin <- plot_lqmm_byqmdbin(
-  df_lqmm_byqmdbin$df,
-  df_lqmm_byqmdbin_including_disturbed$df
-  )
-
-gg_lqmm_biome4_both <- cowplot::plot_grid(
-  gg_lqmm_biome4,
-  gg_lqmm_biome4_byqmdbin,
-  ncol = 1,
-  rel_heights = c(1, 0.6),
-  # labels = c("",  "i"),
-  align = "v",
-  label_y = 1.1
-)
-gg_lqmm_biome4_both
-
-
-### Plot disturbed plots -------------------------------------------------------
-breaks <- get_breaks(data_unm_biome$year)
-
-gg_fdisturbed_biome5 <- plot_disturbed(
-  data_unm_biome,
-  "Temperate Conifer Forests"
-)
-
-gg_fdisturbed_biome5
-
-### Remove disturbed plots -----------------------------------------------------
-data_unm_biome_including_disturbed <- data_unm_biome
-data_unm_biome <- data_unm_biome |>
-  filter(ndisturbed == 0)
-
-write_rds(
-  data_unm_biome,
-  file = here(paste0("data/data_unm_undist_biome5", suffix_subset, ".rds"))
-)
-
-### LQMM fit -------------------------------------------------------------------
-set.seed(123)
-fit_lqmm <- lqmm(
-  logDensity ~ logQMD_sc + year_sc,
-  random = ~1,
-  group = plotID,
-  tau = 0.90,
-  data = data_unm_biome,
-  type = "normal",
-  control = lqmmControl(startQR = TRUE)
-)
-# summary(fit_lqmm)
-
-write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome5", suffix_subset, ".rds")))
-
-### LQMM-interaction fit -------------------------------------------------------
-set.seed(123)
-fit_lqmm_int <- lqmm(
-  logDensity ~ logQMD_sc * year_sc,
-  random = ~1,
-  group = plotID,
-  tau = 0.90,
-  data = data_unm_biome,
-  type = "normal",
-  control = lqmmControl(startQR = TRUE)
-)
-# summary(fit_lqmm_int)
-
-write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome5", suffix_subset, ".rds")))
-
-#### Bootstrapping LQMM fit -----------------------------------------------------
-# boot_data <- rsample::bootstraps(
-#   data_unm_biome %>%
-#     group_by(plotID),
-#   times = 500,
-#   apparent = FALSE
+# gg_lqmm_biome1_both <- cowplot::plot_grid(
+#   gg_lqmm_biome1,
+#   gg_lqmm_biome1_byqmdbin,
+#   ncol = 1,
+#   rel_heights = c(1, 0.6),
+#   align = "v",
+#   # labels = c("",  "g"),
+#   label_y = 1.1
 # )
-#
-# # Apply model to each bootstrap sample
-# boot_results <- boot_data %>%
-#   mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
-#   filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
-#   unnest(coefs) |>
-#   dplyr::select(-splits)
-#
-# write_rds(boot_results, file = here(paste0("data/boot_results_biome5", suffix_subset, ".rds")))
-#
-# df_boot <- bind_rows(
-#   df_boot,
-#   boot_results |>
-#     filter(term == "year") |>
-#     mutate(biome = "Temperate Conifer Forests")
+# gg_lqmm_biome1_both
+
+
+# ### Plot disturbed plots -------------------------------------------------------
+# breaks <- get_breaks(data_unm_biome$year)
+
+# gg_fdisturbed_biome2 <- plot_disturbed(
+#   data_unm_biome,
+#   "Tropical Dry Broadleaf Forests"
 # )
 
-### Plot STL from LQMM ---------------------------------------------------------
-gg_lqmm_biome5 <- plot_lqmm_bybiome(
-  data_unm_biome,
-  fit_lqmm,
-  name = bquote(bold("d") ~ ~"Temperate Conifer Forest")
-)
-gg_lqmm_biome5
+# gg_fdisturbed_biome2
 
-### Plot STL-interaction from LQMM ---------------------------------------------
-gg_lqmm_int_biome5 <- plot_lqmm_bybiome(
-  data_unm_biome,
-  fit_lqmm_int,
-  name = bquote(bold("d") ~ ~"Temperate Conifer Forest")
-)
-gg_lqmm_int_biome5
+# ### Remove disturbed plots -----------------------------------------------------
+# data_unm_biome_including_disturbed <- data_unm_biome
+# data_unm_biome <- data_unm_biome |>
+#   filter(ndisturbed == 0)
 
-### Within QMD bins ----------------------------------------
-# Test whether upward shift of 90% quantile is significant within logQMD-bins
-# returns data frame with pval indicating significance level of a positive
-# effect of year.
-df_lqmm_byqmdbin <- calc_lqmm_byqmdbin(data_unm_biome)
-df_lqmm_byqmdbin_including_disturbed <- calc_lqmm_byqmdbin(
-  data_unm_biome_including_disturbed,
-  breaks = df_lqmm_byqmdbin$breaks
-)
-
-# Build the plot to access internal structure
-gg_lqmm_biome5_byqmdbin <- plot_lqmm_byqmdbin(
-  df_lqmm_byqmdbin$df,
-  df_lqmm_byqmdbin_including_disturbed$df
-  )
-
-gg_lqmm_biome5_both <- cowplot::plot_grid(
-  gg_lqmm_biome5,
-  gg_lqmm_biome5_byqmdbin,
-  ncol = 1,
-  rel_heights = c(1, 0.6),
-  # labels = c("",  "j"),
-  align = "v",
-  label_y = 1.1
-)
-gg_lqmm_biome5_both
-
-
-### Plot disturbed plots -------------------------------------------------------
-breaks <- get_breaks(data_unm_biome$year)
-
-gg_fdisturbed_biome6 <- plot_disturbed(
-  data_unm_biome,
-  "Boreal Forests/Taiga"
-)
-
-gg_fdisturbed_biome6
-
-### Remove disturbed plots -----------------------------------------------------
-data_unm_biome_including_disturbed <- data_unm_biome
-data_unm_biome <- data_unm_biome |>
-  filter(ndisturbed == 0)
-
-write_rds(
-  data_unm_biome,
-  file = here(paste0("data/data_unm_undist_biome6", suffix_subset, ".rds"))
-)
-
-### LQMM fit -------------------------------------------------------------------
-set.seed(123)
-fit_lqmm <- lqmm(
-  logDensity ~ logQMD_sc + year_sc,
-  random = ~1,
-  group = plotID,
-  tau = 0.90,
-  data = data_unm_biome,
-  type = "normal",
-  control = lqmmControl(
-    LP_max_iter = 500, # increase max iterations
-    LP_tol_ll = 1e-4, # relax tolerance slightly (default is 1e-5)
-    startQR = TRUE # good to keep this TRUE
-  )
-)
-# summary(fit_lqmm)
-
-write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome6", suffix_subset, ".rds")))
-
-### LQMM-interaction fit -------------------------------------------------------
-set.seed(123)
-fit_lqmm_int <- lqmm(
-  logDensity ~ logQMD_sc * year_sc,
-  random = ~1,
-  group = plotID,
-  tau = 0.90,
-  data = data_unm_biome,
-  type = "normal",
-  control = lqmmControl(
-    LP_max_iter = 500, # increase max iterations
-    LP_tol_ll = 1e-4, # relax tolerance slightly (default is 1e-5)
-    startQR = TRUE # good to keep this TRUE
-  )
-)
-# summary(fit_lqmm)
-
-write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome6", suffix_subset, ".rds")))
-
-#### Bootstrapping LQMM fit -----------------------------------------------------
-# boot_data <- rsample::bootstraps(
-#   data_unm_biome %>%
-#     group_by(plotID),
-#   times = 500,
-#   apparent = FALSE
-# )
-#
-# # Apply model to each bootstrap sample
-# boot_results <- boot_data %>%
-#   mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
-#   filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
-#   unnest(coefs) |>
-#   dplyr::select(-splits)
-#
-# write_rds(boot_results, file = here(paste0("data/boot_results_biome6", suffix_subset, ".rds")))
-#
-# df_boot <- bind_rows(
-#   df_boot,
-#   boot_results |>
-#     filter(term == "year") |>
-#     mutate(biome = "Boreal Forests/Taiga")
+# write_rds(
+#   data_unm_biome,
+#   file = here(paste0("data/data_unm_undist_biome2", suffix_subset, ".rds"))
 # )
 
-### Plot STL from LQMM ---------------------------------------------------------
-gg_lqmm_biome6 <- plot_lqmm_bybiome(
-  data_unm_biome,
-  fit_lqmm,
-  name = bquote(bold("e") ~ ~"Boreal Forests/Taiga")
-)
-gg_lqmm_biome6
-
-### Plot STL-interaction from LQMM ---------------------------------------------
-gg_lqmm_int_biome6 <- plot_lqmm_bybiome(
-  data_unm_biome,
-  fit_lqmm_int,
-  name = bquote(bold("e") ~ ~"Boreal Forests/Taiga")
-)
-gg_lqmm_int_biome6
-
-### Within QMD bins ----------------------------------------
-# Test whether upward shift of 90% quantile is significant within logQMD-bins
-# returns data frame with pval indicating significance level of a positive
-# effect of year.
-df_lqmm_byqmdbin <- calc_lqmm_byqmdbin(data_unm_biome)
-df_lqmm_byqmdbin_including_disturbed <- calc_lqmm_byqmdbin(
-  data_unm_biome_including_disturbed,
-  breaks = df_lqmm_byqmdbin$breaks
-)
-
-# Build the plot to access internal structure
-gg_lqmm_biome6_byqmdbin <- plot_lqmm_byqmdbin(df_lqmm_byqmdbin$df, df_lqmm_byqmdbin_including_disturbed$df)
-
-gg_lqmm_biome6_both <- cowplot::plot_grid(
-  gg_lqmm_biome6,
-  gg_lqmm_biome6_byqmdbin,
-  ncol = 1,
-  rel_heights = c(1, 0.6),
-  # labels = c("",  "k"),
-  align = "v",
-  label_y = 1.1
-)
-gg_lqmm_biome6_both
-
-
-### Plot disturbed plots -------------------------------------------------------
-breaks <- get_breaks(data_unm_biome$year)
-
-gg_fdisturbed_biome12 <- plot_disturbed(
-  data_unm_biome,
-  "Mediterranean Forests"
-)
-
-gg_fdisturbed_biome12
-
-### Remove disturbed plots -----------------------------------------------------
-data_unm_biome_including_disturbed <- data_unm_biome
-data_unm_biome <- data_unm_biome |>
-  filter(ndisturbed == 0)
-
-write_rds(
-  data_unm_biome,
-  file = here(paste0("data/data_unm_undist_biome12", suffix_subset, ".rds"))
-)
-
-### LQMM fit -------------------------------------------------------------------
-set.seed(123)
-fit_lqmm <- lqmm(
-  logDensity ~ logQMD_sc + year_sc,
-  random = ~1,
-  group = plotID,
-  tau = 0.90,
-  data = data_unm_biome,
-  type = "normal",
-  control = lqmmControl(startQR = TRUE)
-)
-# summary(fit_lqmm)
-
-write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome12", suffix_subset, ".rds")))
-
-### LQMM-interaction fit -------------------------------------------------------
-set.seed(123)
-fit_lqmm_int <- lqmm(
-  logDensity ~ logQMD_sc * year_sc,
-  random = ~1,
-  group = plotID,
-  tau = 0.90,
-  data = data_unm_biome,
-  type = "normal",
-  control = lqmmControl(startQR = TRUE)
-)
-# summary(fit_lqmm_int)
-
-write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome12", suffix_subset, ".rds")))
-
-#### Bootstrapping LQMM fit -----------------------------------------------------
-# boot_data <- rsample::bootstraps(
-#   data_unm_biome %>%
-#     group_by(plotID),
-#   times = 500,
-#   apparent = FALSE
+# ### LQMM fit -------------------------------------------------------------------
+# set.seed(123)
+# fit_lqmm <- lqmm(
+#   logDensity ~ logQMD_sc + year_sc,
+#   random = ~1,
+#   group = plotID,
+#   tau = 0.90,
+#   data = data_unm_biome,
+#   type = "normal",
+#   control = lqmmControl(
+#     LP_max_iter = 500, # inner loop iterations
+#     LP_tol_ll   = 1e-05, # inner loop tolerance
+#     startQR     = TRUE
+#   )
 # )
-#
-# # Apply model to each bootstrap sample
-# boot_results <- boot_data %>%
-#   mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
-#   filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
-#   unnest(coefs) |>
-#   dplyr::select(-splits)
-#
-# write_rds(boot_results, file = here(paste0("data/boot_results_biome12", suffix_subset, ".rds")))
-#
-# df_boot <- bind_rows(
-#   df_boot,
-#   boot_results |>
-#     filter(term == "year") |>
-#     mutate(biome = "Mediterranean Forests")
+# # summary(fit_lqmm)
+
+# write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome2", suffix_subset, ".rds")))
+
+# ### LQMM interaction fit -------------------------------------------------------
+# set.seed(123)
+# fit_lqmm_int <- lqmm(
+#   logDensity ~ logQMD_sc * year_sc,
+#   random = ~1,
+#   group = plotID,
+#   tau = 0.90,
+#   data = data_unm_biome,
+#   type = "normal",
+#   control = lqmmControl(
+#     LP_max_iter = 500, # inner loop iterations
+#     LP_tol_ll   = 1e-05, # inner loop tolerance
+#     startQR     = TRUE
+#   )
+# )
+# # summary(fit_lqmm_int)
+
+# write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome2", suffix_subset, ".rds")))
+
+# #### Bootstrapping LQMM fit -----------------------------------------------------
+# # boot_data <- rsample::bootstraps(
+# #   data_unm_biome %>%
+# #     group_by(plotID),
+# #   times = 500,
+# #   apparent = FALSE
+# # )
+# #
+# # # Apply model to each bootstrap sample
+# # boot_results <- boot_data %>%
+# #   mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
+# #   filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
+# #   unnest(coefs) |>
+# #   dplyr::select(-splits)
+# #
+# # write_rds(boot_results, file = here(paste0("data/boot_results_biome2", suffix_subset, ".rds")))
+# #
+# # df_boot <- bind_rows(
+# #   df_boot,
+# #   boot_results |>
+# #     filter(term == "year") |>
+# #     mutate(biome = "Tropical Dry Broadleaf Forests")
+# # )
+
+# ### Plot STL from LQMM ---------------------------------------------------------
+# gg_lqmm_biome2 <- plot_lqmm_bybiome(
+#   data_unm_biome,
+#   fit_lqmm,
+#   name = bquote(bold("b") ~ ~"Tropical Dry Broadleaf Forests")
+# )
+# gg_lqmm_biome2
+
+# ### Plot STL-interaction from LQMM ---------------------------------------------
+# gg_lqmm_int_biome2 <- plot_lqmm_bybiome(
+#   data_unm_biome,
+#   fit_lqmm_int,
+#   name = bquote(bold("b") ~ ~"Tropical Dry Broadleaf Forests")
+# )
+# gg_lqmm_int_biome2
+
+# ### Within QMD bins ----------------------------------------
+# # Test whether upward shift of 90% quantile is significant within logQMD-bins
+# # returns data frame with pval indicating significance level of a positive
+# # effect of year.
+# df_lqmm_byqmdbin <- calc_lqmm_byqmdbin(data_unm_biome)
+# df_lqmm_byqmdbin_including_disturbed <- calc_lqmm_byqmdbin(
+#   data_unm_biome_including_disturbed,
+#   breaks = df_lqmm_byqmdbin$breaks
 # )
 
-### Plot STL from LQMM ---------------------------------------------------------
-gg_lqmm_biome12 <- plot_lqmm_bybiome(
-  data_unm_biome,
-  fit_lqmm,
-  name = bquote(bold("f") ~ ~"Mediterranean Forests")
-)
-gg_lqmm_biome12
+# # Build the plot to access internal structure
+# gg_lqmm_biome2_byqmdbin <- plot_lqmm_byqmdbin(
+#   df_lqmm_byqmdbin$df,
+#   df_lqmm_byqmdbin_including_disturbed$df
+#   )
 
-### Plot STL-interaction from LQMM ---------------------------------------------
-gg_lqmm_int_biome12 <- plot_lqmm_bybiome(
-  data_unm_biome,
-  fit_lqmm_int,
-  name = bquote(bold("f") ~ ~"Mediterranean Forests")
-)
-gg_lqmm_int_biome12
+# gg_lqmm_biome2_both <- cowplot::plot_grid(
+#   gg_lqmm_biome2,
+#   gg_lqmm_biome2_byqmdbin,
+#   ncol = 1,
+#   rel_heights = c(1, 0.6),
+#   align = "v",
+#   # labels = c("",  "h"),
+#   label_y = 1.1
+# )
+# gg_lqmm_biome2_both
 
-### Within QMD bins ----------------------------------------
-# Test whether upward shift of 90% quantile is significant within logQMD-bins
-# returns data frame with pval indicating significance level of a positive
-# effect of year.
-df_lqmm_byqmdbin <- calc_lqmm_byqmdbin(data_unm_biome)
-df_lqmm_byqmdbin_including_disturbed <- calc_lqmm_byqmdbin(
-  data_unm_biome_including_disturbed,
-  breaks = df_lqmm_byqmdbin$breaks
-)
 
-# Build the plot to access internal structure
-gg_lqmm_biome12_byqmdbin <- plot_lqmm_byqmdbin(df_lqmm_byqmdbin$df, df_lqmm_byqmdbin_including_disturbed$df)
+# ### Plot disturbed plots -------------------------------------------------------
+# breaks <- get_breaks(data_unm_biome$year)
 
-gg_lqmm_biome12_both <- cowplot::plot_grid(
-  gg_lqmm_biome12,
-  gg_lqmm_biome12_byqmdbin,
-  ncol = 1,
-  rel_heights = c(1, 0.6),
-  # labels = c("",  "l"),
-  align = "v",
-  label_y = 1.1
-)
-gg_lqmm_biome12_both
+# gg_fdisturbed_biome4 <- plot_disturbed(
+#   data_unm_biome,
+#   "Temperate Broadleaf & Mixed Forests"
+# )
+
+# gg_fdisturbed_biome4
+
+# ### Remove disturbed plots -----------------------------------------------------
+# data_unm_biome_including_disturbed <- data_unm_biome
+# data_unm_biome <- data_unm_biome |>
+#   filter(ndisturbed == 0)
+
+# write_rds(
+#   data_unm_biome,
+#   file = here(paste0("data/data_unm_undist_biome4", suffix_subset, ".rds"))
+#   )
+
+# ### LQMM fit -------------------------------------------------------------------
+# set.seed(123)
+# fit_lqmm <- lqmm(
+#   logDensity ~ logQMD_sc + year_sc,
+#   random = ~1,
+#   group = plotID,
+#   tau = 0.90,
+#   data = data_unm_biome,
+#   type = "normal",
+#   control = lqmmControl(startQR = TRUE)
+# )
+# # summary(fit_lqmm)
+
+# write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome4", suffix_subset, ".rds")))
+
+# ### LQMM with interaction fit -------------------------------------------------------------------
+# set.seed(123)
+# fit_lqmm_int <- lqmm(
+#   logDensity ~ logQMD_sc * year_sc,
+#   random = ~1,
+#   group = plotID,
+#   tau = 0.90,
+#   data = data_unm_biome,
+#   type = "normal",
+#   control = lqmmControl(startQR = TRUE)
+# )
+# # summary(fit_lqmm_int)
+
+# write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome4", suffix_subset, ".rds")))
+
+# #### Bootstrapping LQMM fit -----------------------------------------------------
+# # boot_data <- rsample::bootstraps(
+# #   data_unm_biome %>%
+# #     group_by(plotID),
+# #   times = 500,
+# #   apparent = FALSE
+# # )
+# #
+# # # Apply model to each bootstrap sample
+# # boot_results <- boot_data %>%
+# #   mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
+# #   filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
+# #   unnest(coefs) |>
+# #   dplyr::select(-splits)
+# #
+# # write_rds(boot_results, file = here(paste0("data/boot_results_biome4", suffix_subset, ".rds")))
+# #
+# # df_boot <- bind_rows(
+# #   df_boot,
+# #   boot_results |>
+# #     filter(term == "year") |>
+# #     mutate(biome = "Temperate Broadleaf & Mixed Forests")
+# # )
+
+# ### Plot STL from LQMM ---------------------------------------------------------
+# gg_lqmm_biome4 <- plot_lqmm_bybiome(
+#   data_unm_biome,
+#   fit_lqmm,
+#   name = bquote(bold("c") ~ ~"Temperate Broadleaf & Mixed Forests")
+# )
+# gg_lqmm_biome4
+
+# gg_lqmm_biome4 + 
+#   labs(title = NULL, subtitle = NULL)
+
+# ggsave(here("fig/gg_lqmm_biome4.pdf"), width = 4, height = 3)
+
+# ### Plot STL from LQMM with interaction ----------------------------------------
+# gg_lqmm_int_biome4 <- plot_lqmm_bybiome(
+#   data_unm_biome,
+#   fit_lqmm_int,
+#   name = bquote(bold("c") ~ ~"Temperate Broadleaf & Mixed Forests")
+# )
+# gg_lqmm_int_biome4
+
+# ### Within QMD bins ----------------------------------------
+# # Test whether upward shift of 90% quantile is significant within logQMD-bins
+# # returns data frame with pval indicating significance level of a positive
+# # effect of year.
+# df_lqmm_byqmdbin <- calc_lqmm_byqmdbin(data_unm_biome)
+# df_lqmm_byqmdbin_including_disturbed <- calc_lqmm_byqmdbin(
+#   data_unm_biome_including_disturbed,
+#   breaks = df_lqmm_byqmdbin$breaks
+# )
+
+# # Build the plot to access internal structure
+# gg_lqmm_biome4_byqmdbin <- plot_lqmm_byqmdbin(
+#   df_lqmm_byqmdbin$df,
+#   df_lqmm_byqmdbin_including_disturbed$df
+#   )
+
+# gg_lqmm_biome4_both <- cowplot::plot_grid(
+#   gg_lqmm_biome4,
+#   gg_lqmm_biome4_byqmdbin,
+#   ncol = 1,
+#   rel_heights = c(1, 0.6),
+#   # labels = c("",  "i"),
+#   align = "v",
+#   label_y = 1.1
+# )
+# gg_lqmm_biome4_both
+
+
+# ### Plot disturbed plots -------------------------------------------------------
+# breaks <- get_breaks(data_unm_biome$year)
+
+# gg_fdisturbed_biome5 <- plot_disturbed(
+#   data_unm_biome,
+#   "Temperate Conifer Forests"
+# )
+
+# gg_fdisturbed_biome5
+
+# ### Remove disturbed plots -----------------------------------------------------
+# data_unm_biome_including_disturbed <- data_unm_biome
+# data_unm_biome <- data_unm_biome |>
+#   filter(ndisturbed == 0)
+
+# write_rds(
+#   data_unm_biome,
+#   file = here(paste0("data/data_unm_undist_biome5", suffix_subset, ".rds"))
+# )
+
+# ### LQMM fit -------------------------------------------------------------------
+# set.seed(123)
+# fit_lqmm <- lqmm(
+#   logDensity ~ logQMD_sc + year_sc,
+#   random = ~1,
+#   group = plotID,
+#   tau = 0.90,
+#   data = data_unm_biome,
+#   type = "normal",
+#   control = lqmmControl(startQR = TRUE)
+# )
+# # summary(fit_lqmm)
+
+# write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome5", suffix_subset, ".rds")))
+
+# ### LQMM-interaction fit -------------------------------------------------------
+# set.seed(123)
+# fit_lqmm_int <- lqmm(
+#   logDensity ~ logQMD_sc * year_sc,
+#   random = ~1,
+#   group = plotID,
+#   tau = 0.90,
+#   data = data_unm_biome,
+#   type = "normal",
+#   control = lqmmControl(startQR = TRUE)
+# )
+# # summary(fit_lqmm_int)
+
+# write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome5", suffix_subset, ".rds")))
+
+# #### Bootstrapping LQMM fit -----------------------------------------------------
+# # boot_data <- rsample::bootstraps(
+# #   data_unm_biome %>%
+# #     group_by(plotID),
+# #   times = 500,
+# #   apparent = FALSE
+# # )
+# #
+# # # Apply model to each bootstrap sample
+# # boot_results <- boot_data %>%
+# #   mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
+# #   filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
+# #   unnest(coefs) |>
+# #   dplyr::select(-splits)
+# #
+# # write_rds(boot_results, file = here(paste0("data/boot_results_biome5", suffix_subset, ".rds")))
+# #
+# # df_boot <- bind_rows(
+# #   df_boot,
+# #   boot_results |>
+# #     filter(term == "year") |>
+# #     mutate(biome = "Temperate Conifer Forests")
+# # )
+
+# ### Plot STL from LQMM ---------------------------------------------------------
+# gg_lqmm_biome5 <- plot_lqmm_bybiome(
+#   data_unm_biome,
+#   fit_lqmm,
+#   name = bquote(bold("d") ~ ~"Temperate Conifer Forest")
+# )
+# gg_lqmm_biome5
+
+# ### Plot STL-interaction from LQMM ---------------------------------------------
+# gg_lqmm_int_biome5 <- plot_lqmm_bybiome(
+#   data_unm_biome,
+#   fit_lqmm_int,
+#   name = bquote(bold("d") ~ ~"Temperate Conifer Forest")
+# )
+# gg_lqmm_int_biome5
+
+# ### Within QMD bins ----------------------------------------
+# # Test whether upward shift of 90% quantile is significant within logQMD-bins
+# # returns data frame with pval indicating significance level of a positive
+# # effect of year.
+# df_lqmm_byqmdbin <- calc_lqmm_byqmdbin(data_unm_biome)
+# df_lqmm_byqmdbin_including_disturbed <- calc_lqmm_byqmdbin(
+#   data_unm_biome_including_disturbed,
+#   breaks = df_lqmm_byqmdbin$breaks
+# )
+
+# # Build the plot to access internal structure
+# gg_lqmm_biome5_byqmdbin <- plot_lqmm_byqmdbin(
+#   df_lqmm_byqmdbin$df,
+#   df_lqmm_byqmdbin_including_disturbed$df
+#   )
+
+# gg_lqmm_biome5_both <- cowplot::plot_grid(
+#   gg_lqmm_biome5,
+#   gg_lqmm_biome5_byqmdbin,
+#   ncol = 1,
+#   rel_heights = c(1, 0.6),
+#   # labels = c("",  "j"),
+#   align = "v",
+#   label_y = 1.1
+# )
+# gg_lqmm_biome5_both
+
+
+# ### Plot disturbed plots -------------------------------------------------------
+# breaks <- get_breaks(data_unm_biome$year)
+
+# gg_fdisturbed_biome6 <- plot_disturbed(
+#   data_unm_biome,
+#   "Boreal Forests/Taiga"
+# )
+
+# gg_fdisturbed_biome6
+
+# ### Remove disturbed plots -----------------------------------------------------
+# data_unm_biome_including_disturbed <- data_unm_biome
+# data_unm_biome <- data_unm_biome |>
+#   filter(ndisturbed == 0)
+
+# write_rds(
+#   data_unm_biome,
+#   file = here(paste0("data/data_unm_undist_biome6", suffix_subset, ".rds"))
+# )
+
+# ### LQMM fit -------------------------------------------------------------------
+# set.seed(123)
+# fit_lqmm <- lqmm(
+#   logDensity ~ logQMD_sc + year_sc,
+#   random = ~1,
+#   group = plotID,
+#   tau = 0.90,
+#   data = data_unm_biome,
+#   type = "normal",
+#   control = lqmmControl(
+#     LP_max_iter = 500, # increase max iterations
+#     LP_tol_ll = 1e-4, # relax tolerance slightly (default is 1e-5)
+#     startQR = TRUE # good to keep this TRUE
+#   )
+# )
+# # summary(fit_lqmm)
+
+# write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome6", suffix_subset, ".rds")))
+
+# ### LQMM-interaction fit -------------------------------------------------------
+# set.seed(123)
+# fit_lqmm_int <- lqmm(
+#   logDensity ~ logQMD_sc * year_sc,
+#   random = ~1,
+#   group = plotID,
+#   tau = 0.90,
+#   data = data_unm_biome,
+#   type = "normal",
+#   control = lqmmControl(
+#     LP_max_iter = 500, # increase max iterations
+#     LP_tol_ll = 1e-4, # relax tolerance slightly (default is 1e-5)
+#     startQR = TRUE # good to keep this TRUE
+#   )
+# )
+# # summary(fit_lqmm)
+
+# write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome6", suffix_subset, ".rds")))
+
+# #### Bootstrapping LQMM fit -----------------------------------------------------
+# # boot_data <- rsample::bootstraps(
+# #   data_unm_biome %>%
+# #     group_by(plotID),
+# #   times = 500,
+# #   apparent = FALSE
+# # )
+# #
+# # # Apply model to each bootstrap sample
+# # boot_results <- boot_data %>%
+# #   mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
+# #   filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
+# #   unnest(coefs) |>
+# #   dplyr::select(-splits)
+# #
+# # write_rds(boot_results, file = here(paste0("data/boot_results_biome6", suffix_subset, ".rds")))
+# #
+# # df_boot <- bind_rows(
+# #   df_boot,
+# #   boot_results |>
+# #     filter(term == "year") |>
+# #     mutate(biome = "Boreal Forests/Taiga")
+# # )
+
+# ### Plot STL from LQMM ---------------------------------------------------------
+# gg_lqmm_biome6 <- plot_lqmm_bybiome(
+#   data_unm_biome,
+#   fit_lqmm,
+#   name = bquote(bold("e") ~ ~"Boreal Forests/Taiga")
+# )
+# gg_lqmm_biome6
+
+# ### Plot STL-interaction from LQMM ---------------------------------------------
+# gg_lqmm_int_biome6 <- plot_lqmm_bybiome(
+#   data_unm_biome,
+#   fit_lqmm_int,
+#   name = bquote(bold("e") ~ ~"Boreal Forests/Taiga")
+# )
+# gg_lqmm_int_biome6
+
+# ### Within QMD bins ----------------------------------------
+# # Test whether upward shift of 90% quantile is significant within logQMD-bins
+# # returns data frame with pval indicating significance level of a positive
+# # effect of year.
+# df_lqmm_byqmdbin <- calc_lqmm_byqmdbin(data_unm_biome)
+# df_lqmm_byqmdbin_including_disturbed <- calc_lqmm_byqmdbin(
+#   data_unm_biome_including_disturbed,
+#   breaks = df_lqmm_byqmdbin$breaks
+# )
+
+# # Build the plot to access internal structure
+# gg_lqmm_biome6_byqmdbin <- plot_lqmm_byqmdbin(df_lqmm_byqmdbin$df, df_lqmm_byqmdbin_including_disturbed$df)
+
+# gg_lqmm_biome6_both <- cowplot::plot_grid(
+#   gg_lqmm_biome6,
+#   gg_lqmm_biome6_byqmdbin,
+#   ncol = 1,
+#   rel_heights = c(1, 0.6),
+#   # labels = c("",  "k"),
+#   align = "v",
+#   label_y = 1.1
+# )
+# gg_lqmm_biome6_both
+
+
+# ### Plot disturbed plots -------------------------------------------------------
+# breaks <- get_breaks(data_unm_biome$year)
+
+# gg_fdisturbed_biome12 <- plot_disturbed(
+#   data_unm_biome,
+#   "Mediterranean Forests"
+# )
+
+# gg_fdisturbed_biome12
+
+# ### Remove disturbed plots -----------------------------------------------------
+# data_unm_biome_including_disturbed <- data_unm_biome
+# data_unm_biome <- data_unm_biome |>
+#   filter(ndisturbed == 0)
+
+# write_rds(
+#   data_unm_biome,
+#   file = here(paste0("data/data_unm_undist_biome12", suffix_subset, ".rds"))
+# )
+
+# ### LQMM fit -------------------------------------------------------------------
+# set.seed(123)
+# fit_lqmm <- lqmm(
+#   logDensity ~ logQMD_sc + year_sc,
+#   random = ~1,
+#   group = plotID,
+#   tau = 0.90,
+#   data = data_unm_biome,
+#   type = "normal",
+#   control = lqmmControl(startQR = TRUE)
+# )
+# # summary(fit_lqmm)
+
+# write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome12", suffix_subset, ".rds")))
+
+# ### LQMM-interaction fit -------------------------------------------------------
+# set.seed(123)
+# fit_lqmm_int <- lqmm(
+#   logDensity ~ logQMD_sc * year_sc,
+#   random = ~1,
+#   group = plotID,
+#   tau = 0.90,
+#   data = data_unm_biome,
+#   type = "normal",
+#   control = lqmmControl(startQR = TRUE)
+# )
+# # summary(fit_lqmm_int)
+
+# write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome12", suffix_subset, ".rds")))
+
+# #### Bootstrapping LQMM fit -----------------------------------------------------
+# # boot_data <- rsample::bootstraps(
+# #   data_unm_biome %>%
+# #     group_by(plotID),
+# #   times = 500,
+# #   apparent = FALSE
+# # )
+# #
+# # # Apply model to each bootstrap sample
+# # boot_results <- boot_data %>%
+# #   mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
+# #   filter(!map_lgl(coefs, is.null)) %>% # drop failed fits
+# #   unnest(coefs) |>
+# #   dplyr::select(-splits)
+# #
+# # write_rds(boot_results, file = here(paste0("data/boot_results_biome12", suffix_subset, ".rds")))
+# #
+# # df_boot <- bind_rows(
+# #   df_boot,
+# #   boot_results |>
+# #     filter(term == "year") |>
+# #     mutate(biome = "Mediterranean Forests")
+# # )
+
+# ### Plot STL from LQMM ---------------------------------------------------------
+# gg_lqmm_biome12 <- plot_lqmm_bybiome(
+#   data_unm_biome,
+#   fit_lqmm,
+#   name = bquote(bold("f") ~ ~"Mediterranean Forests")
+# )
+# gg_lqmm_biome12
+
+# ### Plot STL-interaction from LQMM ---------------------------------------------
+# gg_lqmm_int_biome12 <- plot_lqmm_bybiome(
+#   data_unm_biome,
+#   fit_lqmm_int,
+#   name = bquote(bold("f") ~ ~"Mediterranean Forests")
+# )
+# gg_lqmm_int_biome12
+
+# ### Within QMD bins ----------------------------------------
+# # Test whether upward shift of 90% quantile is significant within logQMD-bins
+# # returns data frame with pval indicating significance level of a positive
+# # effect of year.
+# df_lqmm_byqmdbin <- calc_lqmm_byqmdbin(data_unm_biome)
+# df_lqmm_byqmdbin_including_disturbed <- calc_lqmm_byqmdbin(
+#   data_unm_biome_including_disturbed,
+#   breaks = df_lqmm_byqmdbin$breaks
+# )
+
+# # Build the plot to access internal structure
+# gg_lqmm_biome12_byqmdbin <- plot_lqmm_byqmdbin(df_lqmm_byqmdbin$df, df_lqmm_byqmdbin_including_disturbed$df)
+
+# gg_lqmm_biome12_both <- cowplot::plot_grid(
+#   gg_lqmm_biome12,
+#   gg_lqmm_biome12_byqmdbin,
+#   ncol = 1,
+#   rel_heights = c(1, 0.6),
+#   # labels = c("",  "l"),
+#   align = "v",
+#   label_y = 1.1
+# )
+# gg_lqmm_biome12_both
 
 # Publication figures and tables  ----------------------------------------------
 
@@ -1060,14 +1028,14 @@ fig1_lqmm <- cowplot::plot_grid(
 )
 
 ggsave(
-  filename = here("manuscript/figures/fig1_lqmm", suffix_subset, ".pdf")),
+  filename = here("manuscript/figures/fig1_lqmm.pdf"),
   plot = fig1_lqmm,
   width = 11,
   height = 12
 )
 
 ggsave(
-  filename = here("manuscript/figures/fig1_lqmm", suffix_subset, ".png")),
+  filename = here("manuscript/figures/fig1_lqmm.png"),
   plot = fig1_lqmm,
   width = 11,
   height = 12
@@ -1092,14 +1060,14 @@ fig1_lqmm_onlystl <- cowplot::plot_grid(
 )
 
 ggsave(
-  filename = here("manuscript/figures/fig1_lqmm_onlystl", suffix_subset, ".pdf")),
+  filename = here("manuscript/figures/fig1_lqmm_onlystl.pdf"),
   plot = fig1_lqmm_onlystl,
   width = 11,
   height = 8
 )
 
 ggsave(
-  filename = here("manuscript/figures/fig1_lqmm_onlystl", suffix_subset, ".png")),
+  filename = here("manuscript/figures/fig1_lqmm_onlystl.png"),
   plot = fig1_lqmm_onlystl,
   width = 11,
   height = 8
@@ -1124,14 +1092,14 @@ fig1_lqmm_int_onlystl <- cowplot::plot_grid(
 )
 
 ggsave(
-  filename = here("manuscript/figures/fig1_lqmm_int_onlystl", suffix_subset, ".pdf")),
+  filename = here("manuscript/figures/fig1_lqmm_int_onlystl.pdf"),
   plot = fig1_lqmm_int_onlystl,
   width = 11,
   height = 8
 )
 
 ggsave(
-  filename = here("manuscript/figures/fig1_lqmm_int_onlystl", suffix_subset, ".png")),
+  filename = here("manuscript/figures/fig1_lqmm_int_onlystl.png"),
   plot = fig1_lqmm_int_onlystl,
   width = 11,
   height = 8
@@ -1151,14 +1119,14 @@ fig1_lqmm_onlydots <- cowplot::plot_grid(
 )
 
 ggsave(
-  filename = here("manuscript/figures/fig1_lqmm_onlydots", suffix_subset, ".pdf")),
+  filename = here("manuscript/figures/fig1_lqmm_onlydots.pdf"),
   plot = fig1_lqmm_onlydots,
   width = 9,
   height = 5
 )
 
 ggsave(
-  filename = here("manuscript/figures/fig1_lqmm_onlystl", suffix_subset, ".png")),
+  filename = here("manuscript/figures/fig1_lqmm_onlystl.png"),
   plot = fig1_lqmm_onlydots,
   width = 9,
   height = 5
