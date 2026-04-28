@@ -7,7 +7,7 @@ plot_lqmm_bybiome <- function(data, mod, name = NULL, plot_legend = FALSE){
   year_sd <- sd(data$year)
 
   # get three round decades that are centered around the available years in the dataset
-  display_years <- get_centered_decades(data$year)
+  display_years <- c(1980, 2000, 2020) # get_centered_decades(data$year)
 
   # predict STL as 70% and 90% quantiles from regression fit for three chosen years
   df_pred <- purrr::map_dfr(
@@ -79,14 +79,18 @@ plot_lqmm_bybiome <- function(data, mod, name = NULL, plot_legend = FALSE){
       y = expression(ln(italic(N))),
       title = name,
       subtitle = subtitle,
-      color  = "Year"
+      color = "Year"
     ) +
-    scale_color_manual("Year",
-                       breaks = c(1985, 2000, 2015),
-                       values = c(viridis(3)[2], viridis(3)[3], viridis(3)[1])) +
-    scale_fill_manual("Year",
-                      breaks = c(1985, 2000, 2015),
-                      values = c(viridis(3)[2], viridis(3)[3], viridis(3)[1])) +
+    scale_color_manual(
+      "Year",
+      breaks = display_years,
+      values = c(viridis(3)[2], viridis(3)[3], viridis(3)[1])
+    ) +
+    scale_fill_manual(
+      "Year",
+      breaks = display_years,
+      values = c(viridis(3)[2], viridis(3)[3], viridis(3)[1])
+    ) +
     theme_classic() +
     theme(
       panel.grid.major = element_blank(),
@@ -103,8 +107,8 @@ plot_lqmm_bybiome <- function(data, mod, name = NULL, plot_legend = FALSE){
       plot.title.position = "plot"
     ) +
     #guides(color = guide_legend(direction = "horizontal")) +
-    scale_x_continuous(limits = c(2.2, 4.7), breaks = seq(3,4,1)) +
-    scale_y_continuous(limits = c(2.9,9.3), breaks = seq(4,8,2))
+    scale_x_continuous(limits = c(2.2, 4.7), breaks = seq(3, 4, 1)) +
+    scale_y_continuous(limits = c(2.9, 9.3), breaks = seq(4, 8, 2))
 
 }
 

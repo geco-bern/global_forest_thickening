@@ -235,7 +235,7 @@ calc_csink_bylat <- function(df, df_info){
 
 ## Create bootstraps ------------
 set.seed(1982)
-n_boot <- 100
+n_boot <- 300
 boot_resamples <- bootstraps(df, times = n_boot)
 
 ### Un-parallel version --------------------------
@@ -329,7 +329,7 @@ write_rds(
   file = here(paste0("data/df_boot_nboot_", as.character(n_boot),".rds"))
 )
 
-# df_boot <- read_rds(here("data/df_boot_slopefilter_nboot_2000.rds"))
+# df_boot <- read_rds(here("data/df_boot_nboot_2000.rds"))
 
 ### Summarise across bootstraps ------------------------------------------------
 # stack predictions from all bootstrap samples into (very) long vector
@@ -362,17 +362,17 @@ df_summ <- df_boot |>
 
 write_rds(
   df_summ,
-  here(paste0("data/df_summ_", lab_filter, "_nboot_", as.character(n_boot),".rds"))
+  here(paste0("data/df_summ_nboot_", as.character(n_boot),".rds"))
 )
 
-# df_summ <- read_rds(here("data/df_summ_slopefilter_nboot_30.rds"))
+df_summ <- read_rds(here("data/df_summ_nboot_300.rds"))
 
 ## Visualisations --------------------------------------------------------------
 ### Distribution of global C sink estimates ------------------------------------
 # sum across all gridcells, distribution across bootstraps
 gg_hist_csink_boot <- df_boot |>
   ggplot(aes(db_pgc_global, after_stat(density))) +
-  geom_histogram(fill = "grey", color = "black", bins = 50) +
+  geom_histogram(fill = "grey", color = "black", bins = 30) +
   labs(
     x = expression(paste("PgC ", yr^-1)),
     y = "Density"
@@ -620,7 +620,7 @@ ggsave(
 )
 
 ### Sink across latitude ---------
-df_boot_small <- read_rds(here("data/df_boot_slopefilter_nboot_30.rds"))
+df_boot_small <- read_rds(here("data/df_boot_nboot_300.rds"))
 
 df_bylat <- df_boot_small |>
   select(-db_pgc_global) |>
@@ -662,6 +662,13 @@ gg_csink_bylat <- df_bylat |>
   coord_flip()
 
 gg_csink_bylat
+
+ggsave(
+  here("manuscript/figures/gg_csink_bylat.pdf"),
+  plot = gg_csink_bylat,
+  width = 5,
+  height = 4
+)
 
 ## Publication figure --------------------------
 gg_map_sink_all <- cowplot::plot_grid(

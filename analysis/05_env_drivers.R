@@ -236,9 +236,18 @@ tl <- attr(terms(mod_lmer_env), "term.labels")
 main_effects <- tl[ !grepl(":", tl) ]   # remove interaction terms
 len_main_effects <- length(main_effects)
 
-df_coef_plot <- broom.mixed::tidy(mod_lmer_env, effects = "fixed", conf.int = TRUE) |>
+df_coef_plot <- broom.mixed::tidy(
+  mod_lmer_env,
+  effects = "fixed",
+  conf.int = TRUE,
+  conf.level = 0.90
+) |>
   mutate(
-    eff = ifelse(row_number() %in% 1:(len_main_effects + 1), "Main effect", "Interaction terms"),
+    eff = ifelse(
+      row_number() %in% 1:(len_main_effects + 1),
+      "Main effect",
+      "Interaction terms"
+    ),
     eff = as_factor(eff)
   ) |>
   rename(var = term) |>
@@ -259,9 +268,25 @@ df_coef_plot <- broom.mixed::tidy(mod_lmer_env, effects = "fixed", conf.int = TR
     varnew = as_factor(varnew),
     varnew = fct_relevel(varnew, c("C:N", "Ndep", "ORGC", "MI", "MAT"))
   ) |>
-  filter(varnew == "MAT" | varnew == "MI" | varnew == "Ndep" |
-    varnew == "PBR" | varnew == "ORGC" | varnew == "C:N") |>
-  mutate(varnew = forcats::fct_relevel(varnew, "PBR", "ORGC", "C:N", "Ndep", "MI", "MAT"))
+  filter(
+    varnew == "MAT" |
+      varnew == "MI" |
+      varnew == "Ndep" |
+      varnew == "PBR" |
+      varnew == "ORGC" |
+      varnew == "C:N"
+  ) |>
+  mutate(
+    varnew = forcats::fct_relevel(
+      varnew,
+      "PBR",
+      "ORGC",
+      "C:N",
+      "Ndep",
+      "MI",
+      "MAT"
+    )
+  )
 
 ## Save model object and coefficients table ------------------------------------
 saveRDS(mod_lmer_env, file = here("data/mod_lmer_env.rds"))

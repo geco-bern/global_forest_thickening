@@ -220,6 +220,20 @@ write_rds(
   df_biome_analysis,
   file = here("data/df_biome_analysis.rds")
 )
+
+# Extract plot objects
+df_plots <- df_biome_analysis |> 
+  select(biome_major, out) |> 
+  mutate(
+    gg_lqmm = purrr::map(out, "gg_lqmm"),
+    gg_coef_filters = purrr::map(out, "gg_coef_filters"),
+    gg_fdisturbed = purrr::map(out, "gg_fdisturbed"),
+    gg_lqmm_byqmdbin = purrr::map(out, "gg_lqmm_byqmdbin")
+  )
+
+
+
+
  
 # ## Plots -------------------------
 # # construct panel
@@ -1000,6 +1014,130 @@ write_rds(
 # Publication figures and tables  ----------------------------------------------
 
 ## Figure 1 --------------------------------------------------------------------
+### Fig 1 only STL ------------------
+legend <- get_legend(
+  df_plots$gg_lqmm[[1]] +
+    theme(legend.position = "right")
+)
+
+fig1_lqmm_onlystl <- cowplot::plot_grid(
+  df_plots$gg_lqmm[[1]] +
+    labs(title = bquote(bold("a") ~ ~"Temperate Forests")),
+  df_plots$gg_lqmm[[2]] +
+    labs(title = bquote(bold("b") ~ ~"Mediterranean Forests")),
+  df_plots$gg_lqmm[[3]] +
+    labs(title = bquote(bold("c") ~ ~"Boreal Forests/Taiga")),
+  df_plots$gg_lqmm[[4]] +
+    labs(title = bquote(bold("d") ~ ~"Tropical & Subtropical Broadleaf Forests")),
+  ncol = 2
+)
+
+fig1_lqmm_onlystl <- cowplot::plot_grid(
+  fig1_lqmm_onlystl,
+  legend,
+  ncol = 2,
+  rel_widths = c(1, 0.2)
+)
+
+ggsave(
+  filename = here("manuscript/figures/fig1_lqmm_onlystl.pdf"),
+  plot = fig1_lqmm_onlystl,
+  width = 11,
+  height = 8
+)
+
+ggsave(
+  filename = here("manuscript/figures/fig1_lqmm_onlystl.png"),
+  plot = fig1_lqmm_onlystl,
+  width = 11,
+  height = 8
+)
+
+### Filter effects on 'year' coefficient ---------------------------------------
+fig_filters_biomes <- cowplot::plot_grid(
+  df_plots$gg_coef_filters[[1]] +
+    labs(title = bquote(bold("a") ~ ~"Temperate Forests")) +
+    coord_flip(),
+  df_plots$gg_coef_filters[[2]] +
+    labs(title = bquote(bold("b") ~ ~"Mediterranean Forests")) +
+    coord_flip(),
+  df_plots$gg_coef_filters[[3]] +
+    labs(title = bquote(bold("c") ~ ~"Boreal Forests/Taiga")) +
+    coord_flip(),
+  df_plots$gg_coef_filters[[4]] +
+    labs(title = bquote(bold("d") ~ ~"Tropical & Subtropical Broadleaf Forests")) +
+    coord_flip(),
+  ncol = 2
+)
+
+ggsave(
+  filename = here("manuscript/figures/fig_filters_biomes.png"),
+  plot = fig_filters_biomes,
+  width = 11,
+  height = 8
+)
+
+ggsave(
+  filename = here("manuscript/figures/fig_filters_biomes.pdf"),
+  plot = fig_filters_biomes,
+  width = 11,
+  height = 8
+)
+
+### 'year' effect by QMD bin ---------------------------------------
+fig_lqmm_byqmdbin_biomes <- cowplot::plot_grid(
+  df_plots$gg_lqmm_byqmdbin[[1]] +
+    labs(title = bquote(bold("a") ~ ~"Temperate Forests")),
+  df_plots$gg_lqmm_byqmdbin[[2]] +
+    labs(title = bquote(bold("b") ~ ~"Mediterranean Forests")),
+  df_plots$gg_lqmm_byqmdbin[[3]] +
+    labs(title = bquote(bold("c") ~ ~"Boreal Forests/Taiga")),
+  df_plots$gg_lqmm_byqmdbin[[4]] +
+    labs(title = bquote(bold("d") ~ ~"Tropical & Subtropical Broadleaf Forests")),
+  ncol = 2
+)
+
+ggsave(
+  filename = here("manuscript/figures/fig_lqmm_byqmdbin_biomes.png"),
+  plot = fig_lqmm_byqmdbin_biomes,
+  width = 11,
+  height = 8
+)
+
+ggsave(
+  filename = here("manuscript/figures/fig_lqmm_byqmdbin_biomes.pdf"),
+  plot = fig_lqmm_byqmdbin_biomes,
+  width = 11,
+  height = 8
+)
+
+### Disturbance trends ---------------------------------------
+fig_disturbance_biomes <- cowplot::plot_grid(
+  df_plots$gg_fdisturbed[[1]] +
+    labs(title = bquote(bold("a") ~ ~"Temperate Forests")),
+  df_plots$gg_fdisturbed[[2]] +
+    labs(title = bquote(bold("b") ~ ~"Mediterranean Forests")),
+  df_plots$gg_fdisturbed[[3]] +
+    labs(title = bquote(bold("c") ~ ~"Boreal Forests/Taiga")),
+  df_plots$gg_fdisturbed[[4]] +
+    labs(title = bquote(bold("d") ~ ~"Tropical & Subtropical Broadleaf Forests")),
+  ncol = 2
+)
+
+ggsave(
+  filename = here("manuscript/figures/fig_disturbance_biomes.png"),
+  plot = fig_disturbance_biomes,
+  width = 11,
+  height = 8
+)
+
+ggsave(
+  filename = here("manuscript/figures/fig_disturbance_biomes.pdf"),
+  plot = fig_disturbance_biomes,
+  width = 11,
+  height = 8
+)
+
 ### STL and dots combined ------------------------------------------------------
 legend <- get_legend(
   gg_lqmm_biome1 +
@@ -1041,37 +1179,6 @@ ggsave(
   height = 12
 )
 
-### Fig 1 only STL ------------------
-fig1_lqmm_onlystl <- cowplot::plot_grid(
-  gg_lqmm_biome1,
-  gg_lqmm_biome2,
-  gg_lqmm_biome4,
-  gg_lqmm_biome5,
-  gg_lqmm_biome6,
-  gg_lqmm_biome12,
-  ncol = 3
-)
-
-fig1_lqmm_onlystl <- cowplot::plot_grid(
-  fig1_lqmm_onlystl,
-  legend,
-  ncol = 2,
-  rel_widths = c(1, 0.2)
-)
-
-ggsave(
-  filename = here("manuscript/figures/fig1_lqmm_onlystl.pdf"),
-  plot = fig1_lqmm_onlystl,
-  width = 11,
-  height = 8
-)
-
-ggsave(
-  filename = here("manuscript/figures/fig1_lqmm_onlystl.png"),
-  plot = fig1_lqmm_onlystl,
-  width = 11,
-  height = 8
-)
 
 ### Fig 1 ALTERNATIVE only STL with interactions  ------------------
 fig1_lqmm_int_onlystl <- cowplot::plot_grid(
