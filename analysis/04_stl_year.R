@@ -1073,15 +1073,15 @@ fig_filters_biomes <- cowplot::plot_grid(
 ggsave(
   filename = here("manuscript/figures/fig_filters_biomes.png"),
   plot = fig_filters_biomes,
-  width = 11,
-  height = 8
+  width = 8,
+  height = 6
 )
 
 ggsave(
   filename = here("manuscript/figures/fig_filters_biomes.pdf"),
   plot = fig_filters_biomes,
-  width = 11,
-  height = 8
+  width = 8,
+  height = 6
 )
 
 ### 'year' effect by QMD bin ---------------------------------------
@@ -1100,15 +1100,15 @@ fig_lqmm_byqmdbin_biomes <- cowplot::plot_grid(
 ggsave(
   filename = here("manuscript/figures/fig_lqmm_byqmdbin_biomes.png"),
   plot = fig_lqmm_byqmdbin_biomes,
-  width = 11,
-  height = 8
+  width = 8,
+  height = 6
 )
 
 ggsave(
   filename = here("manuscript/figures/fig_lqmm_byqmdbin_biomes.pdf"),
   plot = fig_lqmm_byqmdbin_biomes,
-  width = 11,
-  height = 8
+  width = 8,
+  height = 6
 )
 
 ### Disturbance trends ---------------------------------------

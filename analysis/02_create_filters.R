@@ -22,11 +22,13 @@
 library(tidyverse)
 library(here)
 library(segmented)
+library(lqmm)
 
 source(here("R/identify_disturbed_plots.R"))
 source(here("R/identify_ingrowth_plots.R"))
 source(here("R/identify_badbins.R"))
 source(here("R/filter_stl_slope2.R"))
+source(here("R/fit_model.R"))
 
 # df_all contains information of management:
 # - management_since_census1_yrs (before called years_last_management)
