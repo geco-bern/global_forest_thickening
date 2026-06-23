@@ -3,24 +3,6 @@
 # load packages ----
 # library(renv)
 library(tidyverse)
-# library(rFIA)
-# library(patchwork)
-# library(terra)
-# library(sf)
-# library(lme4)
-# library(lmerTest)
-# library(ggeffects)
-# library(effects)
-# library(sjPlot)
-# library(measurements)
-# library(sp)
-# library(lqmm)
-# library(ggforce)
-# library(MuMIn)
-# library(ingestr)
-# library(see)
-# library(ggplot2)
-# library(DescTools)
 
 # load functions ----
 source(here::here("R/functions.R"))
@@ -293,18 +275,20 @@ saveRDS(df_all, file = here::here("data/inputs/df_all.rds"))
 # NEW APPROACH:
 # Management categories 1,2,3 depending on the knowledge of the forest use history.
 
-
-
 # THIS WAS THE INITIAL APPROACH:
-# Select only unmanaged forests
+# Select only unmanaged forests. These filters are now applied in 02_create_filters.R
 df_unm <- data_unm_fc(df_all)
 df_unm
 df_unm |>
   nrow()
+
 plot_stl(df_unm)
 plot_map(df_unm)
 
 saveRDS(df_unm, file = here::here("data/inputs/df_unm.rds"))
+
+# Figures for SI -------------------------
+
 
 # Generate filtered by biomes ----
 # The unmanaged data is divided by biomes, and then for each biome we apply the filter of the upper quantile

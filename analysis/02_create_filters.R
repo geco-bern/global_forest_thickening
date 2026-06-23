@@ -29,6 +29,7 @@ source(here("R/identify_ingrowth_plots.R"))
 source(here("R/identify_badbins.R"))
 source(here("R/filter_stl_slope2.R"))
 source(here("R/fit_model.R"))
+source(here("R/plot_stl_longplots.R"))
 
 # df_all contains information of management:
 # - management_since_census1_yrs (before called years_last_management)
@@ -148,12 +149,11 @@ tmp <- df_unm |>
   group_by(dataset_major) |> 
   summarise(n = n())
 
-View(tmp)
+# View(tmp)
 
 ### Identify years (in 10-year bins) based on deviating QMD distribution ------------
 # adds column 'badqmdbin'
 tmp_badbins <- df_unm |> 
-  # filter(dataset_major == "aus_plots") |> 
   group_by(dataset_major) |> 
   nest() |> 
   mutate(out = purrr::map2(data, dataset_major, ~identify_badbins(.x, .y))) |> 
@@ -215,147 +215,200 @@ ggsave(
   height = 8
 )
 
-df_unm <- tmp_slopefilter |> 
+df_unm_withfilters <- tmp_slopefilter |> 
   dplyr::select(biome_major, data) |> 
   unnest(data)
 
-write_rds(df_unm, here("data/inputs/df_unm_withfilters.rds"))
+write_rds(df_unm_withfilters, here("data/inputs/df_unm_withfilters.rds"))
 
-# # Additional plots ----------
-# df_unm <- read_rds(here("data/inputs/df_unm_withfilters.rds"))
+## Figures for SI -----------------
+### Length of repeated observations ----------------------------------
+df_len <- df_unm |>
+  group_by(plotID, biome_major) |>
+  summarise(start = min(year), end = max(year)) |>
+  mutate(len = end - start)
 
-# ## Biome 1 Tropical & Subtropical Moist Broadleaf Forests ----------------------
-# gg_hist_year_biome1 <- df_unm |>
-#   filter(biomeID == 1) |> 
-#   ggplot(aes(x = year, fill = dataset)) +
-#   geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
-#   theme_bw() +
-#   labs(title = "Tropical Moist Broadleaf Forests") +
-#   xlim(1970, 2024) +
-#   labs(x = "Year", y = "Count", fill = "") +
-#   khroma::scale_fill_okabeito() +
-#   theme(
-#     legend.position = "right"
-#   )
+# numbers for paper
+df_len |>
+  ungroup() |>
+  group_by(biome_major) |>
+  summarise(
+    len_median = median(len),
+    len_mean = mean(len)
+  )
 
-# ## Biome 2 Tropical & Subtropical Dry Broadleaf Forests ------------------------
-# gg_hist_year_biome2 <- df_unm |>
-#   filter(biomeID == 2) |> 
-#   ggplot(aes(x = year, fill = dataset)) +
-#   geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
-#   theme_bw() +
-#   labs(title = "Tropical Dry Broadleaf Forests") +
-#   xlim(1990, 2024) +
-#   labs(x = "Year", y = "Count", fill = "") +
-#   khroma::scale_fill_okabeito() +
-#   theme(
-#     legend.position = "right"
-#   )
+df_len |>
+  ungroup() |>
+  summarise(
+    len_median = median(len),
+    len_mean = mean(len)
+  )
 
-# ## Biome 4 Temperate Broadleaf & Mixed Forests ---------------------------------
-# gg_hist_year_biome4 <- df_unm |>
-#   filter(biomeID == 4) |> 
-#   ggplot(aes(x = year, fill = dataset)) +
-#   geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
-#   theme_bw() +
-#   labs(title = "Temperate Broadleaf & Mixed Forests") +
-#   xlim(1960, 2024) +
-#   labs(x = "Year", y = "Count", fill = "") +
-#   viridis::scale_fill_viridis(discrete = TRUE) +
-#   theme(
-#     legend.position = "right"
-#   )
+df_len |>
+  ggplot(aes(x = len, color = biome_major, fill = biome_major)) +
+  geom_density(adjust = 3, alpha = 0.5) +
+  scale_fill_manual(
+    values = c(
+      "Boreal Forests/Taiga" = "dodgerblue4",
+      "Mediterranean Forests" = "orangered3",
+      "Temperate Forests" = "darkgreen",
+      "Tropical & Subtropical Broadleaf Forests" = "springgreen3"
+    ),
+    na.value = NA,
+    breaks = ~ .x[!is.na(.x)],
+    name = ""
+  ) +
+  scale_color_manual(
+    values = c(
+      "Boreal Forests/Taiga" = "dodgerblue4",
+      "Mediterranean Forests" = "orangered3",
+      "Temperate Forests" = "darkgreen",
+      "Tropical & Subtropical Broadleaf Forests" = "springgreen3"
+    ),
+    na.value = NA,
+    breaks = ~ .x[!is.na(.x)],
+    name = ""
+  ) +
+  theme_classic() +
+  theme(
+    legend.position = "bottom"
+  ) +
+  labs(
+    x = "Length (years)",
+    y = "Density"
+  )
 
-# gg_hist_year_biome4
+ggsave(
+  filename = here(
+    "manuscript/figures/distribution_length.pdf"
+  ),
+  width = 10,
+  height = 5
+)
 
-# ## Biome 5  Temperate Conifer Forests Forest -----------------------------------
-# gg_hist_year_biome5 <- df_unm |>
-#   filter(biomeID == 5) |> 
-#   ggplot(aes(x = year, fill = dataset)) +
-#   geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
-#   theme_bw() +
-#   labs(title = "Temperate Conifer Forests") +
-#   xlim(1970, 2024) +
-#   labs(x = "Year", y = "Count", fill = "") +
-#   viridis::scale_fill_viridis(discrete = TRUE) +
-#   theme(
-#     legend.position = "right"
-#   )
+### Barplot: observations by sources over time ----------------
+plot_hist_year_biome <- function(df, biome_name, xmin) {
+  df |>
+    filter(biome_major == biome_name) |>
+    ggplot(aes(x = year, fill = dataset)) +
+    geom_histogram(
+      color = "black",
+      binwidth = 1,
+      position = "stack",
+      linewidth = 0.3
+    ) +
+    theme_bw() +
+    coord_cartesian(xlim = c(xmin, 2024)) +
+    labs(
+      title = biome_name,
+      x = "Year",
+      y = "Count",
+      fill = ""
+    ) +
+    viridis::scale_fill_viridis(discrete = TRUE) +
+    theme(
+      legend.position = "right"
+    )
+}
 
-# gg_hist_year_biome5
+gg_hist_year_tropical <- plot_hist_year_biome(
+  df_unm,
+  "Tropical & Subtropical Broadleaf Forests",
+  xmin = 1970
+)
 
-# ## Biome 6 Boreal Forests/Taiga ------------------------------------------------
-# gg_hist_year_biome6 <- df_unm |>
-#   filter(biomeID == 6) |> 
-#   ggplot(aes(x = year, fill = dataset)) +
-#   geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
-#   theme_bw() +
-#   labs(title = "Boreal Forests/Taiga") +
-#   xlim(1980, 2024) +
-#   labs(x = "Year", y = "Count", fill = "") +
-#   khroma::scale_fill_okabeito() +
-#   theme(
-#     legend.position = "right"
-#   )
+gg_hist_year_temperate <- plot_hist_year_biome(
+  df_unm,
+  "Temperate Forests",
+  xmin = 1960
+)
 
-# gg_hist_year_biome6
+gg_hist_year_boreal <- plot_hist_year_biome(
+  df_unm,
+  "Boreal Forests/Taiga",
+  xmin = 1980
+)
 
-# ## Biome 12 Mediterranean Forests ----------------------
-# gg_hist_year_biome12 <- df_unm |>
-#   filter(biomeID == 12) |> 
-#   ggplot(aes(x = year, fill = dataset)) +
-#   geom_histogram(color = "black", binwidth = 1, position = "stack", linewidth = 0.3) +
-#   theme_bw() +
-#   labs(title = "Mediterranean Forests") +
-#   xlim(1980, 2024) +
-#   labs(x = "Year", y = "Count", fill = "") +
-#   khroma::scale_fill_okabeito() +
-#   theme(
-#     legend.position = "right"
-#   )
+gg_hist_year_mediterranean <- plot_hist_year_biome(
+  df_unm,
+  "Mediterranean Forests",
+  xmin = 1980
+)
 
-# gg_hist_year_biome12
+# Combine
+row1 <- cowplot::plot_grid(
+  gg_hist_year_tropical,
+  ncol = 1,
+  labels = letters[1]
+)
 
-# ## SI Figure: Histogram over years ---------------------------------------------
-# row1 <- cowplot::plot_grid(
-#   gg_hist_year_biome1,
-#   gg_hist_year_biome2,
-#   ncol = 2,
-#   rel_widths = c(1, 0.7),
-#   labels = letters[1:2]
-# )
+row2 <- cowplot::plot_grid(
+  gg_hist_year_temperate,
+  ncol = 1,
+  labels = letters[2]
+)
 
-# row2 <- cowplot::plot_grid(
-#   gg_hist_year_biome4,
-#   ncol = 1,
-#   labels = letters[3]
-# )
+row3 <- cowplot::plot_grid(
+  gg_hist_year_boreal,
+  gg_hist_year_mediterranean,
+  ncol = 2,
+  labels = letters[3:4]
+)
 
-# row3 <- cowplot::plot_grid(
-#   gg_hist_year_biome5,
-#   ncol = 1,
-#   labels = letters[4]
-# )
+fig_hist_year <- cowplot::plot_grid(
+  row1,
+  row2,
+  row3,
+  ncol = 1
+)
+fig_hist_year
 
-# row4 <- cowplot::plot_grid(
-#   gg_hist_year_biome6,
-#   gg_hist_year_biome12,
-#   ncol = 2,
-#   labels = letters[5:6]
-# )
+ggsave(
+  filename = here("manuscript/figures/fig_hist_year.pdf"),
+  plot = fig_hist_year,
+  width = 9,
+  height = 10
+)
 
-# fig_hist_year <- cowplot::plot_grid(
-#   row1,
-#   row2,
-#   row3,
-#   row4,
-#   ncol = 1
-# )
-# fig_hist_year
+### Longest-observation --------------------------------------------------------
 
-# ggsave(
-#   filename = here("manuscript/figures/fig_hist_year2.pdf"),
-#   plot = fig_hist_year,
-#   width = 9,
-#   height = 15
-# )
+# read data with filters
+df_unm_withfilters <- read_rds(here("data/inputs/df_unm_withfilters.rds"))
+
+gg_longplots_tropical <- plot_stl_longplots(
+  df_unm_withfilters,
+  biome_name = "Tropical & Subtropical Broadleaf Forests"
+)
+
+gg_longplots_temperate <- plot_stl_longplots(
+  df_unm_withfilters,
+  biome_name = "Temperate Forests"
+)
+
+gg_longplots_boreal <- plot_stl_longplots(
+  df_unm_withfilters,
+  biome_name = "Boreal Forests/Taiga"
+)
+
+gg_longplots_mediterranean <- plot_stl_longplots(
+  df_unm_withfilters,
+  biome_name = "Mediterranean Forests"
+)
+
+fig_stl_longplots <- cowplot::plot_grid(
+  gg_longplots_tropical,
+  gg_longplots_temperate,
+  gg_longplots_boreal,
+  gg_longplots_mediterranean,
+  ncol = 2,
+  labels = letters[1:4]
+)
+
+fig_stl_longplots
+
+ggsave(
+  filename = here("manuscript/figures/stl_longplots.pdf"),
+  plot = fig_stl_longplots,
+  width = 9,
+  height = 7
+)

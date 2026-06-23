@@ -14,17 +14,7 @@ library(dplyr)
 library(ggplot2)
 library(tidyr)
 library(lubridate)
-# library(rFIA)
-# library(lme4)
-# library(lmerTest)
-# library(ggeffects)
-# library(effects)
-# library(sjPlot)
-# library(measurements)
 library(lqmm)
-# library(ggforce)
-# library(MuMIn)
-# library(DescTools)
 library(here)
 library(viridis)
 library(purrr)
@@ -223,15 +213,13 @@ write_rds(
 
 # Extract plot objects
 df_plots <- df_biome_analysis |> 
-  select(biome_major, out) |> 
+  dplyr::select(biome_major, out) |> 
   mutate(
     gg_lqmm = purrr::map(out, "gg_lqmm"),
     gg_coef_filters = purrr::map(out, "gg_coef_filters"),
     gg_fdisturbed = purrr::map(out, "gg_fdisturbed"),
     gg_lqmm_byqmdbin = purrr::map(out, "gg_lqmm_byqmdbin")
   )
-
-
 
 
  
@@ -1239,25 +1227,18 @@ ggsave(
   height = 5
 )
 
-
-
 ### Number: years covered -------------
-df_tmp <- read_rds(here("data/data_unm_undist_biome1", suffix_subset, ".rds"))) |>
+df_tmp <- read_rds(here("data/data_unm_undist_biome1", suffix_subset, ".rds")) |>
   bind_rows(
-    read_rds(here("data/data_unm_undist_biome2", suffix_subset, ".rds")))
-  ) |>
+    read_rds(here("data/data_unm_undist_biome2", suffix_subset, ".rds"))) |>
   bind_rows(
-    read_rds(here("data/data_unm_undist_biome4", suffix_subset, ".rds")))
-  ) |>
+    read_rds(here("data/data_unm_undist_biome4", suffix_subset, ".rds"))) |>
   bind_rows(
-    read_rds(here("data/data_unm_undist_biome5", suffix_subset, ".rds")))
-  ) |>
+    read_rds(here("data/data_unm_undist_biome5", suffix_subset, ".rds"))) |>
   bind_rows(
-    read_rds(here("data/data_unm_undist_biome6", suffix_subset, ".rds")))
-  ) |>
+    read_rds(here("data/data_unm_undist_biome6", suffix_subset, ".rds"))) |>
   bind_rows(
     read_rds(here("data/data_unm_undist_biome12", suffix_subset, ".rds")))
-  )
 
 df_tmp |>
   ggplot(aes(x = year, y = after_stat(density))) +
@@ -1268,75 +1249,10 @@ df_tmp |>
 min(df_tmp$year)
 max(df_tmp$year)
 
-## SI Figure: Length of repeated observations ----------------------------------
-df_len <- data_unm |>
-  group_by(plotID, biome, biomeID) |>
-  summarise(start = min(year), end = max(year)) |>
-  mutate(len = end - start)
-
-# numbers for paper
-df_len |>
-  ungroup() |>
-  group_by(biomeID, biome) |>
-  summarise(
-    len_median = median(len),
-    len_mean = mean(len)
-  )
-
-df_len |>
-  ungroup() |>
-  summarise(
-    len_median = median(len),
-    len_mean = mean(len)
-  )
-
-df_len |>
-  ggplot(aes(x = len, color = biome, fill = biome)) +
-  geom_density(adjust = 3, alpha = 0.5) +
-  scale_fill_manual(
-    values = c(
-      "Boreal Forests/Taiga"                                       = "dodgerblue4",
-      "Mediterranean Forests, Woodlands & Scrub"                   = "orangered3",
-      "Temperate Broadleaf & Mixed Forests"                        = "darkgreen",
-      "Temperate Conifer Forests"                                  = "lightseagreen",
-      "Tropical & Subtropical Dry Broadleaf Forests"               = "goldenrod4",
-      "Tropical & Subtropical Moist Broadleaf Forests"             = "springgreen3"
-    ),
-    na.value = NA,
-    breaks = ~ .x[!is.na(.x)],
-    name = ""
-  ) +
-  scale_color_manual(
-    values = c(
-      "Boreal Forests/Taiga"                                       = "dodgerblue4",
-      "Mediterranean Forests, Woodlands & Scrub"                   = "orangered3",
-      "Temperate Broadleaf & Mixed Forests"                        = "darkgreen",
-      "Temperate Conifer Forests"                                  = "lightseagreen",
-      "Tropical & Subtropical Dry Broadleaf Forests"               = "goldenrod4",
-      "Tropical & Subtropical Moist Broadleaf Forests"             = "springgreen3"
-    ),
-    na.value = NA,
-    breaks = ~ .x[!is.na(.x)],
-    name = ""
-  ) +
-  theme_classic() +
-  theme(
-    legend.position = "bottom"
-  ) +
-  labs(
-    x = "Length (years)",
-    y = "Density"
-  )
-
-ggsave(
-  filename = here("manuscript/figures/distribution_length", suffix_subset, ".pdf")),
-  width = 10,
-  height = 5
-)
 
 ## SI Figure: Bootstrapped percent change of N per year ------------------------
 # write_rds(df_boot, file = here(paste0("data/df_boot", suffix_subset, ".rds")))
-df_boot <- read_rds(here("data/df_boot", suffix_subset, ".rds")))
+df_boot <- read_rds(here("data/df_boot", suffix_subset, ".rds"))
 
 df_boot |>
   mutate(percent_change = 100*(exp(estimate) - 1)) |>
@@ -1380,7 +1296,7 @@ df_boot |>
   )
 
 ggsave(
-  filename = here("manuscript/figures/distribution_percent_change", suffix_subset, ".pdf")),
+  filename = here("manuscript/figures/distribution_percent_change", suffix_subset, ".pdf"),
   width = 8,
   height = 4
 )
@@ -1404,7 +1320,7 @@ summary_stats <- df_boot |>
     .groups = "drop"
   )
 
-write_rds(summary_stats, file = here(paste0("data/summary_stats.csv"))
+write_rds(summary_stats, file = here("data/summary_stats.csv"))
 
 create_table_latex(
   summary_stats |>
@@ -1414,7 +1330,7 @@ create_table_latex(
       SD = percent_change_sd
       ),
     caption = "Percentage change of forest stand density.",
-    filn = here("manuscript/tables/table_percentage_change", suffix_subset, ".tex"))
+    filn = here("manuscript/tables/table_percentage_change.tex")
     # align = c("p{0.1cm}", "p{5cm}", "p{7cm}")
     )
 
@@ -1431,7 +1347,7 @@ cowplot::plot_grid(
 )
 
 ggsave(
-  filename = here("manuscript/figures/fdisturbed", suffix_subset, ".pdf")),
+  filename = here("manuscript/figures/fdisturbed", suffix_subset, ".pdf"),
   width = 9,
   height = 9
 )
@@ -1447,6 +1363,6 @@ df_datasets <- data_unm |>
 create_table_latex(
   df_datasets,
   caption = "Constituent forest dataset sizes and descriptions.",
-  filn = here("manuscript/tables/datasets", suffix_subset, ".tex"))
+  filn = here("manuscript/tables/datasets", suffix_subset, ".tex")
   # align = c("p{0.1cm}", "p{5cm}", "p{7cm}")
 )

@@ -62,14 +62,42 @@ write_csv(df_biomes_codes, file = here("data/df_biomes_codes.csv"))
 df_forest_biomes <- df_biomes_codes |>
   filter(WWF_MHTNUM %in% c(1, 2, 4, 5, 6, 12))
 
+get_biome_major <- function(biomeID) {
+  ifelse(
+    biomeID %in% c(1, 2),
+    "Tropical & Subtropical Broadleaf Forests",
+    ifelse(
+      biomeID %in% c(4, 5),
+      "Temperate Forests",
+      ifelse(
+        biomeID == 6,
+        "Boreal Forests/Taiga",
+        ifelse(
+          biomeID == 12,
+          "Mediterranean Forests",
+          NA
+        )
+      )
+    )
+  )
+}
+
 # Rasterise
 # perform shapefile to raster conversion, use forest cover fraction raster
 # as template
 biomes_raster <- terra::rasterize(biomes, r_fcf, field = "WWF_MHTNAM")
+biomes_raster_id <- terra::rasterize(biomes, r_fcf, field = "WWF_MHTNUM")
 
 # Mask to keep only forest biomes in raster
 mask <- biomes_raster %in% df_forest_biomes$WWF_MHTNAM
 biomes_raster_forest <- mask(biomes_raster, mask, maskvalues = 0)
+biomes_raster_forest_id <- mask(biomes_raster_id, mask, maskvalues = 0)
+biomes_raster_forest_major <- subst(
+  biomes_raster_forest_id,
+  from = c(1, 2, 4, 5, 6, 12),
+  to = get_biome_major(c(1, 2, 4, 5, 6, 12))
+)
+names(biomes_raster_forest_major) <- "biome_major"
 
 # # write to file as NetCDF
 # terra::writeCDF(
@@ -87,6 +115,7 @@ df_grid <- as.data.frame(biomes_raster_forest, xy = TRUE, na.rm = FALSE) |>
     by = join_by(WWF_MHTNAM)
   ) |>
   rename(biome_name = WWF_MHTNAM, biome_number = WWF_MHTNUM) |>
+  mutate(biome_major = get_biome_major(biome_number)) |>
   drop_na()
 
 # Environmental drivers --------------------------------------------------------
@@ -376,7 +405,7 @@ gg_sitedensity <- ggplot() +
   ) +
   theme_minimal() +
   theme(
-    panel.grid = element_line(color = "gray90", size = 0.2),
+    panel.grid = element_line(color = "gray90", linewidth = 0.2),
     legend.position = "right"
   )
 
@@ -389,7 +418,7 @@ ggsave(
 
 ## Site points -----------------------------------------------------------------
 gg_sitepoints <- ggplot() +
-  tidyterra::geom_spatraster(data = biomes_raster_forest) +
+  tidyterra::geom_spatraster(data = biomes_raster_forest_major) +
   geom_sf(
     data = coast,
     colour = "black",
@@ -398,22 +427,10 @@ gg_sitepoints <- ggplot() +
   ) +
   scale_fill_manual(
     values = c(
-      "Boreal Forests/Taiga"                                         = "dodgerblue4",
-      # "Tundra"                                                       = "lightcyan3"
-      # "Deserts and Xeric Shrublands"                                 = "#FFD3A0",
-      # "Flooded Grasslands and Savannas"                              = "indianred3",
-      # "Inland Water"                                                 = "azure",
-      # "Mangroves"                                                    = "violetred",
-      "Mediterranean Forests, Woodlands and Scrub"                   = "orangered3",
-      # "Montane Grasslands and Shrublands"                            = "steelblue3",
-      # "Rock and Ice"                                                 = "azure4",
-      "Temperate Broadleaf and Mixed Forests"                        = "darkgreen",
-      "Temperate Conifer Forests"                                    = "lightseagreen",
-      # "Temperate Grasslands, Savannas and Shrublands"                = "goldenrod3",
-      # "Tropical and Subtropical Coniferous Forests"                  = "#31A278",
-      "Tropical and Subtropical Dry Broadleaf Forests"               = "goldenrod4",
-      # "Tropical and Subtropical Grasslands, Savannas and Shrublands" = "darkolivegreen",
-      "Tropical and Subtropical Moist Broadleaf Forests"             = "springgreen3"
+      "Boreal Forests/Taiga"                            = "dodgerblue4",
+      "Mediterranean Forests"                           = "orangered3",
+      "Temperate Forests"                              = "darkgreen",
+      "Tropical & Subtropical Broadleaf Forests"        = "springgreen3"
     ),
     na.value = "transparent",
     breaks = ~ .x[!is.na(.x)],
