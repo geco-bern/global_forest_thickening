@@ -35,154 +35,7 @@ source(here("R/calc_percent_change.R"))
 source(here("R/plot_disturbed.R"))
 source(here("R/fit_model.R"))
 source(here("R/extract_coef.R"))
-
-## Define workflow -------------
-analyse_biome <- function(df, biome_name){
-
-  # Analyse disturbance trend (before applying disturbed-filter)
-  breaks <- get_breaks(df$year)
-  gg_fdisturbed <- plot_disturbed(df, biome_name, breaks)
-
-  # Define filter stages --------------
-  list_df_filtered <- list(
-
-    # all data
-    "raw" = df,
-
-    # no disturbance-affecte plots
-    "no_disturbance" = df |>
-      filter(ndisturbed == 0),
-
-    # no data from years with shifted QMD distribution
-    "no_badqmd" = df |>
-      filter(ndisturbed == 0, !badqmdbin), 
-
-    # no data from plots with outlying self-thinning slope
-    "no_badslope" = df |>
-      filter(ndisturbed == 0, !badqmdbin, !badslope),
-
-    # no data from plots without management history and management <30 years prior to first census
-    "no_mgmt_30" = df |>
-      filter(
-        ndisturbed == 0, !badqmdbin, !badslope,
-
-        # recorded history and management > 30 years prior to first census OR pristine
-        (management_cat == 1 & management_since_census1_yrs >= 30) | management_cat == 2
-      ),
-
-    # no data from plots without management history and management <100 years prior to first census
-    "no_mgmt_100" = df |>
-      filter(
-        ndisturbed == 0, !badqmdbin, !badslope,
-
-        # recorded history and management > 30 years prior to first census OR pristine
-        (management_cat == 1 & management_since_census1_yrs >= 100) | management_cat == 2
-      ),
-
-    # only old-growth
-    "primary" = df |> 
-      filter(
-        ndisturbed == 0, !badqmdbin, !badslope,
-
-        # Pristine/primary/old-growth/protected
-        management_cat == 2
-      )
-  )
-
-  # Analyse sensitivity of fit ---------------
-  # (year coefficient) subject filter levels
-  df_filtereffects <- imap_dfr(list_df_filtered, \(df, step_name) {
-    df |>
-      ungroup() |> 
-      nest() |>
-      mutate(
-        n = map_int(data, nrow),
-
-        # store both model + coefficients
-        res = map(data, \(d) {
-          model <- fit_model(d, lqmm = TRUE)
-          coefs <- extract_coef(model, lqmm = TRUE)
-
-          list(
-            model = model,
-            coefs = coefs
-          )
-        })
-      ) |>
-      mutate(
-        fit_lqmm = purrr::map(res, "model"),
-        coef_lqmm = purrr::map(res, "coefs")
-      ) |>     # creates columns: model, coefs
-      tidyr::unnest(coef_lqmm) |>         # expand coefficient table
-      dplyr::select(-data) |>
-      mutate(step = step_name)
-  })
-
-  # Create plot --------------
-  # of coefficient 'year' for all filter levels
-  gg_coef_filters <- df_filtereffects |>
-    mutate(
-      step = fct_relevel(
-        step,
-        "primary",
-        "no_mgmt_100",
-        "no_mgmt_30",
-        "no_badslope",
-        "no_badqmd",
-        "no_disturbance",
-        "raw",
-      )
-    ) |> 
-    ggplot(aes(x = step, y = estimate)) +
-    geom_point(size = 2) +
-    geom_errorbar(aes(ymin = lower, ymax = upper), width = 0) +
-    geom_hline(yintercept = 0, linetype = "dotted") +
-    # geom_text(aes(label = paste0("n=", n)), hjust = -0.9, size = 3) +
-    # scale_y_continuous(expand = expansion(mult = c(0.05, 0.1))) +
-    labs(
-      x = "Filtering step",
-      y = "Coefficient (year)"
-    ) +
-    # Add observation counts to the right of points
-    geom_text(
-      aes(label = n), 
-      y = Inf,
-      hjust = 1.1,
-      size = 3
-    ) + 
-    theme_classic() +
-    ylim(-0.5, 0.5) +
-    theme(
-      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)
-    )
-
-  # Create classic LQMM plot -------------
-  # for filter level no_badslope
-  fit_lqmm <- df_filtereffects |> 
-      filter(step == "no_badslope") |> 
-      pull(fit_lqmm)
-  
-  gg_lqmm <- plot_lqmm_bybiome(
-    list_df_filtered$no_badslope,
-    fit_lqmm[[1]]
-  )
-
-  # LQMM by QMD bin ----------------
-  # for filter no_badslope
-  df_lqmm_byqmdbin <- calc_lqmm_byqmdbin(list_df_filtered$no_badslope)
-  gg_lqmm_byqmdbin <- plot_lqmm_byqmdbin(df_lqmm_byqmdbin$df)
-
-  return(
-    list(
-      gg_fdisturbed = gg_fdisturbed,
-      df_filtereffects = df_filtereffects,
-      gg_lqmm = gg_lqmm,
-      gg_coef_filters = gg_coef_filters,
-      gg_lqmm_byqmdbin = gg_lqmm_byqmdbin
-    )
-  )
-
-}
+source(here("R/analyse_biome.R"))
 
 ## Run workflow ---------------------
 ### Read and process data ------------
@@ -211,18 +64,7 @@ write_rds(
   file = here("data/df_biome_analysis.rds")
 )
 
-# Extract plot objects
-df_plots <- df_biome_analysis |> 
-  dplyr::select(biome_major, out) |> 
-  mutate(
-    gg_lqmm = purrr::map(out, "gg_lqmm"),
-    gg_coef_filters = purrr::map(out, "gg_coef_filters"),
-    gg_fdisturbed = purrr::map(out, "gg_fdisturbed"),
-    gg_lqmm_byqmdbin = purrr::map(out, "gg_lqmm_byqmdbin")
-  )
 
-
- 
 # ## Plots -------------------------
 # # construct panel
 # left_panel <- cowplot::plot_grid(
@@ -240,7 +82,6 @@ df_plots <- df_biome_analysis |>
 #   gg_coef_filters,
 #   rel_widths = c(1, 0.5)
 # )
-
 
 # XXXXXXXXXXXXXXXXXX
 
@@ -266,7 +107,6 @@ df_plots <- df_biome_analysis |>
 # } else {
 #   suffix_subset <- ""
 # }
-
 
 # ### Plot disturbed plots -------------------------------------------------------
 # breaks <- get_breaks(data_unm_biome$year)
@@ -394,7 +234,6 @@ df_plots <- df_biome_analysis |>
 # )
 # gg_lqmm_biome1_both
 
-
 # ### Plot disturbed plots -------------------------------------------------------
 # breaks <- get_breaks(data_unm_biome$year)
 
@@ -520,7 +359,6 @@ df_plots <- df_biome_analysis |>
 # )
 # gg_lqmm_biome2_both
 
-
 # ### Plot disturbed plots -------------------------------------------------------
 # breaks <- get_breaks(data_unm_biome$year)
 
@@ -603,7 +441,7 @@ df_plots <- df_biome_analysis |>
 # )
 # gg_lqmm_biome4
 
-# gg_lqmm_biome4 + 
+# gg_lqmm_biome4 +
 #   labs(title = NULL, subtitle = NULL)
 
 # ggsave(here("fig/gg_lqmm_biome4.pdf"), width = 4, height = 3)
@@ -642,7 +480,6 @@ df_plots <- df_biome_analysis |>
 #   label_y = 1.1
 # )
 # gg_lqmm_biome4_both
-
 
 # ### Plot disturbed plots -------------------------------------------------------
 # breaks <- get_breaks(data_unm_biome$year)
@@ -760,7 +597,6 @@ df_plots <- df_biome_analysis |>
 #   label_y = 1.1
 # )
 # gg_lqmm_biome5_both
-
 
 # ### Plot disturbed plots -------------------------------------------------------
 # breaks <- get_breaks(data_unm_biome$year)
@@ -884,7 +720,6 @@ df_plots <- df_biome_analysis |>
 # )
 # gg_lqmm_biome6_both
 
-
 # ### Plot disturbed plots -------------------------------------------------------
 # breaks <- get_breaks(data_unm_biome$year)
 
@@ -999,7 +834,21 @@ df_plots <- df_biome_analysis |>
 # )
 # gg_lqmm_biome12_both
 
-# Publication figures and tables  ----------------------------------------------
+# Publication figures, tables, and numbers  ----------------------------------------------
+
+# Extract plot objects
+
+df_biome_analysis <- read_rds(here("data/df_biome_analysis.rds"))
+
+df_plots <- df_biome_analysis |> 
+  dplyr::select(biome_major, out) |> 
+  mutate(
+    gg_lqmm = purrr::map(out, "gg_lqmm"),
+    gg_coef_filters = purrr::map(out, "gg_coef_filters"),
+    gg_fdisturbed = purrr::map(out, "gg_fdisturbed"),
+    gg_lqmm_byqmdbin = purrr::map(out, "gg_lqmm_byqmdbin")
+  )
+
 
 ## Figure 1 --------------------------------------------------------------------
 ### Fig 1 only STL ------------------
@@ -1040,6 +889,18 @@ ggsave(
   width = 11,
   height = 8
 )
+
+# Numbers:
+# Our estimates of the effect size of year were virtually certain to be greater than
+# zero and ranged between XXX yr-1 across the individual four biomes.
+tmp <- df_biome_analysis |>
+  mutate(fit = purrr::map(out, "fit_lqmm")) |>
+  mutate(fit = purrr::map(fit, 1)) |>
+  mutate(coef = purrr::map(fit, ~ coef(.))) |> 
+  mutate(coef = purrr::map_dbl(coef, "year_sc")) |> 
+  select(biome_major, coef)
+
+knitr::kable(tmp)
 
 ### Filter effects on 'year' coefficient ---------------------------------------
 fig_filters_biomes <- cowplot::plot_grid(
@@ -1126,46 +987,46 @@ ggsave(
   height = 8
 )
 
-### STL and dots combined ------------------------------------------------------
-legend <- get_legend(
-  gg_lqmm_biome1 +
-    theme(legend.position = "right")
-)
+# ### STL and dots combined ------------------------------------------------------
+# legend <- get_legend(
+#   gg_lqmm_biome1 +
+#     theme(legend.position = "right")
+# )
 
-# Arrange the 9 plots in a 3x3 grid
-fig1_lqmm <- cowplot::plot_grid(
-  gg_lqmm_biome1_both,
-  gg_lqmm_biome2_both,
-  gg_lqmm_biome4_both,
-  gg_lqmm_biome5_both,
-  gg_lqmm_biome6_both,
-  gg_lqmm_biome12_both,
-  ncol = 3
-)
+# # Arrange the 9 plots in a 3x3 grid
+# fig1_lqmm <- cowplot::plot_grid(
+#   gg_lqmm_biome1_both,
+#   gg_lqmm_biome2_both,
+#   gg_lqmm_biome4_both,
+#   gg_lqmm_biome5_both,
+#   gg_lqmm_biome6_both,
+#   gg_lqmm_biome12_both,
+#   ncol = 3
+# )
 
-fig1_lqmm
+# fig1_lqmm
 
-# Combine grid and legend
-fig1_lqmm <- cowplot::plot_grid(
-  fig1_lqmm,
-  legend,
-  ncol = 2,
-  rel_widths = c(1, 0.2)
-)
+# # Combine grid and legend
+# fig1_lqmm <- cowplot::plot_grid(
+#   fig1_lqmm,
+#   legend,
+#   ncol = 2,
+#   rel_widths = c(1, 0.2)
+# )
 
-ggsave(
-  filename = here("manuscript/figures/fig1_lqmm.pdf"),
-  plot = fig1_lqmm,
-  width = 11,
-  height = 12
-)
+# ggsave(
+#   filename = here("manuscript/figures/fig1_lqmm.pdf"),
+#   plot = fig1_lqmm,
+#   width = 11,
+#   height = 12
+# )
 
-ggsave(
-  filename = here("manuscript/figures/fig1_lqmm.png"),
-  plot = fig1_lqmm,
-  width = 11,
-  height = 12
-)
+# ggsave(
+#   filename = here("manuscript/figures/fig1_lqmm.png"),
+#   plot = fig1_lqmm,
+#   width = 11,
+#   height = 12
+# )
 
 
 ### Fig 1 ALTERNATIVE only STL with interactions  ------------------
@@ -1251,21 +1112,26 @@ max(df_tmp$year)
 
 
 ## SI Figure: Bootstrapped percent change of N per year ------------------------
-# write_rds(df_boot, file = here(paste0("data/df_boot", suffix_subset, ".rds")))
-df_boot <- read_rds(here("data/df_boot", suffix_subset, ".rds"))
+df_boot <- df_biome_analysis |>
+  mutate(df_boot = purrr::map(out, "df_boot")) |> 
+  select(biome_major, df_boot) |> 
+  unnest(df_boot)
 
 df_boot |>
-  mutate(percent_change = 100*(exp(estimate) - 1)) |>
-  ggplot(aes(x = percent_change, group = biome, color = biome, fill = biome)) +
+  mutate(percent_change = 100 * (exp(estimate) - 1)) |>
+  ggplot(aes(
+    x = percent_change,
+    group = biome_major,
+    color = biome_major,
+    fill = biome_major
+  )) +
   geom_density(alpha = 0.5) +
   scale_fill_manual(
     values = c(
-      "Boreal Forests/Taiga"                                       = "dodgerblue4",
-      "Mediterranean Forests, Woodlands & Scrub"                   = "orangered3",
-      "Temperate Broadleaf & Mixed Forests"                        = "darkgreen",
-      "Temperate Conifer Forests"                                  = "lightseagreen",
-      "Tropical & Subtropical Dry Broadleaf Forests"               = "goldenrod4",
-      "Tropical & Subtropical Moist Broadleaf Forests"             = "springgreen3"
+      "Boreal Forests/Taiga" = "dodgerblue4",
+      "Mediterranean Forests" = "orangered3",
+      "Temperate Forests" = "darkgreen",
+      "Tropical & Subtropical Broadleaf Forests" = "springgreen3"
     ),
     na.value = NA,
     breaks = ~ .x[!is.na(.x)],
@@ -1273,12 +1139,10 @@ df_boot |>
   ) +
   scale_color_manual(
     values = c(
-      "Boreal Forests/Taiga"                                       = "dodgerblue4",
-      "Mediterranean Forests, Woodlands & Scrub"                   = "orangered3",
-      "Temperate Broadleaf & Mixed Forests"                        = "darkgreen",
-      "Temperate Conifer Forests"                                  = "lightseagreen",
-      "Tropical & Subtropical Dry Broadleaf Forests"               = "goldenrod4",
-      "Tropical & Subtropical Moist Broadleaf Forests"             = "springgreen3"
+      "Boreal Forests/Taiga" = "dodgerblue4",
+      "Mediterranean Forests" = "orangered3",
+      "Temperate Forests" = "darkgreen",
+      "Tropical & Subtropical Broadleaf Forests" = "springgreen3"
     ),
     na.value = NA,
     breaks = ~ .x[!is.na(.x)],
@@ -1286,17 +1150,22 @@ df_boot |>
   ) +
   theme_classic() +
   labs(
-    x = expression(paste("Change in density (%"^{-yr}, ")")),
+    x = expression(paste(
+      "Change in density (%"^{
+        -yr
+      },
+      ")"
+    )),
     y = "Density",
     color = "",
     fill = ""
-    ) +
+  ) +
   theme(
     legend.position = "bottom"
   )
 
 ggsave(
-  filename = here("manuscript/figures/distribution_percent_change", suffix_subset, ".pdf"),
+  filename = here("manuscript/figures/distribution_percent_change.pdf"),
   width = 8,
   height = 4
 )

@@ -209,14 +209,21 @@ gg_slopefilter <- cowplot::plot_grid(
 )
 
 ggsave(
-  here("fig/slopefilter.pdf"),
+  here("manuscript/figures/slopefilter.pdf"),
   plot = gg_slopefilter,
   width = 12,
   height = 8
 )
 
+# For manuscript text:
+# Median slope by biome:
+tmp_slopefilter |> 
+  mutate(slope_med = purrr::map_dbl(data, ~median(.$slope_lin)))
+
+# Make df flat again
 df_unm_withfilters <- tmp_slopefilter |> 
   dplyr::select(biome_major, data) |> 
+  unnest(data) |> 
   unnest(data)
 
 write_rds(df_unm_withfilters, here("data/inputs/df_unm_withfilters.rds"))

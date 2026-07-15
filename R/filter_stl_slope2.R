@@ -78,9 +78,9 @@ filter_stl_slope2 <- function(df, fit_lqmm, group_name, multiplier_sd = 2){
     mutate(
       badslope = bad_lin | bad_seg
     ) %>%
-    dplyr::select(plotID, data, badslope) |>
-    unnest(data) |>
-    ungroup()
+    dplyr::select(plotID, data, slope_lin, badslope)
+    # unnest(data) |>
+    # ungroup()
 
   return(
     list(
