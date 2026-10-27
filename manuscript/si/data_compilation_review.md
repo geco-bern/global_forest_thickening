@@ -18,15 +18,17 @@ The draft, now integrated into `main.tex`, describes executable transformations 
 
 7. **Subplot boundaries and identifiers** — UNITO processes only parent plots `9_1`, `9_2`, and `9_3`, using breaks from `seq(min, max, by = 20)`. If the final edge is below the maximum coordinate, some records can receive a missing grid identifier; the code then groups this identifier. UNITBV groups by grid cell without including the original plot identifier. SERC uses a fixed 0–400 m grid. Confirm domain coverage, whether all cells have the assigned 0.04 ha area, and whether UNITBV contains a single parent plot as assumed in the comments.
 
-8. **ForestPlots diameter fields** — `analysis/00_raw_data.R:2950–2954` takes the arithmetic mean of D0–D4 before converting to centimetres. Confirm the meaning of these fields. If they represent separate stems, averaging diameters would not preserve either the number of stems or summed basal area. The draft reports the calculation without assigning an unsupported interpretation to the fields. No live/dead filter is applied in this block or in IBERBAS; verify any upstream selection.
+8. **ForestPlots diameter fields** — `analysis/00_raw_data.R:2950–2954` takes the arithmetic mean of D0–D4 before converting to centimetres. Confirm the meaning of these fields. If they represent separate stems, averaging diameters would not preserve either the number of stems or summed basal area. The draft reports the calculation without assigning an unsupported interpretation to the fields. No live/dead filter is applied in this block or in IBERBAS; verify any upstream selection. @lauramarques
 
 ## Dataset identity and metadata
 
 - **Table S1 versus current object names:** the draft retains the table identifiers and gives aliases where useful. Current script names include `fvabw` (table: `forst`), `unitbv` (`incds`), `npvbw` (`nbw`), `inrae_lessem` (`france`), and `fep_gre_stand` (`greece_stand`). `from_tree_data()` and related helpers derive the dataset field from the input object's name; consequently ForestPlots and RAINFOR currently receive `forestplots` and `rainfor_plots`, whereas downstream code sometimes checks `df_forestplots` and `df_rainfor`. Reconcile these names separately from the prose edit.
 - **BCI:** explicitly excluded from the combined list at `analysis/01_clean_data.R:247`, consistent with the raw-script comment about unresolved management history. It is mentioned as an exclusion, not counted as a 34th constituent dataset.
+  - beni: ok. Excluded from SI.
 - **BNP:** the input is commented as species-level, but the executed code uses `from_stand_data()`, with no species summation. Confirm that the input is already one stand summary per plot-year. The draft follows the executed operation.
 - **Projected coordinates:** the draft reports the CRS codes selected by `biomes_coords_utm()` (Spain: 25830; FVA-BW/LWF: 25832; NW-FVA: 31467; UNITO: 32632). Their correctness against the original coordinate metadata was not independently verified.
 - **Site coordinates:** several ForestGEO datasets use one geographic location for all quadrats; RAINFOR fills missing plot coordinates by site-code prefix. The draft makes these approximations explicit.
+- **Forestplots:** Information about data provenance is insufficient. The datasets are identified as coming from different countries. Are locations of plots known? Are standardised plot names/IDs used? Are YM and HZ ok with being listed as data providers?
 
 ## Management and workflow interpretation
 
@@ -52,9 +54,7 @@ The draft, now integrated into `main.tex`, describes executable transformations 
 
 Remaining revisions of `00_raw_data.R`.
 
-## Beni
-
-(TODO)
+## To do
 
 - Do not calculate the logarithm of N and QMD nd do not append this as a new variable to the data at this step.
 - For the tree-level aggregation, do not omit missing individual basal areas from basal-area sums. Instead, impute missing basal area values based on the diameter at breast height (DBH) for the respective tree. If this variable is missing as well, do not calculate the basal area and make it `NA` instead.
@@ -68,11 +68,20 @@ Remaining revisions of `00_raw_data.R`.
   - `unitbv` instead of `incds`
   - `lwf` instead of `lwf_tree`
   - `nbw` instead of `npvbw`
+  - `nwfva` instead of `nwfva_tree`
+  - `tuzvo` instead of `tuzvo_tree`
+  - `ul` instead of `ul_tree`
+  - `bci` instead of `scbi`
+  - `palanan` instead of `palanam`
+  - `forestplots` instead of `df_forestplots`
 
-## Laura
+## To check Laura
 
 (@lauramarques)
 
 - Confirm processing of Norwegian National Forest Inventory: All plots were assumed unmanaged and were given `management_cat = 1` and a fixed elapsed-time value of 64 years to every plot.
 - Confirm: Uholka is changed from `management_cat = 1` and `management_since_census1_yrs = 999` to `management_cat = 2` (primary forest).
 - Should EuFoRia plots all categorised as `management_cat = 2`? Now, at least some are `management_cat = 1` and time since last management is specified (inlcuding `bnp`, `iberbas`, `lwf`).
+- EuFoRia Unito: comment in script `00_raw_data.R`: "In Table S1, assign to 50 years. Need to confirm with data providers." Now set to `management_cat = 2` (primary/old growth).
+- EuFoRia urk: Comment in script: "In Table S1, assign to NA years. It can be considered a primary/old-growth forests.". Therefore, I changed this to `management_cat = 2` (primary/old growth). Ok?
+- Treatment of `management_since_census1_yrs` in `aus_plots` was revised. Now interpreting `year_last_management`: if *after* the first available census per plot, then set `management = 1`, otherwise `management = 0` and set `management_since_census1_yrs = min(year, na.rm = TRUE) - year_last_management`. Please confirm. It was unclear why all plots for which `year_last_management` was *not* NA were set as `management_cat = 3` (unknown).

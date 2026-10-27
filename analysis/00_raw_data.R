@@ -1691,7 +1691,7 @@ rbeni::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_nwfva, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_nwfva, file = file.path(here::here(), "/data/inputs/df_nwfva.rds"))
+saveRDS(df_nwfva, file = here::here("/data/inputs/df_nwfva.rds"))
 
 ## tuzvo ----
 # Data providers: Stanislav Kucbel and Peter Jalovia
@@ -1878,13 +1878,14 @@ unito <- unito |>
   filter(lat != 0) |>
   unite(plotID, plotID, LPI_ID, sep = "_")
 
-ggplot(unito) +
-  geom_point(aes(lon, lat, col = plotID))
+# ggplot(unito) +
+#   geom_point(aes(lon, lat, col = plotID))
 
 unito_1 <- unito |>
   filter(plotID == "9_1")
-ggplot(unito_1) +
-  geom_point(aes(lon, lat, col = plotID))
+
+# ggplot(unito_1) +
+#   geom_point(aes(lon, lat, col = plotID))
 
 unito_1$grid20 <- interaction(
   cut(unito_1$lon,
@@ -1897,14 +1898,16 @@ unito_1$grid20 <- interaction(
   ),
   sep = "X"
 )
+
 unito_1 <- unito_1 |>
   rename(plotIDD = plotID) |>
   group_by(grid20) |>
   mutate(plotID = cur_group_id()) |>
   ungroup() |>
   unite(plotID, plotID, plotIDD, sep = "_")
-ggplot(unito_1) +
-  geom_point(aes(lon, lat, col = plotID))
+
+# ggplot(unito_1) +
+#   geom_point(aes(lon, lat, col = plotID))
 
 # rewrite lat and lon to have info at plot level not tree level
 unito_1 <- unito_1 |>
@@ -1912,13 +1915,15 @@ unito_1 <- unito_1 |>
     lon = lon_plot,
     lat = lat_plot
   )
-ggplot(unito_1) +
-  geom_point(aes(lon, lat))
+
+# ggplot(unito_1) +
+#   geom_point(aes(lon, lat))
 
 unito_2 <- unito |>
   filter(plotID == "9_2")
-ggplot(unito_2) +
-  geom_point(aes(lon, lat, col = plotID))
+
+# ggplot(unito_2) +
+#   geom_point(aes(lon, lat, col = plotID))
 
 unito_2$grid20 <- interaction(
   cut(unito_2$lon,
@@ -1931,14 +1936,16 @@ unito_2$grid20 <- interaction(
   ),
   sep = "X"
 )
+
 unito_2 <- unito_2 |>
   rename(plotIDD = plotID) |>
   group_by(grid20) |>
   mutate(plotID = cur_group_id()) |>
   ungroup() |>
   unite(plotID, plotID, plotIDD, sep = "_")
-ggplot(unito_2) +
-  geom_point(aes(lon, lat, col = plotID))
+
+# ggplot(unito_2) +
+#   geom_point(aes(lon, lat, col = plotID))
 
 # rewrite lat and lon to have info at plot level not tree level
 unito_2 <- unito_2 |>
@@ -1951,8 +1958,9 @@ ggplot(unito_2) +
 
 unito_3 <- unito |>
   filter(plotID == "9_3")
-ggplot(unito_3) +
-  geom_point(aes(lon, lat, col = plotID))
+
+# ggplot(unito_3) +
+#   geom_point(aes(lon, lat, col = plotID))
 
 unito_3$grid20 <- interaction(
   cut(unito_3$lon,
@@ -1965,14 +1973,16 @@ unito_3$grid20 <- interaction(
   ),
   sep = "X"
 )
+
 unito_3 <- unito_3 |>
   rename(plotIDD = plotID) |>
   group_by(grid20) |>
   mutate(plotID = cur_group_id()) |>
   ungroup() |>
   unite(plotID, plotID, plotIDD, sep = "_")
-ggplot(unito_3) +
-  geom_point(aes(lon, lat, col = plotID))
+
+# ggplot(unito_3) +
+#   geom_point(aes(lon, lat, col = plotID))
 
 # rewrite lat and lon to have info at plot level not tree level
 unito_3 <- unito_3 |>
@@ -1980,8 +1990,8 @@ unito_3 <- unito_3 |>
     lon = lon_plot,
     lat = lat_plot
   )
-ggplot(unito_3) +
-  geom_point(aes(lon, lat))
+# ggplot(unito_3) +
+#   geom_point(aes(lon, lat))
 
 unito <- unito_1 |>
   bind_rows(unito_2) |>
@@ -2065,15 +2075,17 @@ df_urk <- from_stand_data(urk) |>
   mutate(
     biomass = NA,
     management = 0,
-    management_cat = 1,
+    management_cat = 2,
     country = "Poland"
   ) |>
-  rename(plotsize = area_ha) |>
-  group_by(plotID) %>%
-  mutate(
-    management_since_census1_yrs = min(year, na.rm = TRUE) - year_last_management
-  ) |>
-  ungroup()
+  rename(plotsize = area_ha)
+
+  # beni: removed this as I set management_cat = 2, following comment above.
+  # group_by(plotID) %>%
+  # mutate(
+  #   management_since_census1_yrs = min(year, na.rm = TRUE) - year_last_management
+  # ) |>
+  # ungroup()
 
 # add coords and biomes
 df_urk <- biomes_coords_latlon(df_urk)
@@ -2928,7 +2940,10 @@ rbeni::plot_map_simpl() +
   geom_point(aes(lon, lat, color = ai), data = df_mudumalai, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_mudumalai, file = file.path(here::here(), "/data/inputs/df_mudumalai.rds"))
+saveRDS(
+  df_mudumalai,
+  file = here::here("/data/inputs/df_mudumalai.rds")
+)
 
 # Forests plots MZ ----
 # Data provided by Yadvinder Mahli and Huanyuan Zhang
@@ -2952,7 +2967,7 @@ meta_fp <- meta_fp |>
 # 1) A selection of countries and plots together
 multiplots <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestplots/mahli_zhang/fp_mz_multiplots.csv")
 
-multiplots <- read.csv("~/data/forestplots/mahli_zhang/fp_mz_multiplots.csv")
+# multiplots <- read.csv("~/data/forestplots/mahli_zhang/fp_mz_multiplots.csv")
 
 # select and rename variables
 multiplots <- multiplots |>
@@ -2980,9 +2995,9 @@ gabon <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDY
   lapply(read_csv) |>
   bind_rows()
 
-gabon <- list.files(path = "~/data/forestplots/mahli_zhang/gabon", full.names = TRUE, pattern = "\\.csv$") |>
-  lapply(read_csv) |>
-  bind_rows()
+# gabon <- list.files(path = "~/data/forestplots/mahli_zhang/gabon", full.names = TRUE, pattern = "\\.csv$") |>
+#   lapply(read_csv) |>
+#   bind_rows()
 
 # select and rename variables
 gabon <- gabon |>
@@ -2999,9 +3014,9 @@ ghana <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDY
   lapply(read_csv) |>
   bind_rows()
 
-ghana <- list.files(path = "~/data/forestplots/mahli_zhang/ghana", full.names = TRUE, pattern = "\\.csv$") |>
-  lapply(read_csv) |>
-  bind_rows()
+# ghana <- list.files(path = "~/data/forestplots/mahli_zhang/ghana", full.names = TRUE, pattern = "\\.csv$") |>
+#   lapply(read_csv) |>
+#   bind_rows()
 
 # select and rename variables
 ghana <- ghana |>
@@ -3017,9 +3032,9 @@ malaysia <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/G
   lapply(read_csv) |>
   bind_rows()
 
-malaysia <- list.files(path = "~/data/forestplots/mahli_zhang/malaysia", full.names = TRUE, pattern = "\\.csv$") |>
-  lapply(read_csv) |>
-  bind_rows()
+# malaysia <- list.files(path = "~/data/forestplots/mahli_zhang/malaysia", full.names = TRUE, pattern = "\\.csv$") |>
+#   lapply(read_csv) |>
+#   bind_rows()
 
 # select and rename variables
 malaysia <- malaysia |>
@@ -3082,9 +3097,12 @@ rbeni::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_forestplots, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_forestplots, file = file.path(here::here(), "/data/inputs/df_forestplots.rds"))
+saveRDS(
+  df_forestplots,
+  file = here::here("/data/inputs/df_forestplots.rds")
+)
 
-# Australian plots ####
+# Australian plots ----
 # Data providers: David Forrester and collaborators:
 # Sustainable Timber Tasmania: David Bartlett or Shaun Suitor or Crispen Marunda
 # Forestry Corporation of NSW: Mike Sutton
@@ -3117,9 +3135,14 @@ aus_plots <- aus_plots |>
     biomass = AbovegroundAHC1_2_Mgperha * 10^3,
     country = "Australia",
     year = as.integer(year),
-    management_since_census1_yrs = NA,
-    management = 0,
-    management_cat = ifelse(is.na(year_last_management), 2, 3)
+    management = ifelse(year_last_management < min(year, na.rm = TRUE), 0, 1), # beni: added this to be sure
+    management_since_census1_yrs = ifelse(
+      management == 0, 
+      min(year, na.rm = TRUE) - year_last_management, 
+      NA
+    ), # beni: added this instead of considering it NA
+    # management_cat = ifelse(is.na(year_last_management), 2, 3)  # beni: changed this to cat = 1: known history
+    management_cat = ifelse(is.na(year_last_management), 2, 1)
   )
 
 # aggregate data from stand to stand data
@@ -3158,7 +3181,7 @@ rbeni::plot_map_simpl() +
   theme(legend.position = "bottom")
 
 # save stand-level data
-saveRDS(df_aus, file = file.path(here::here(), "/data/inputs/df_aus.rds"))
+saveRDS(df_aus, file = here::here("/data/inputs/df_aus.rds"))
 
 # RAINFOR Amazon Forest Inventory Network ----
 # Data from Esquivel-Muelbert, et al. 2025 data published
