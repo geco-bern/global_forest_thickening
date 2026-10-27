@@ -30,7 +30,6 @@ source(here("R/plot_lqmm_bybiome.R"))
 source(here("R/calc_lqmm_byqmdbin.R"))
 source(here("R/create_table_latex.R"))
 source(here("R/process_cite_lines.R"))
-source(here("R/wrap_fit_lqmm.R"))
 source(here("R/calc_percent_change.R"))
 source(here("R/plot_disturbed.R"))
 source(here("R/fit_model.R"))
@@ -123,7 +122,7 @@ write_rds(
 
 # write_rds(
 #   data_unm_biome,
-#   file = here(paste0("data/data_unm_undist_biome1", suffix_subset, ".rds"))
+#   file = here(paste0("data/data_unm_undist_biome1.rds"))
 # )
 
 # ### LQMM fit -------------------------------------------------------------------
@@ -143,7 +142,7 @@ write_rds(
 # )
 # # summary(fit_lqmm)
 
-# write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome1", suffix_subset, ".rds")))
+# write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome1.rds")))
 
 # ### LQMM fit with interaction --------------------------------------------------
 # set.seed(123)
@@ -162,7 +161,7 @@ write_rds(
 # )
 # # summary(fit_lqmm_int)
 
-# write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome1", suffix_subset, ".rds")))
+# write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome1.rds")))
 
 # #### STL shift -----------------------------------------------------------------
 # # Opt 2: predicted logDensity at two years differing by one year (in scaled units)
@@ -183,13 +182,13 @@ write_rds(
 # #   unnest(coefs) |>
 # #   dplyr::select(-splits)
 # #
-# # write_rds(boot_results, file = here(paste0("data/boot_results_biome1", suffix_subset, ".rds")))
+# # write_rds(boot_results, file = here(paste0("data/boot_results_biome1.rds")))
 # #
 # # df_boot <- boot_results |>
 # #   filter(term == "year") |>
 # #   mutate(biome = "Tropical & Subtropical Moist Broadleaf Forests")
 # #
-# # boot_results <- read_rds(file = here(paste0("data/boot_results_biome1", suffix_subset, ".rds")))
+# # boot_results <- read_rds(file = here(paste0("data/boot_results_biome1.rds")))
 
 # ### Plot STL from LQMM ---------------------------------------------------------
 # gg_lqmm_biome1 <- plot_lqmm_bybiome(
@@ -251,7 +250,7 @@ write_rds(
 
 # write_rds(
 #   data_unm_biome,
-#   file = here(paste0("data/data_unm_undist_biome2", suffix_subset, ".rds"))
+#   file = here(paste0("data/data_unm_undist_biome2.rds"))
 # )
 
 # ### LQMM fit -------------------------------------------------------------------
@@ -271,7 +270,7 @@ write_rds(
 # )
 # # summary(fit_lqmm)
 
-# write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome2", suffix_subset, ".rds")))
+# write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome2.rds")))
 
 # ### LQMM interaction fit -------------------------------------------------------
 # set.seed(123)
@@ -290,7 +289,7 @@ write_rds(
 # )
 # # summary(fit_lqmm_int)
 
-# write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome2", suffix_subset, ".rds")))
+# write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome2.rds")))
 
 # #### Bootstrapping LQMM fit -----------------------------------------------------
 # # boot_data <- rsample::bootstraps(
@@ -307,7 +306,7 @@ write_rds(
 # #   unnest(coefs) |>
 # #   dplyr::select(-splits)
 # #
-# # write_rds(boot_results, file = here(paste0("data/boot_results_biome2", suffix_subset, ".rds")))
+# # write_rds(boot_results, file = here(paste0("data/boot_results_biome2.rds")))
 # #
 # # df_boot <- bind_rows(
 # #   df_boot,
@@ -376,7 +375,7 @@ write_rds(
 
 # write_rds(
 #   data_unm_biome,
-#   file = here(paste0("data/data_unm_undist_biome4", suffix_subset, ".rds"))
+#   file = here(paste0("data/data_unm_undist_biome4.rds"))
 #   )
 
 # ### LQMM fit -------------------------------------------------------------------
@@ -392,7 +391,7 @@ write_rds(
 # )
 # # summary(fit_lqmm)
 
-# write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome4", suffix_subset, ".rds")))
+# write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome4.rds")))
 
 # ### LQMM with interaction fit -------------------------------------------------------------------
 # set.seed(123)
@@ -407,7 +406,7 @@ write_rds(
 # )
 # # summary(fit_lqmm_int)
 
-# write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome4", suffix_subset, ".rds")))
+# write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome4.rds")))
 
 # #### Bootstrapping LQMM fit -----------------------------------------------------
 # # boot_data <- rsample::bootstraps(
@@ -424,7 +423,7 @@ write_rds(
 # #   unnest(coefs) |>
 # #   dplyr::select(-splits)
 # #
-# # write_rds(boot_results, file = here(paste0("data/boot_results_biome4", suffix_subset, ".rds")))
+# # write_rds(boot_results, file = here(paste0("data/boot_results_biome4.rds")))
 # #
 # # df_boot <- bind_rows(
 # #   df_boot,
@@ -498,7 +497,7 @@ write_rds(
 
 # write_rds(
 #   data_unm_biome,
-#   file = here(paste0("data/data_unm_undist_biome5", suffix_subset, ".rds"))
+#   file = here(paste0("data/data_unm_undist_biome5.rds"))
 # )
 
 # ### LQMM fit -------------------------------------------------------------------
@@ -514,7 +513,7 @@ write_rds(
 # )
 # # summary(fit_lqmm)
 
-# write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome5", suffix_subset, ".rds")))
+# write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome5.rds")))
 
 # ### LQMM-interaction fit -------------------------------------------------------
 # set.seed(123)
@@ -529,7 +528,7 @@ write_rds(
 # )
 # # summary(fit_lqmm_int)
 
-# write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome5", suffix_subset, ".rds")))
+# write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome5.rds")))
 
 # #### Bootstrapping LQMM fit -----------------------------------------------------
 # # boot_data <- rsample::bootstraps(
@@ -546,7 +545,7 @@ write_rds(
 # #   unnest(coefs) |>
 # #   dplyr::select(-splits)
 # #
-# # write_rds(boot_results, file = here(paste0("data/boot_results_biome5", suffix_subset, ".rds")))
+# # write_rds(boot_results, file = here(paste0("data/boot_results_biome5.rds")))
 # #
 # # df_boot <- bind_rows(
 # #   df_boot,
@@ -615,7 +614,7 @@ write_rds(
 
 # write_rds(
 #   data_unm_biome,
-#   file = here(paste0("data/data_unm_undist_biome6", suffix_subset, ".rds"))
+#   file = here(paste0("data/data_unm_undist_biome6.rds"))
 # )
 
 # ### LQMM fit -------------------------------------------------------------------
@@ -635,7 +634,7 @@ write_rds(
 # )
 # # summary(fit_lqmm)
 
-# write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome6", suffix_subset, ".rds")))
+# write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome6.rds")))
 
 # ### LQMM-interaction fit -------------------------------------------------------
 # set.seed(123)
@@ -654,7 +653,7 @@ write_rds(
 # )
 # # summary(fit_lqmm)
 
-# write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome6", suffix_subset, ".rds")))
+# write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome6.rds")))
 
 # #### Bootstrapping LQMM fit -----------------------------------------------------
 # # boot_data <- rsample::bootstraps(
@@ -671,7 +670,7 @@ write_rds(
 # #   unnest(coefs) |>
 # #   dplyr::select(-splits)
 # #
-# # write_rds(boot_results, file = here(paste0("data/boot_results_biome6", suffix_subset, ".rds")))
+# # write_rds(boot_results, file = here(paste0("data/boot_results_biome6.rds")))
 # #
 # # df_boot <- bind_rows(
 # #   df_boot,
@@ -737,7 +736,7 @@ write_rds(
 
 # write_rds(
 #   data_unm_biome,
-#   file = here(paste0("data/data_unm_undist_biome12", suffix_subset, ".rds"))
+#   file = here(paste0("data/data_unm_undist_biome12.rds"))
 # )
 
 # ### LQMM fit -------------------------------------------------------------------
@@ -753,7 +752,7 @@ write_rds(
 # )
 # # summary(fit_lqmm)
 
-# write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome12", suffix_subset, ".rds")))
+# write_rds(fit_lqmm, file = here(paste0("data/outputs/fit_lqmm_biome12.rds")))
 
 # ### LQMM-interaction fit -------------------------------------------------------
 # set.seed(123)
@@ -768,7 +767,7 @@ write_rds(
 # )
 # # summary(fit_lqmm_int)
 
-# write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome12", suffix_subset, ".rds")))
+# write_rds(fit_lqmm_int, file = here(paste0("data/outputs/fit_lqmm_int_biome12.rds")))
 
 # #### Bootstrapping LQMM fit -----------------------------------------------------
 # # boot_data <- rsample::bootstraps(
@@ -785,7 +784,7 @@ write_rds(
 # #   unnest(coefs) |>
 # #   dplyr::select(-splits)
 # #
-# # write_rds(boot_results, file = here(paste0("data/boot_results_biome12", suffix_subset, ".rds")))
+# # write_rds(boot_results, file = here(paste0("data/boot_results_biome12.rds")))
 # #
 # # df_boot <- bind_rows(
 # #   df_boot,
@@ -894,11 +893,11 @@ ggsave(
 # Our estimates of the effect size of year were virtually certain to be greater than
 # zero and ranged between XXX yr-1 across the individual four biomes.
 tmp <- df_biome_analysis |>
-  mutate(fit = purrr::map(out, "fit_lqmm")) |>
-  mutate(fit = purrr::map(fit, 1)) |>
-  mutate(coef = purrr::map(fit, ~ coef(.))) |> 
-  mutate(coef = purrr::map_dbl(coef, "year_sc")) |> 
-  select(biome_major, coef)
+  dplyr::mutate(fit = purrr::map(out, "fit_lqmm")) |>
+  dplyr::mutate(fit = purrr::map(fit, 1)) |>
+  dplyr::mutate(coef = purrr::map(fit, coef_original_units)) |>
+  dplyr::mutate(coef = 100 * expm1(purrr::map_dbl(coef, "year"))) |>
+  dplyr::select(biome_major, coef)
 
 knitr::kable(tmp)
 
@@ -1089,17 +1088,17 @@ ggsave(
 )
 
 ### Number: years covered -------------
-df_tmp <- read_rds(here("data/data_unm_undist_biome1", suffix_subset, ".rds")) |>
+df_tmp <- read_rds(here("data/data_unm_undist_biome1.rds")) |>
   bind_rows(
-    read_rds(here("data/data_unm_undist_biome2", suffix_subset, ".rds"))) |>
+    read_rds(here("data/data_unm_undist_biome2.rds"))) |>
   bind_rows(
-    read_rds(here("data/data_unm_undist_biome4", suffix_subset, ".rds"))) |>
+    read_rds(here("data/data_unm_undist_biome4.rds"))) |>
   bind_rows(
-    read_rds(here("data/data_unm_undist_biome5", suffix_subset, ".rds"))) |>
+    read_rds(here("data/data_unm_undist_biome5.rds"))) |>
   bind_rows(
-    read_rds(here("data/data_unm_undist_biome6", suffix_subset, ".rds"))) |>
+    read_rds(here("data/data_unm_undist_biome6.rds"))) |>
   bind_rows(
-    read_rds(here("data/data_unm_undist_biome12", suffix_subset, ".rds")))
+    read_rds(here("data/data_unm_undist_biome12.rds")))
 
 df_tmp |>
   ggplot(aes(x = year, y = after_stat(density))) +
@@ -1113,12 +1112,12 @@ max(df_tmp$year)
 
 ## SI Figure: Bootstrapped percent change of N per year ------------------------
 df_boot <- df_biome_analysis |>
-  mutate(df_boot = purrr::map(out, "df_boot")) |> 
-  select(biome_major, df_boot) |> 
-  unnest(df_boot)
+  dplyr::mutate(df_boot = purrr::map(out, "df_boot")) |>
+  dplyr::select(biome_major, df_boot) |>
+  tidyr::unnest(df_boot)
 
 df_boot |>
-  mutate(percent_change = 100 * (exp(estimate) - 1)) |>
+  dplyr::mutate(percent_change = 100 * (exp(estimate) - 1)) |>
   ggplot(aes(
     x = percent_change,
     group = biome_major,
@@ -1189,11 +1188,11 @@ summary_stats <- df_boot |>
     .groups = "drop"
   )
 
-write_rds(summary_stats, file = here("data/summary_stats.csv"))
+write_csv(summary_stats, file = here("data/summary_stats.csv"))
 
 create_table_latex(
   summary_stats |>
-    select(
+    dplyr::select(
       Biome = biome,
       Mean = percent_change_mean,
       SD = percent_change_sd
@@ -1216,7 +1215,7 @@ cowplot::plot_grid(
 )
 
 ggsave(
-  filename = here("manuscript/figures/fdisturbed", suffix_subset, ".pdf"),
+  filename = here("manuscript/figures/fdisturbed.pdf"),
   width = 9,
   height = 9
 )
@@ -1232,6 +1231,6 @@ df_datasets <- data_unm |>
 create_table_latex(
   df_datasets,
   caption = "Constituent forest dataset sizes and descriptions.",
-  filn = here("manuscript/tables/datasets", suffix_subset, ".tex")
+  filn = here("manuscript/tables/datasets.tex")
   # align = c("p{0.1cm}", "p{5cm}", "p{7cm}")
 )

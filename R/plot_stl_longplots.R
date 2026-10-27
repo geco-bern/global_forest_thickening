@@ -13,7 +13,7 @@ plot_stl_longplots <- function(df, biome_name = "") {
       # management_cat == 2
     )
 
-    # for demo keep only best
+  # for demo keep only best
   tmp <- df |>
     group_by(plotID, dataset) |>
     summarise(year_min = min(year), year_max = max(year)) |>
@@ -24,11 +24,11 @@ plot_stl_longplots <- function(df, biome_name = "") {
   thresh_len <- floor(quantile(tmp$len, probs = 0.95, na.rm = TRUE))
 
   df_longplots <- tmp |>
-    slice(1:30) |> 
+    dplyr::slice(1:30) |>
     # filter(len >= thresh_len) |>
     # slice_sample(n = 10) |> # used 3 before
-    select(plotID, dataset) |>
-    distinct()
+    dplyr::select(plotID, dataset) |>
+    dplyr::distinct()
 
   df <- df |>
     mutate(highlight = ifelse(plotID %in% df_longplots$plotID, TRUE, FALSE))

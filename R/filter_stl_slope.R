@@ -7,7 +7,7 @@ filter_stl_slope <- function(df, fit_lqmm, multiplier_sd = 0.5){
     nest() |>
     mutate(nobs = purrr::map_int(data, ~nrow(.))) |>
     filter(nobs >= 3) |>  # minimum satisfied by design of data selection, but here for safety
-    mutate(linmod = purrr::map(data, ~lm(logDensity ~ logQMD_sc, data = .))) |>
+    mutate(linmod = purrr::map(data, ~lm(logDensity ~ logQMD, data = .))) |>
     mutate(slope = purrr::map_dbl(linmod, ~coef(.)[2])) |>
     select(-linmod)
 
@@ -15,7 +15,7 @@ filter_stl_slope <- function(df, fit_lqmm, multiplier_sd = 0.5){
   df_byplot <- df_byplot |>
     filter(slope > quantile(df_byplot$slope, 0.01) & slope < quantile(df_byplot$slope, 0.99))
 
-  slope_lqmm <- coef(fit_lqmm)["logQMD_sc"]
+  slope_lqmm <- coef_original_units(fit_lqmm)["logQMD"]
   sd_slopes <- sd(df_byplot$slope)
 
   # subset data based on slope: must be within a certain margin of slope obtained from quantile regression

@@ -501,7 +501,8 @@ nfi_switzerland <- lfi_plot_census |>
     management = ifelse(is.na(management_since_census1_yrs), 1, 0),
     management_cat = 1, 
     plotsize = PLOT_AREA_LARGE * 10^-4,
-    country = "Switzerland")
+    country = "Switzerland"
+  )
 
 # aggregate data from stand to stand data
 df_nfi_switzerland <- from_stand_data(nfi_switzerland)
@@ -528,13 +529,21 @@ df_nfi_switzerland <- phos_coords_latlon(df_nfi_switzerland)
 df_nfi_switzerland <- orgc_coords_latlon(df_nfi_switzerland)
 
 ggplot() +
-  geom_point(data = df_nfi_switzerland, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(
+    data = df_nfi_switzerland, 
+    aes(x = logQMD, y = logDensity), 
+    alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE
+  )
 
 rbeni::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_nfi_switzerland, size = 0.5, alpha = 0.5) + theme(legend.position = "bottom")
+  geom_point(aes(lon, lat, color = biome), data = df_nfi_switzerland, size = 0.5, alpha = 0.5) + 
+  theme(legend.position = "bottom")
 
 # Save stand-level data
-saveRDS(df_nfi_switzerland, file = file.path(here::here(), "/data/inputs/df_nfi_swi.rds"))
+saveRDS(
+  df_nfi_switzerland,
+  file = here::here("/data/inputs/df_nfi_swi.rds")
+)
 
 # NFI Norway ----
 # Data providers: Oliver Moen Snoksrud and Johannes Breidenbach
@@ -742,11 +751,15 @@ uholka <- uholka |>
   mutate(
     dbh = (dbh_1 + dbh_2) / 2 / 10,
     ba_tree = pi * (dbh * 0.01 / 2)^2,
-    plotID = as.numeric(ifelse(nchar(treeID) == 4, substr(treeID, 1, 1), substr(treeID, 1, 2))),
+    plotID = as.numeric(ifelse(
+      nchar(treeID) == 4,
+      substr(treeID, 1, 1),
+      substr(treeID, 1, 2)
+    )),
     plotsize = 0.25, # ha
     biomass = NA,
-    country = "Ukraine",
-    management_since_census1_yrs = 999
+    country = "Ukraine"
+    # management_since_census1_yrs = 999 (beni: changed to management_cat = 2)
   ) |>
   drop_na(dbh) 
 
@@ -757,8 +770,10 @@ df_uholka <- from_tree_data(uholka) |>
   mutate(census = match(year, unique(year))) |>
   ungroup() |>
   relocate(census, .after = year) |>
-  mutate(management = 0,
-         management_cat = 1)
+  mutate(
+    management = 0,
+    management_cat = 2
+  )
 
 # add coords and biomes
 df_uholka <- biomes_coords_latlon(df_uholka)
@@ -987,12 +1002,13 @@ df_bnp <- from_stand_data(bnp) |>
     biomass = NA,
     plotsize = 0.05,
     management = 0,
-    management_cat = 1,
+    management_cat = 2, # Define all bnp plots as management_cat == 2 (primary), see email Rupert Seidl, 16.04.2026
     country = "Germany"
   ) |>
-group_by(plotID) %>%
+  group_by(plotID) %>%
   mutate(
-    management_since_census1_yrs = min(year, na.rm = TRUE) - year_last_management
+    management_since_census1_yrs = min(year, na.rm = TRUE) -
+      year_last_management
   ) |>
   ungroup()
 
@@ -1181,7 +1197,8 @@ iberbas <- iberbas |>
     ba_tree = pi * (dbh * 0.01 / 2)^2,
     biomass = NA,
     management_since_census1_yrs = 70,
-    country = "Bulgaria")
+    country = "Bulgaria"
+  )
 
 # aggregate data from stand to stand data
 df_iberbas <- from_tree_data(iberbas) |>
@@ -1423,7 +1440,7 @@ npvbw <- npvbw |>
     ba_tree = pi * (dbh * 0.01 / 2)^2,
     biomass = NA,
     country = "Germany",
-    #management_since_census1_yrs = 42
+    #management_since_census1_yrs = 42  # calculated below from data
   ) |>
   rename(
     plotsize = plot_size,

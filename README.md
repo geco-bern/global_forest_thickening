@@ -34,6 +34,30 @@ Global forest growth has increased in recent decades, but its role in sustaining
 
 - Analyses SDR and sensitivity to management-history by biome.
 
+### Model preprocessing
+
+The filtered input data contain predictors in their original units.
+`fit_model()` uses a `recipes::step_normalize()` recipe to center and scale
+`logQMD` and `year` on the complete training rows of each filter stage, biome,
+QMD bin, or bootstrap sample. The response and plot identifiers are not scaled.
+The fitted recipe is stored as `attr(fit, "recipe")`; the returned object remains
+an `lqmm` or `lmerMod` model, with standardized coefficients named `logQMD_sc`
+and `year_sc`.
+
+Use `predict_model(fit, new_data, ...)` with predictors in original units to apply
+the fitted preprocessing before prediction. `coef_original_units(fit)` converts
+the fixed effects, including the intercept, back to original units.
+The local bootstrap helper in `analyse_biome()` calls `fit_model()` and returns
+these converted coefficients, so its `year` estimate is per calendar year and annual percentage change is
+`100 * expm1(estimate)`. Bootstrap resampling remains restricted to `no_badslope`,
+with 500 replicates by default (`analyse_biome(..., n_boot = 500)`).
+
+Re-run `analysis/02_create_filters.R` and `analysis/04_stl_year.R` to regenerate
+the input data and fitted results. Previously saved models do not contain the
+trained recipes. The model checks can be run with
+`Rscript tests/test_model_preprocessing.R`; they require `recipes`, `lqmm`,
+`rsample`, `lme4`, `testthat`, and the plotting packages used by the analysis.
+
 
 ## Repository use
 

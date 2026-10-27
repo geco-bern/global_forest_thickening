@@ -33,7 +33,6 @@ df_unm <- read_rds(here("data/inputs/df_unm_withfilters.rds"))
 
 # Define filter stages
 list_df_filtered <- list(
-
   # all data
   "raw" = df_unm,
 
@@ -43,7 +42,7 @@ list_df_filtered <- list(
 
   # no data from years with shifted QMD distribution
   "no_badqmd" = df_unm |>
-    filter(ndisturbed == 0, !badqmdbin), 
+    filter(ndisturbed == 0, !badqmdbin),
 
   # no data from plots with outlying self-thinning slope
   "no_badslope" = df_unm |>
@@ -52,28 +51,37 @@ list_df_filtered <- list(
   # no data from plots without management history and management <30 years prior to first census
   "no_mgmt_30" = df_unm |>
     filter(
-      ndisturbed == 0, !badqmdbin, !badslope,
+      ndisturbed == 0,
+      !badqmdbin,
+      !badslope,
 
       # recorded history and management > 30 years prior to first census OR pristine
-      (management_cat == 1 & management_since_census1_yrs >= 30) | management_cat == 2
+      (management_cat == 1 & management_since_census1_yrs >= 30) |
+        management_cat == 2
     ),
 
   # no data from plots without management history and management <100 years prior to first census
   "no_mgmt_100" = df_unm |>
     filter(
-      ndisturbed == 0, !badqmdbin, !badslope,
+      ndisturbed == 0,
+      !badqmdbin,
+      !badslope,
 
       # recorded history and management > 30 years prior to first census OR pristine
-      (management_cat == 1 & management_since_census1_yrs >= 100) | management_cat == 2
+      (management_cat == 1 & management_since_census1_yrs >= 100) |
+        management_cat == 2
     ),
 
   # only old-growth
-  "primary" = df_unm |> 
+  "primary" = df_unm |>
     filter(
-      ndisturbed == 0, !badqmdbin, !badslope,
+      ndisturbed == 0,
+      !badqmdbin,
+      !badslope,
 
       # Pristine/primary/old-growth/protected
-      management_cat == 2
+      management_cat == 2 |
+        (management_cat == 1 & management_since_census1_yrs >= 900)
     )
 )
 

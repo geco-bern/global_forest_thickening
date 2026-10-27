@@ -49,18 +49,18 @@ biomes <- sf::read_sf("~/data/biomes/olson_harvard_dataverse/tnc_terr_ecoregions
 
 # get biome names and code
 df_biomes_codes <- biomes |>
-  select(WWF_MHTNAM, WWF_MHTNUM) |>
+  dplyr::select(WWF_MHTNAM, WWF_MHTNUM) |>
   as.data.frame() |>
-  select(-geometry) |>
-  distinct() |>
-  arrange(WWF_MHTNUM)
+  dplyr::select(-geometry) |>
+  dplyr::distinct() |>
+  dplyr::arrange(WWF_MHTNUM)
 
 # write biome codes to file (for later use)
-write_csv(df_biomes_codes, file = here("data/df_biomes_codes.csv"))
+readr::write_csv(df_biomes_codes, file = here("data/df_biomes_codes.csv"))
 
 # subset only forest biomes
 df_forest_biomes <- df_biomes_codes |>
-  filter(WWF_MHTNUM %in% c(1, 2, 4, 5, 6, 12))
+  dplyr::filter(WWF_MHTNUM %in% c(1, 2, 4, 5, 6, 12))
 
 get_biome_major <- function(biomeID) {
   ifelse(
@@ -90,8 +90,8 @@ biomes_raster_id <- terra::rasterize(biomes, r_fcf, field = "WWF_MHTNUM")
 
 # Mask to keep only forest biomes in raster
 mask <- biomes_raster %in% df_forest_biomes$WWF_MHTNAM
-biomes_raster_forest <- mask(biomes_raster, mask, maskvalues = 0)
-biomes_raster_forest_id <- mask(biomes_raster_id, mask, maskvalues = 0)
+biomes_raster_forest <- terra::mask(biomes_raster, mask, maskvalues = 0)
+biomes_raster_forest_id <- terra::mask(biomes_raster_id, mask, maskvalues = 0)
 biomes_raster_forest_major <- subst(
   biomes_raster_forest_id,
   from = c(1, 2, 4, 5, 6, 12),
@@ -417,20 +417,34 @@ ggsave(
   )
 
 ## Site points -----------------------------------------------------------------
+land <- rnaturalearth::ne_countries(
+  scale = 110,
+  returnclass = "sf"
+)
+
 gg_sitepoints <- ggplot() +
-  tidyterra::geom_spatraster(data = biomes_raster_forest_major) +
+  # Grey continent interiors beneath the biome raster
+  geom_sf(
+    data = land,
+    fill = "#eceee9",
+    colour = NA
+  ) +
+  tidyterra::geom_spatraster(
+    data = biomes_raster_forest_major
+  ) +
+  # Coastline outlines above the raster
   geom_sf(
     data = coast,
-    colour = "black",
-    linewidth = 0.2,
-    fill = "grey70"
+    colour = "#7b8279",
+    linewidth = .09,
+    fill = NA
   ) +
   scale_fill_manual(
     values = c(
-      "Boreal Forests/Taiga"                            = "dodgerblue4",
-      "Mediterranean Forests"                           = "orangered3",
-      "Temperate Forests"                              = "darkgreen",
-      "Tropical & Subtropical Broadleaf Forests"        = "springgreen3"
+      "Boreal Forests/Taiga" = "dodgerblue4",
+      "Mediterranean Forests" = "orangered3",
+      "Temperate Forests" = "darkgreen",
+      "Tropical & Subtropical Broadleaf Forests" = "springgreen3"
     ),
     na.value = "transparent",
     breaks = ~ .x[!is.na(.x)],
@@ -441,34 +455,24 @@ gg_sitepoints <- ggplot() +
     data = df_plots,
     color = "red",
     fill = "white",
-    alpha = .7,
+    alpha = 0.7,
     shape = 21,
     size = 1.2
-    ) +
-  # geom_point(
-  #   aes(lon, lat),
-  #   data = data_unm_euforia,
-  #   color = "blue",
-  #   fill = "white",
-  #   alpha = .7,
-  #   shape = 21,
-  #   size = 1.2
-  #   ) +
-  # geom_count(aes(lon, lat), data = data_biomes_fil_unique_plots, color="red",alpha = .6) +
-  # scale_size_area() +
-  # geom_hex(aes(lon, lat, color = biome), data = data_biomes_fil, bins = 50, linewidth = 1) +
-  # set extent in longitude and latitude
+  ) +
   coord_sf(
+    crs = sf::st_crs(4326),
+    xlim = c(-180, 180),
     ylim = c(-60, 85),
-    expand = FALSE # to draw map strictly bounded by the specified extent
+    expand = FALSE
   ) +
   labs(x = "", y = "") +
   theme_minimal() +
   theme(
-    panel.grid = element_line(color = "gray90", size = 0.2),
+    panel.grid = element_line(color = "gray90", linewidth = 0.2),
+    panel.background = element_rect(fill = "white", colour = NA),
+    plot.background = element_rect(fill = "white", colour = NA),
     legend.position = "bottom",
-    legend.text = element_text(size = 8),
-    # panel.background = element_rect(fill = "white")
+    legend.text = element_text(size = 8)
   )
 
 gg_sitepoints

@@ -74,12 +74,6 @@ df_unm <- df_all |>
   ungroup() |>
   relocate(n_census_unm, .after = n_census) |> 
 
-  # Some added variables and corrections
-  mutate(
-    year_sc = scale(year),
-    logQMD_sc = scale(logQMD)
-  ) |>
-
   # Re-define all bnp plots as management_cat == 2 (primary), see email Rupert Seidl, 16.04.2026
   mutate(management_cat = ifelse(dataset == "bnp", 2, management_cat)) |>
 

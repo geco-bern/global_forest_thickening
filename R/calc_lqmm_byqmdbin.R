@@ -25,30 +25,19 @@ calc_lqmm_byqmdbin <- function(df, binwidth = 0.25, breaks = NA) {
       labels = bin_labels
     ))
 
-  # Nest and fit models, including logQMD_sc
+  # Learn scaling separately within each QMD bin.
   df <- df |>
     group_by(bin_lqmm) |>
     nest() |>
     mutate(nvals = purrr::map_int(data, nrow)) |>
     filter(nvals >= 30) |> # require enough data in a bin
 
-    # scale QMD *within each bin*
-    mutate(data = purrr::map(data, ~ .x |>
-      mutate(logQMD_sc = scale(logQMD)[, 1]))) |>
-
     # LQMM fit per bin
-    mutate(mod_lqmm = purrr::map(data, ~ lqmm(
-      logDensity ~ year_sc + logQMD_sc,
-      random = ~1,
-      group = plotID,
-      tau = 0.90,
-      type = "normal",
-      data = .,
-      control = lqmmControl(
-        LP_max_iter = 6000, # inner loop iterations
-        UP_max_iter = 6000,
-        LP_tol_ll   = 1e-05, # inner loop tolerance
-        startQR     = TRUE
+    mutate(mod_lqmm = purrr::map(data, ~ fit_model(
+      .x,
+      control = list(
+        LP_max_iter = 6000,
+        UP_max_iter = 6000
       )
     ))) |>
     # extract summaries safely

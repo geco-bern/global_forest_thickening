@@ -28,7 +28,7 @@ filter_stl_slope2 <- function(df, fit_lqmm, group_name, multiplier_sd = 2){
       slope_lin = map_dbl(linmod, ~ coef(.x)[2]),
       slopes_seg = map(
         segmod,
-        ~ if (is.null(.x)) NA else slope(.x)$logQMD_sc[, "Est."]
+        ~ if (is.null(.x)) NA else slope(.x)$logQMD[, "Est."]
       )
     )
 

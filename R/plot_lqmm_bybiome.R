@@ -1,11 +1,5 @@
 plot_lqmm_bybiome <- function(data, mod, name = NULL, plot_legend = FALSE){
 
-  # Extract means and SDs from the training data
-  logQMD_mean <- mean(data$logQMD)
-  logQMD_sd <- sd(data$logQMD)
-  year_mean <- mean(data$year)
-  year_sd <- sd(data$year)
-
   # get three round decades that are centered around the available years in the dataset
   display_years <- c(1980, 2000, 2020) # get_centered_decades(data$year)
 
@@ -18,28 +12,7 @@ plot_lqmm_bybiome <- function(data, mod, name = NULL, plot_legend = FALSE){
       plotID = "dummy" # unique(data$plotID)[1]  # may take any value here, as long as predict(..., level = 0)
     )
   ) |>
-    mutate(
-      #pred_70 =  predict(
-      #  mod,
-      #  level = 0,
-      #  newdata = .
-      #)[,"0.7"],
-      #pred_90 =  predict(
-      #  mod,
-      #  level = 0,
-      #  newdata = .
-      #)[,"0.9"])
-      logQMD_sc = (logQMD - logQMD_mean) / logQMD_sd,
-      year_sc = (year - year_mean) / year_sd
-    ) |>
-    mutate(`logQMD_sc:year_sc` = logQMD_sc * year_sc) %>%
-    mutate(
-      pred_90 = predict(
-        mod,
-        level = 0,
-        newdata = .
-      )
-    ) |>
+    mutate(pred_90 = predict_model(mod, new_data = pick(everything()), level = 0)) |>
     mutate(year = as.factor(year))
 
   # extract fit info

@@ -3,6 +3,7 @@
 \typeout{Written by Beni Stocker}
 \typeout{ }
 
+% extarticle supports the 9pt base size, unlike the standard article class.
 \LoadClass[10pt,a4paper]{article}
 
 % Language/Charset specific
@@ -21,7 +22,7 @@
 \RequirePackage[pdftex]{graphicx}
 
 % Page layout (margins)
-\usepackage[left=3cm,right=5cm]{geometry}
+\usepackage[left=2.5cm,right=2.5cm]{geometry}
 
 % To use modelsummary() table (dynamically generating model summary tables in R)
 \usepackage{tabularray}

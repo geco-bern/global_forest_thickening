@@ -154,9 +154,6 @@ plot_map <- function(data) {
 }
 
 # plot map ai
-library(viridis)
-library(wesanderson)
-
 plot_map_ai <- function(data) {
   library(rnaturalearth)
   library(rnaturalearthdata)

@@ -1,5 +1,5 @@
 ## Define workflow -------------
-analyse_biome <- function(df, biome_name){
+analyse_biome <- function(df, biome_name, n_boot = 500){
 
   # Analyse disturbance trend (before applying disturbed-filter)
   breaks <- get_breaks(df$year)
@@ -7,7 +7,6 @@ analyse_biome <- function(df, biome_name){
 
   # Define filter stages --------------
   list_df_filtered <- list(
-
     # all data
     "raw" = df,
 
@@ -17,7 +16,7 @@ analyse_biome <- function(df, biome_name){
 
     # no data from years with shifted QMD distribution
     "no_badqmd" = df |>
-      filter(ndisturbed == 0, !badqmdbin), 
+      filter(ndisturbed == 0, !badqmdbin),
 
     # no data from plots with outlying self-thinning slope
     "no_badslope" = df |>
@@ -26,28 +25,37 @@ analyse_biome <- function(df, biome_name){
     # no data from plots without management history and management <30 years prior to first census
     "no_mgmt_30" = df |>
       filter(
-        ndisturbed == 0, !badqmdbin, !badslope,
+        ndisturbed == 0,
+        !badqmdbin,
+        !badslope,
 
         # recorded history and management > 30 years prior to first census OR pristine
-        (management_cat == 1 & management_since_census1_yrs >= 30) | management_cat == 2
+        (management_cat == 1 & management_since_census1_yrs >= 30) |
+          management_cat == 2
       ),
 
     # no data from plots without management history and management <100 years prior to first census
     "no_mgmt_100" = df |>
       filter(
-        ndisturbed == 0, !badqmdbin, !badslope,
+        ndisturbed == 0,
+        !badqmdbin,
+        !badslope,
 
         # recorded history and management > 30 years prior to first census OR pristine
-        (management_cat == 1 & management_since_census1_yrs >= 100) | management_cat == 2
+        (management_cat == 1 & management_since_census1_yrs >= 100) |
+          management_cat == 2
       ),
 
     # only old-growth
-    "primary" = df |> 
+    "primary" = df |>
       filter(
-        ndisturbed == 0, !badqmdbin, !badslope,
+        ndisturbed == 0,
+        !badqmdbin,
+        !badslope,
 
         # Pristine/primary/old-growth/protected
-        management_cat == 2
+        management_cat == 2 |
+          (management_cat == 1 & management_since_census1_yrs >= 900)
       )
   )
 
@@ -125,15 +133,26 @@ analyse_biome <- function(df, biome_name){
       pull(fit_lqmm)
 
   # Bootstrap LQMM fit for the selected filter level only.
+  fit_bootstrap_sample <- function(split) {
+    # Drop failed fits; retain convergence warnings for diagnosis.
+    tryCatch({
+      model <- fit_model(rsample::analysis(split), lqmm = TRUE)
+      beta <- coef_original_units(model)
+
+      # The year estimate is per calendar year.
+      tibble::tibble(term = names(beta), estimate = unname(beta))
+    }, error = function(e) NULL)
+  }
+
   boot_data <- rsample::bootstraps(
     list_df_filtered$no_badslope %>%
       group_by(plotID),
-    times = 500,
+    times = n_boot,
     apparent = FALSE
   )
 
   boot_results <- boot_data %>%
-    mutate(coefs = map(splits, wrap_fit_lqmm)) %>%
+    mutate(coefs = map(splits, fit_bootstrap_sample)) %>%
     filter(!map_lgl(coefs, is.null)) %>%
     unnest(coefs) |>
     dplyr::select(-splits)
