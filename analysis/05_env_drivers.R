@@ -9,6 +9,8 @@ library(lubridate)
 library(lme4)
 library(lmerTest)
 library(here)
+
+source(here("R/harmonise_dataset_names.R"))
 library(broom)
 library(kableExtra)
 library(modelsummary)
@@ -19,7 +21,8 @@ library(ggplot2)
 ## Load data -----------
 # note: always use (use_slopefilter = TRUE). Results are consistent for MI and
 # Ndep against alternative filter options, but not for other factors.
-df <- read_rds(here("data/inputs/df_unm_withfilters.rds")) |> 
+df <- read_rds(here("data/inputs/df_unm_withfilters.rds")) |>
+  mutate(across(any_of(c("dataset", "dataset_major")), harmonise_dataset_names)) |>
 
   # # Re-define all bnp plots as management_cat == 2 (primary), see email Rupert Seidl, 16.04.2026
   # mutate(management_cat = ifelse(dataset == "bnp", 2, management_cat)) |>

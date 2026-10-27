@@ -255,7 +255,8 @@ data_all <- bind_rows(
   df_rainfor
 )
 
-df_all <- df_all |>
+df_all <- data_all |>
+  mutate(dataset = harmonise_dataset_names(dataset)) |>
   mutate(ndep = noy + nhx) |>
   # unite plotID and dataset to ensure there are not matches form different sources
   rename(plotIDD = plotID) |>

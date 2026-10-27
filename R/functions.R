@@ -1,5 +1,7 @@
 # This script runs the functions to process and plot the data used in the analyses
 
+source(here::here("R/harmonise_dataset_names.R"))
+
 # plot self-thinning line
 plot_stl <- function(data) {
   plot <- ggplot(data) +
@@ -189,7 +191,7 @@ ba_to_qmd <- function(ba, density) {
 # prepare_stand_data
 from_species_data <- function(data) {
   # get name of dataset
-  datanm <- deparse(substitute(data))
+  datanm <- harmonise_dataset_names(deparse(substitute(data)))
 
   # identify dominant species
   dom_species <- data |>
@@ -235,7 +237,7 @@ from_species_data <- function(data) {
 # prepare_stand_data
 from_stand_tree_data <- function(data_tree, data_stand) {
   # get name of dataset
-  datanm <- deparse(substitute(data_stand))
+  datanm <- harmonise_dataset_names(deparse(substitute(data_stand)))
 
   # identify dominant species
   dom_species <- data_tree |>
@@ -277,7 +279,7 @@ from_stand_tree_data <- function(data_tree, data_stand) {
 # prepare_stand_data
 from_stand_data <- function(data) {
   # get name of dataset
-  datanm <- deparse(substitute(data))
+  datanm <- harmonise_dataset_names(deparse(substitute(data)))
 
   # Aggregate data at stand level
   data_agg <- data |>
@@ -305,7 +307,7 @@ from_stand_data <- function(data) {
 # prepare_stand_data
 from_tree_data <- function(data) {
   # get name of dataset
-  datanm <- deparse(substitute(data))
+  datanm <- harmonise_dataset_names(deparse(substitute(data)))
 
   # identify dominant species
   dom_species <- data |>

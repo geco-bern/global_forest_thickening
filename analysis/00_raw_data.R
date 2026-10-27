@@ -32,6 +32,7 @@ library(rgeco)
 library(here)
 
 # load functions ----
+# Aggregation helpers harmonise dataset identifiers for all downstream labels.
 source(here::here("/R/functions.R"))
 
 # NFI Spain ----
@@ -2210,6 +2211,7 @@ rgeco::plot_map_simpl() +
 # Save stand-level data
 saveRDS(df_wuls, file = here::here("data/inputs/df_wuls.rds"))
 
+# ForestGeo plots -----
 ## Luquillo ----
 # Contact: Jess Zimmerman
 # Management:

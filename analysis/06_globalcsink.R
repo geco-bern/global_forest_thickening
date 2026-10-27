@@ -9,6 +9,8 @@ library(lme4)
 library(purrr)
 library(tidyr)
 library(here)
+
+source(here("R/harmonise_dataset_names.R"))
 library(rsample)
 library(recipes)
 library(multidplyr)
@@ -20,6 +22,7 @@ library(scales)
 
 ## Load data -------------------------------------------------------------------
 df <- read_rds(here("data/inputs/df_unm_withfilters.rds")) |>
+  mutate(across(any_of(c("dataset", "dataset_major")), harmonise_dataset_names)) |>
 
   # variable substitute, needed here
   mutate(NQMD2 = density * QMD^2) |>

@@ -38,7 +38,8 @@ source(here("R/analyse_biome.R"))
 
 ## Run workflow ---------------------
 ### Read and process data ------------
-df <- read_rds(here("data/inputs/df_unm_withfilters.rds"))
+df <- read_rds(here("data/inputs/df_unm_withfilters.rds")) |>
+  mutate(across(any_of(c("dataset", "dataset_major")), harmonise_dataset_names))
 
 ### Apply workflow by biome -------------
 df_biome_analysis <- df |> 
@@ -1222,6 +1223,7 @@ ggsave(
 
 ## Table: datasets
 df_datasets <- data_unm |>
+  mutate(dataset = harmonise_dataset_names(dataset)) |>
   group_by(dataset) |>
   summarise(count = n()) |>
   arrange(-count) |>

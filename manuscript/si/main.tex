@@ -143,22 +143,22 @@ Abbrevation & \textit{N} & Long name & Filter & Reference \\
   pasoh & 1007 & Pasoh & No management intervention observed during monitoring & \url{https://forestgeo.si.edu} \\
   df\_rainfor & 988 & Amazon Forest Inventory Network (RAINFOR) & No management intervention ocurred & Esquivel-Muelbert, A., Banbury Morgan, R., Brienen, R. et al. Increasing tree size across Amazonia. Nat. Plants 11, 2016–2025 (2025). \url{https://doi.org/10.1038/s41477-025-02097-4} \\
   nfr\_swi & 729 & Swiss Natural Forest Reserves & Forest reserves & Restricted data (not publicly available) \\
-  forst & 537 & Forest Research Institute Baden-Württemberg & Forest reserves & Restricted data (not publicly available) \\
-  palanam & 484 & & No management intervention observed during monitoring & \url{https://forestgeo.si.edu} \\
+  fvabw & 537 & Forest Research Institute Baden-Württemberg & Forest reserves & Restricted data (not publicly available) \\
+  palanan & 484 & & No management intervention observed during monitoring & \url{https://forestgeo.si.edu} \\
   unito & 311 & University of Turin  & Forest reserves & Restricted data (not publicly available) \\
   uholka & 200 & Uholka-Shyrokyi Luh & Forest reserves & Restricted data (not publicly available) \\
-  df\_forestplots & 149 & Forest Inventory Network & No management intervention ocurred & Restricted data (not publicly available) \\
+  forestplots & 149 & Forest Inventory Network & No management intervention ocurred & Restricted data (not publicly available) \\
   mudumalai & 126 & Mudumalai & No management intervention observed during monitoring & Restricted data (not publicly available) \\
-  lwf\_tree & 114 & Bavarian Institute of Forestry & Forest reserves & Restricted data (not publicly available) \\
-  nwfva\_tree & 84 &  Northwest German Forest Research Institute (NW-FVA) & Forest reserves & Restricted data (not publicly available) \\
-  incds &  75 & National Institute for Research-Development in Forestry ‘‘Marin Drăcea’’ Department of Forest & Forest reserves & Restricted data (not publicly available) \\
-  tuzvo\_tree &  63 & Technical University in Zvolen & Forest reserves & Restricted data (not publicly available) \\
+  lwf & 114 & Bavarian Institute of Forestry & Forest reserves & Restricted data (not publicly available) \\
+  nwfva & 84 &  Northwest German Forest Research Institute (NW-FVA) & Forest reserves & Restricted data (not publicly available) \\
+  unitbv &  75 & National Institute for Research-Development in Forestry ‘‘Marin Drăcea’’ Department of Forest & Forest reserves & Restricted data (not publicly available) \\
+  tuzvo &  63 & Technical University in Zvolen & Forest reserves & Restricted data (not publicly available) \\
   iberbas &  57 & Institute of Biodiversity and Ecosystem Research, Bulgarian Academy of Sciences & Forest reserves & Restricted data (not publicly available) \\
   efm\_swi &  51 & Experiemental Forest Management plots & No management intervention observed during monitoring & Restricted data (not publicly available) \\
-  france & 47 & French plots & No management intervention observed during monitoring & Restricted data (not publicly available) \\
-  greece\_stand &  40 & Greek plots & No management intervention observed during monitoring & Restricted data (not publicly available) \\
+  inrae\_lessem & 47 & French plots & No management intervention observed during monitoring & Restricted data (not publicly available) \\
+  fep\_gre\_stand &  40 & Greek plots & No management intervention observed during monitoring & Restricted data (not publicly available) \\
   czu &  24 & Czech University of Life Sciences Prague & Forest reserves & Restricted data (not publicly available) \\
-  ul\_tree &  23 & University of Ljubljana, Slovenia & Forest reserves & Restricted data (not publicly available) \\
+  ul &  23 & University of Ljubljana, Slovenia & Forest reserves & Restricted data (not publicly available) \\
   urk &  12 & Roztocze National Park, Poland & Forest reserves & Restricted data (not publicly available) \\
   nbw & 7 & NPV-BW & Forest reserves & Restricted data (not publicly available) \\
 \end{longtable}
@@ -227,7 +227,7 @@ The source description identified the plot as primary forest and not managed in 
 
 % analysis/00_raw_data.R:793-881.
 \subsubsection{Greek forest plots}
-For the Greek forest plots (\texttt{greece\_stand} in Table~\ref{tab:datasets}; \texttt{fep\_gre\_stand} in the script), we used the supplied stand-level density, basal area per hectare, plot area, coordinates, and census year. QMD was calculated using Eq.~\ref{eq:qmd2}. The accompanying tree table was restricted to living trees and used to attach a dominant-species classification. The interval between plot establishment and the last intervention was calculated separately as management-history information.
+For the Greek forest plots (\texttt{fep\_gre\_stand}), we used the supplied stand-level density, basal area per hectare, plot area, coordinates, and census year. QMD was calculated using Eq.~\ref{eq:qmd2}. The accompanying tree table was restricted to living trees and used to attach a dominant-species classification. The interval between plot establishment and the last intervention was calculated separately as management-history information.
 
 The elapsed-time variable was calculated as \texttt{first\_measurement} minus \texttt{year\_last\_intervention}. The separately supplied \texttt{years\_since\_management} field was not used for this calculation. All records were assigned \texttt{management\_cat = 1} and \texttt{management = 0}.
 
@@ -235,7 +235,7 @@ The elapsed-time variable was calculated as \texttt{first\_measurement} minus \t
 
 % analysis/00_raw_data.R:883-961.
 \subsubsection{INRAE LESSEM plots}
-For the French plots (\texttt{france} in Table~\ref{tab:datasets}; \texttt{inrae\_lessem} in the script), tree measurements were joined to plot metadata and species and status lookups. We retained records classified as alive, calculated individual basal areas from diameters, and used the plot areas supplied to calculate density and basal area per hectare. QMD was then derived using Eq.~\ref{eq:qmd2}. Longitude, latitude, and plot area were obtained from the joined metadata, while measurement year was retained from the source records and used to generate within-plot census indices.
+For the French plots (\texttt{inrae\_lessem}), tree measurements were joined to plot metadata and species and status lookups. We retained records classified as alive, calculated individual basal areas from diameters, and used the plot areas supplied to calculate density and basal area per hectare. QMD was then derived using Eq.~\ref{eq:qmd2}. Longitude, latitude, and plot area were obtained from the joined metadata, while measurement year was retained from the source records and used to generate within-plot census indices.
 
 All aggregated records were assigned \texttt{management = 0} and \texttt{management\_cat = 1}. The tree-aggregation function expected \texttt{management\_since\_census1\_yrs} to be present in the joined input and averaged its non-missing values within each plot-year.
 
@@ -255,7 +255,7 @@ For the Czech plots (\texttt{czu}), the stand-level table supplied density, basa
 
 % analysis/00_raw_data.R:1097-1163; R/functions.R:379-489.
 \subsubsection{Baden-W\"urttemberg forest research plots (EuFoRIa)}
-For the Baden-W\"urttemberg plots (\texttt{forst} in Table~\ref{tab:datasets}; \texttt{fvabw} in the script), the input contained species-level summaries. We summed stem density and basal area across species within each plot and year, retaining plot area, and derived QMD from the aggregated totals using Eq.~\ref{eq:qmd2}. Census indices were generated from distinct measurement years. The supplied projected coordinates were interpreted as ETRS89 / UTM zone 32N (EPSG:25832) and transformed to WGS84 longitude and latitude. The forest-reserve designation was represented by \texttt{management = 0} and \texttt{management\_cat = 2}.
+For the Baden-W\"urttemberg plots (\texttt{fvabw}), the input contained species-level summaries. We summed stem density and basal area across species within each plot and year, retaining plot area, and derived QMD from the aggregated totals using Eq.~\ref{eq:qmd2}. Census indices were generated from distinct measurement years. The supplied projected coordinates were interpreted as ETRS89 / UTM zone 32N (EPSG:25832) and transformed to WGS84 longitude and latitude. The forest-reserve designation was represented by \texttt{management = 0} and \texttt{management\_cat = 2}.
 
 % \input{dataset_figures/fvabw.tex}
 
@@ -269,7 +269,7 @@ The reserve dataset was assigned \texttt{management = 0} and \texttt{management\
 
 % analysis/00_raw_data.R:1227-1323.
 \subsubsection{Romanian reserve plots (EuFoRIa)}
-For the Romanian reserve dataset (\texttt{incds} in Table~\ref{tab:datasets}; \texttt{unitbv} in the script), diameter, status, and biomass columns for 2003, 2013, and 2023 were reshaped into one record per tree and year. Local $X$ and $Y$ coordinates were used to divide the 100 $\times$ 100 m mapped area into 20 $\times$ 20 m cells, each assigned an area of 0.04 ha and a unique subplot identifier. Only records classified as alive were retained. Individual basal areas were calculated from diameters, then density, basal area, and QMD were calculated for each subplot and year. Geographic coordinates were carried forward from the source records.
+For the Romanian reserve dataset (\texttt{unitbv}), diameter, status, and biomass columns for 2003, 2013, and 2023 were reshaped into one record per tree and year. Local $X$ and $Y$ coordinates were used to divide the 100 $\times$ 100 m mapped area into 20 $\times$ 20 m cells, each assigned an area of 0.04 ha and a unique subplot identifier. Only records classified as alive were retained. Individual basal areas were calculated from diameters, then density, basal area, and QMD were calculated for each subplot and year. Geographic coordinates were carried forward from the source records.
 
 The reserve/old-growth interpretation was encoded as \texttt{management = 0} and \texttt{management\_cat = 2}. The original dataset was described as lacking management-history information, so the elapsed-time variable was set to missing for all subplots.
 
@@ -277,19 +277,19 @@ The reserve/old-growth interpretation was encoded as \texttt{management = 0} and
 
 % analysis/00_raw_data.R:1325-1406; R/functions.R:379-489.
 \subsubsection{Bavarian Institute of Forestry plots (EuFoRIa)}
-For the Bavarian Institute of Forestry dataset (\texttt{lwf\_tree}), unique plot locations and areas were extracted from the stand metadata and joined to the tree records. We retained living trees, used the source census field as measurement year, and calculated individual basal areas from diameters. Density and basal area were aggregated per hectare by plot and year, and QMD was derived using Eq.~\ref{eq:qmd2}. Coordinates supplied in ETRS89 / UTM zone 32N (EPSG:25832) were transformed to WGS84.
+For the Bavarian Institute of Forestry dataset (\texttt{lwf}), unique plot locations and areas were extracted from the stand metadata and joined to the tree records. We retained living trees, used the source census field as measurement year, and calculated individual basal areas from diameters. Density and basal area were aggregated per hectare by plot and year, and QMD was derived using Eq.~\ref{eq:qmd2}. Coordinates supplied in ETRS89 / UTM zone 32N (EPSG:25832) were transformed to WGS84.
 
 The ``Forest reserves'' description in Table~\ref{tab:datasets} was represented by assigning \texttt{management = 0}. Earlier use was classified as unrecorded: \texttt{management\_cat = 3}, with a missing elapsed-time value. These plots were therefore eligible for the common unmanaged-data selection but were excluded from the stricter management-history subsets.
 
-% \input{dataset_figures/lwf_tree.tex}
+% \input{dataset_figures/lwf.tex}
 
 % analysis/00_raw_data.R:1408-1479.
 \subsubsection{NPV-BW reserve plots (EuFoRIa)}
-For the NPV-BW dataset (\texttt{nbw} in Table~\ref{tab:datasets}; \texttt{npvbw} in the script), we retained tree records classified as alive and used the supplied plot areas to express stem counts and basal areas per hectare. Individual basal areas were calculated from diameters and QMD was derived from the plot-level totals using Eq.~\ref{eq:qmd2}. The source census field supplied the measurement year. To obtain a consistent plot location, latitude and longitude were averaged across the retained records belonging to each plot before aggregation.
+For the NPV-BW dataset (\texttt{nbw}), we retained tree records classified as alive and used the supplied plot areas to express stem counts and basal areas per hectare. Individual basal areas were calculated from diameters and QMD was derived from the plot-level totals using Eq.~\ref{eq:qmd2}. The source census field supplied the measurement year. To obtain a consistent plot location, latitude and longitude were averaged across the retained records belonging to each plot before aggregation.
 
 The elapsed-time variable was calculated for each plot as the earliest observed census year minus \texttt{year\_last\_management}, then averaged across retained tree records during plot-year aggregation. All plots were assigned \texttt{management\_cat = 1} and \texttt{management = 0}.
 
-% \input{dataset_figures/npvbw.tex}
+% \input{dataset_figures/nbw.tex}
 
 % analysis/00_raw_data.R:1481-1594.
 \subsubsection{Swiss Natural Forest Reserves}
@@ -299,21 +299,21 @@ For the Swiss Natural Forest Reserves (\texttt{nfr\_swi}), we selected the stand
 
 % analysis/00_raw_data.R:1596-1677; R/functions.R:379-489.
 \subsubsection{Northwest German Forest Research Institute plots (EuFoRIa)}
-For the Northwest German Forest Research Institute dataset (\texttt{nwfva\_tree}), stand-level census and management metadata were joined to the tree records, and only records with live status code ``A'' were retained. Individual basal areas were calculated, and stem counts and summed basal areas were divided by the supplied plot area. QMD was derived using Eq.~\ref{eq:qmd2}. The supplied plot coordinates were transformed from DHDN / 3-degree Gauss--Kr\"uger zone 3 (EPSG:31467) to WGS84. Stand metadata supplied \texttt{year\_last\_management}. The elapsed-time variable was calculated as the first census year minus the year of the last management. The code assigned \texttt{management\_cat = 1} and \texttt{management = 0}.
+For the Northwest German Forest Research Institute dataset (\texttt{nwfva}), stand-level census and management metadata were joined to the tree records, and only records with live status code ``A'' were retained. Individual basal areas were calculated, and stem counts and summed basal areas were divided by the supplied plot area. QMD was derived using Eq.~\ref{eq:qmd2}. The supplied plot coordinates were transformed from DHDN / 3-degree Gauss--Kr\"uger zone 3 (EPSG:31467) to WGS84. Stand metadata supplied \texttt{year\_last\_management}. The elapsed-time variable was calculated as the first census year minus the year of the last management. The code assigned \texttt{management\_cat = 1} and \texttt{management = 0}.
 
-% \input{dataset_figures/nwfva_tree.tex}
+% \input{dataset_figures/nwfva.tex}
 
 % analysis/00_raw_data.R:1679-1765.
 \subsubsection{Technical University in Zvolen plots (EuFoRIa)}
-For the Slovak plots (\texttt{tuzvo\_tree}), plot coordinates and areas were extracted from the stand metadata and joined to individual-tree observations. We retained records classified as alive and used the inventory-year field as the census year. Individual basal areas were calculated from diameters. Stem counts and basal areas were aggregated within each plot and year and divided by plot area, after which QMD was derived using Eq.~\ref{eq:qmd2}. Geographic coordinates were retained from the plot metadata. The source was treated as a reserve/old-growth dataset without a quantified management history. All records were assigned \texttt{management = 0} and \texttt{management\_cat = 2}. 
+For the Slovak plots (\texttt{tuzvo}), plot coordinates and areas were extracted from the stand metadata and joined to individual-tree observations. We retained records classified as alive and used the inventory-year field as the census year. Individual basal areas were calculated from diameters. Stem counts and basal areas were aggregated within each plot and year and divided by plot area, after which QMD was derived using Eq.~\ref{eq:qmd2}. Geographic coordinates were retained from the plot metadata. The source was treated as a reserve/old-growth dataset without a quantified management history. All records were assigned \texttt{management = 0} and \texttt{management\_cat = 2}. 
 
-% \input{dataset_figures/tuzvo_tree.tex}
+% \input{dataset_figures/tuzvo.tex}
 
 % analysis/00_raw_data.R:1767-1844.
 \subsubsection{University of Ljubljana plots (EuFoRIa)}
-For the Slovenian plots (\texttt{ul\_tree}), tree records were joined to separate plot-area and geographic-coordinate tables using the plot identifier. Only records classified as alive were retained. Individual basal areas were calculated from diameters, and density and basal area were aggregated by plot and measurement year. QMD was derived using Eq.~\ref{eq:qmd2}, with geographic coordinates retained from the coordinate table and census indices regenerated within each plot. The source description characterised these plots as old forest without management. This was encoded as \texttt{management = 0} and \texttt{management\_cat = 2}.
+For the Slovenian plots (\texttt{ul}), tree records were joined to separate plot-area and geographic-coordinate tables using the plot identifier. Only records classified as alive were retained. Individual basal areas were calculated from diameters, and density and basal area were aggregated by plot and measurement year. QMD was derived using Eq.~\ref{eq:qmd2}, with geographic coordinates retained from the coordinate table and census indices regenerated within each plot. The source description characterised these plots as old forest without management. This was encoded as \texttt{management = 0} and \texttt{management\_cat = 2}.
 
-% \input{dataset_figures/ul_tree.tex}
+% \input{dataset_figures/ul.tex}
 
 % analysis/00_raw_data.R:1846-2034; R/functions.R:379-489.
 \subsubsection{University of Turin plots (EuFoRIa)}
@@ -347,20 +347,17 @@ For Luquillo (\texttt{luquillo}), census files were combined and the supplied qu
 
 % \input{dataset_figures/luquillo.tex}
 
-% % analysis/00_raw_data.R:2373-2462.
-% % BCI is not included. Comment in `00_raw_data.R`: finally not added to the global dataset due to difficulty to exclude management (communication with  Salomón Aguilar, Research Technician)
-% \subsubsection{Barro Colorado Island (ForestGEO)}
-% The Barro Colorado Island forest plots are maintained by the Smithsonian Conservation Biology Institute (\texttt{scbi}), census files were combined after harmonising the data types of tree and stem tags. The supplied quadrats were treated as 0.04 ha plots. Diameters were converted from millimetres to centimetres, and only living records with positive diameter and non-missing local coordinates and year were retained. Census years were assigned as 2008, 2013, and 2018 for censuses 1--3. Density and basal area were aggregated by quadrat and year and QMD was calculated using Eq.~\ref{eq:qmd2}. All quadrats were assigned the site coordinates 78.1454$^\circ$ W, 38.8935$^\circ$ N.
+% analysis/00_raw_data.R:2373-2462.
+\subsubsection{Smithsonian Conservation Biology Institute (ForestGEO)}
+For the Smithsonian Conservation Biology Institute site in Virginia, USA (\texttt{scbi}), census files were combined after harmonising the data types of tree and stem tags. The supplied quadrats were treated as 0.04 ha plots. Only living records with positive diameter and non-missing local coordinates and year were retained. Census years were assigned as 2008, 2013, and 2018 for censuses 1--3. Density and basal area were aggregated by quadrat and year and QMD was calculated using Eq.~\ref{eq:qmd2}. All quadrats were assigned the site coordinates 78.1454$^\circ$ W, 38.8935$^\circ$ N. All records were assigned \texttt{management = 0}, \texttt{management\_cat = 1}, and a fixed elapsed-time value of 53 years. More information is available at \url{https://forestgeo.si.edu/sites/north-america/smithsonian-conservation-biology-institute}.
 
-% All records were assigned \texttt{management = 0}, \texttt{management\_cat = 1}, and a fixed elapsed-time value of 53 years. The script attributes the interval to supplementary information rather than management fields in the census files. No separate intervention-date filter was evaluated during compilation.
-
-% % \input{dataset_figures/scbi.tex}
+% \input{dataset_figures/scbi.tex}
 
 % analysis/00_raw_data.R:2464-2546.
 \subsubsection{Palanan (ForestGEO)}
-For the Philippine dataset identified as \texttt{palanam}, census files were combined after harmonising tree and stem tag types. The supplied quadrat identifiers defined 0.04 ha analysis plots. Basal areas were calculated from diameter values. Living records with positive diameter and non-missing local coordinates and year were retained. Year was extracted from the measurement date, with the first census explicitly assigned to 1994. Density and basal area were aggregated by quadrat (subplot) and year, QMD was derived using Eq.~\ref{eq:qmd2}, and observations with $\ln(\mathrm{QMD}) \leq 1$ were excluded. All quadrats were assigned the site coordinates 122.3880$^\circ$ E, 17.0402$^\circ$ N. Management information was encoded as \texttt{management = 0} and \texttt{management\_cat = 2}. More info is available at \url{https://forestgeo.si.edu/sites/philippines/palanan}.
+For the Philippine dataset identified as \texttt{palanan}, census files were combined after harmonising tree and stem tag types. The supplied quadrat identifiers defined 0.04 ha analysis plots. Basal areas were calculated from diameter values. Living records with positive diameter and non-missing local coordinates and year were retained. Year was extracted from the measurement date, with the first census explicitly assigned to 1994. Density and basal area were aggregated by quadrat (subplot) and year, QMD was derived using Eq.~\ref{eq:qmd2}, and observations with $\ln(\mathrm{QMD}) \leq 1$ were excluded. All quadrats were assigned the site coordinates 122.3880$^\circ$ E, 17.0402$^\circ$ N. Management information was encoded as \texttt{management = 0} and \texttt{management\_cat = 2}. More info is available at \url{https://forestgeo.si.edu/sites/philippines/palanan}.
 
-% \input{dataset_figures/palanam.tex}
+% \input{dataset_figures/palanan.tex}
 
 % analysis/00_raw_data.R:2548-2652.
 \subsubsection{Smithsonian Environmental Research Center (ForestGEO)}
@@ -388,7 +385,7 @@ For Mudumalai (\texttt{mudumalai}), the source contained stand-level counts and 
 
 % analysis/00_raw_data.R:2916-3068.
 \subsubsection{ForestPlots compilation}
-We compiled data of a subset of data managed by ForestPlots (\texttt{df\_forestplots} in Table~\ref{tab:datasets}; \texttt{forestplots} in the script), covering tropical forests in Gabon, Ghana, and Malaysia. Diameter was calculated as the arithmetic mean of the available values in original data fields D0--D4. Records with zero or missing resulting diameter were excluded. Plot area and geographic coordinates were joined from a separate metadata table. Individual basal areas were calculated, and density and basal area were aggregated by plot and year before deriving QMD. Observations with $\ln(\mathrm{QMD}) \geq 4.5$ were excluded. No additional live/dead-status filter was applied. The combined records were assigned \texttt{management = 0} and \texttt{management\_cat = 2}, with a missing elapsed-time value.
+We compiled data of a subset of data managed by ForestPlots (\texttt{forestplots}), covering tropical forests in Gabon, Ghana, and Malaysia. Diameter was calculated as the arithmetic mean of the available values in original data fields D0--D4. Records with zero or missing resulting diameter were excluded. Plot area and geographic coordinates were joined from a separate metadata table. Individual basal areas were calculated, and density and basal area were aggregated by plot and year before deriving QMD. Observations with $\ln(\mathrm{QMD}) \geq 4.5$ were excluded. No additional live/dead-status filter was applied. The combined records were assigned \texttt{management = 0} and \texttt{management\_cat = 2}, with a missing elapsed-time value.
 
 % \input{dataset_figures/forestplots.tex}
 

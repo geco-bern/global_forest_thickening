@@ -24,12 +24,15 @@ library(lmerTest)
 library(purrr)
 library(forcats)
 library(here)
+
+source(here("R/harmonise_dataset_names.R"))
 library(rnaturalearth)
 
 source(here("R/fit_model.R"))
 source(here("R/extract_coef.R"))
 
-df_unm <- read_rds(here("data/inputs/df_unm_withfilters.rds"))
+df_unm <- read_rds(here("data/inputs/df_unm_withfilters.rds")) |>
+  mutate(across(any_of(c("dataset", "dataset_major")), harmonise_dataset_names))
 
 # Define filter stages
 list_df_filtered <- list(

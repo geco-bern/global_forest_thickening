@@ -21,6 +21,8 @@
 ## Loading ------------------------------------------------------------------
 library(tidyverse)
 library(here)
+
+source(here("R/harmonise_dataset_names.R"))
 library(segmented)
 library(lqmm)
 
@@ -47,7 +49,8 @@ source(here("R/plot_stl_longplots.R"))
 #    The time since the last management before the first census is unknown. The forest may have a history of substantial past wood harvesting and/or visible signs of forest use before the first census.
 
 # Read data prepared with 01_clean_data.R, line 290
-df_all <- read_rds(here("data/inputs/df_all.rds"))
+df_all <- read_rds(here("data/inputs/df_all.rds")) |>
+  mutate(across(any_of(c("dataset", "dataset_major")), harmonise_dataset_names))
 
 # Apply filters relevant for all analyses
 df_unm <- df_all |>
@@ -121,13 +124,13 @@ df_unm <- df_unm |>
 df_unm <- df_unm |> 
   mutate(
     dataset_major = ifelse(
-      dataset %in% c("bnp", "czu", "forst", "iberbas", "incds", "lwf", "nbw", "nfr", "nwfva", "tuzvo", "ul", "unito", "urk", "wuls", "tuzvo_tree", "nwfva_tree", "ul_tree", "npvbw", "fvabw", "unitbv", "uholka"),
+      dataset %in% c("bnp", "czu", "fvabw", "iberbas", "unitbv", "lwf", "nbw", "nfr", "nwfva", "tuzvo", "ul", "unito", "urk", "wuls", "uholka"),
       "euforia",
       ifelse(
-        dataset %in% c("luquillo", "bci", "scbi", "palanam", "serc", "pasoh", "mudumalai"),
+        dataset %in% c("luquillo", "bci", "scbi", "palanan", "serc", "pasoh", "mudumalai"),
         "forestgeo",
         ifelse(
-          dataset == "df_forestplots", 
+          dataset == "forestplots", 
           "forestplots",
           ifelse(
             dataset == "df_rainfor",

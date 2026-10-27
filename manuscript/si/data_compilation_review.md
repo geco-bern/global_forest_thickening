@@ -8,7 +8,7 @@ The draft, now integrated into `main.tex`, describes executable transformations 
 
 2. **Palanam and SERC diameter units** — The basal-area calculations at `analysis/00_raw_data.R:2491` and `analysis/00_raw_data.R:2594` treat the source `DBH` values as centimetres. Unlike Luquillo, SCBI, and Pasoh, there is no preceding multiplication by 0.1. Verify the units in these particular input files. The draft says that the code treats the values as centimetres, rather than claiming that the raw metadata confirm this.
 
-3. **Wytham 2008** — `analysis/00_raw_data.R:2669–2688` reshapes `dbh_2008` but only status columns for 2010, 2016, and 2021. The 2008 rows therefore receive missing status and are discarded by `filter(status != "D")`. The draft lists the reshaped years but does not assert that 2008 survives. Confirm whether dropping that census is intended.
+3. **Wytham 2008** — `analysis/00_raw_data.R:2669–2688` reshapes `dbh_2008` but only status columns for 2010, 2016, and 2021. The 2008 rows therefore receive missing status and are discarded by `filter(status != "D")`. The draft lists the reshaped years but does not assert that 2008 survives. Confirm whether dropping that census is intended. @lauramarques
 
 4. **Missing diameters and multiple stems** — `R/functions.R:333–375` counts input rows for density (`n() / plotsize`) but omits missing basal areas from the basal-area sum. Several dataset blocks do not explicitly remove missing diameter after selecting living trees. Nor does the common helper collapse multiple stem records to unique tree tags. Verify whether each source has already dealt with these cases. The draft explicitly distinguishes retained records/stems from unique biological individuals.
 
@@ -61,6 +61,8 @@ Remaining revisions of `00_raw_data.R`.
 - Avoid any use of the factor 0.00007853982. Instead, use R's internal `pi` explicitly in all respective calculations. For example $0.00007853982 = (1/(100\cdot\sqrt{4/\pi}))^2$.
 - For US FIA data processing, explicitly remove plots that were not classified as forest reserve.
 - Add column in table providing information of data provider. Name should be part of the author list.
+- Add to constituent dataset tables information as additional columns:
+  - Names of data providers or reference if taken from published sources
 - Harmonise names, also in table and plot labels: 
   - `fep_gre_stand` instead of `greece_stand`
   - `inrae_lessem` instead of `france`
@@ -74,8 +76,8 @@ Remaining revisions of `00_raw_data.R`.
   - `bci` instead of `scbi`
   - `palanan` instead of `palanam`
   - `forestplots` instead of `df_forestplots`
-- Make the BA-QMD conversion into a function, using the exact value of $\pi$ (`100 * sqrt((4 * ba)/(pi * density))` instead of `QMD = sqrt(ba / (0.0000785 * density))`), and apply it to each constituent dataset.
-- Avoid creating new variables for `logQMD` and `logDensity`. These are now calculated with each model fit later in the workflow and specified as a "recipe".
+<!-- - Make the BA-QMD conversion into a function, using the exact value of $\pi$ (`100 * sqrt((4 * ba)/(pi * density))` instead of `QMD = sqrt(ba / (0.0000785 * density))`), and apply it to each constituent dataset. -->
+<!-- - Avoid creating new variables for `logQMD` and `logDensity`. These are now calculated with each model fit later in the workflow and specified as a "recipe". -->
 
 ## To check Laura
 
