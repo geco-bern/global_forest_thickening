@@ -210,7 +210,7 @@ plot_stl(df_aus)
 plot_map(df_aus)
 
 # RAINFOR plots ----
-df_rainfor <- readRDS(file.path(here::here(), "/data/inputs/df_rainfor.rds"))
+df_rainfor <- readRDS(here::here("/data/inputs/df_rainfor.rds"))
 df_rainfor
 plot_stl(df_rainfor)
 plot_map(df_rainfor)
@@ -301,6 +301,7 @@ df_unm_biome1 <- df_unm |>
   filter(biomeID == 1)
 df_unm_biome1 |>
   nrow()
+
 plot_stl(df_unm_biome1)
 
 # filter data with upper quantile
@@ -481,8 +482,8 @@ ggplot() +
   scale_x_continuous(limits = c(0, 80)) 
 
 # Table S1 ----
-data <- readRDS(file.path(here::here(), "/data/inputs/df_unm.rds"))
-data <- readRDS(file.path(here::here(), "/data/inputs/df_fil75_biomes.rds"))
+data <- readRDS(here::here("/data/inputs/df_unm.rds"))
+data <- readRDS(here::here("/data/inputs/df_fil75_biomes.rds"))
 
 # Unmanaged years
 data |>
@@ -537,7 +538,7 @@ table_s1 <- data %>% group_by(country,dataset) %>%
             biomass_mean=mean(biomass,na.rm=T),
             biomass_sd=sd(biomass,na.rm=T))
 table_s1
-write.csv(table_s1, file = file.path(here::here(), "/data/outputs/tableS1.csv"))
+write.csv(table_s1, file = here::here("/data/outputs/tableS1.csv"))
 
 # Table S2 ----
 # Table at the biome level
@@ -553,4 +554,4 @@ table_s2 <- data %>%
             density_mean=mean(density,na.rm=T),
             density_sd=sd(density,na.rm=T))
 table_s2
-write.csv(table_s2, file = file.path(here::here(), "/data/outputs/tableS2.csv"))
+write.csv(table_s2, file = here::here("/data/outputs/tableS2.csv"))

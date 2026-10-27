@@ -96,7 +96,7 @@ df_nfi_spain <- phos_coords_latlon(df_nfi_spain)
 df_nfi_spain <- orgc_coords_latlon(df_nfi_spain)
 
 ggplot() +
-  geom_point(data = df_nfi_spain, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_nfi_spain, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_nfi_spain, size = 0.5, alpha = 0.5)
@@ -199,7 +199,7 @@ df_nfi_sweeden <- phos_coords_latlon(df_nfi_sweeden)
 df_nfi_sweeden <- orgc_coords_latlon(df_nfi_sweeden)
 
 ggplot() +
-  geom_point(data = df_nfi_sweeden, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_nfi_sweeden, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_nfi_sweeden, size = 0.5, alpha = 0.5)
@@ -324,9 +324,7 @@ if (!file.exists(filn)) {
       ) |>
       ungroup() |>
       mutate(
-        QMD = sqrt(ba / (0.0000785 * density)),
-        logDensity = log(density),
-        logQMD = log(QMD),
+        QMD = ba_to_qmd(ba, density),
         dataset = "fia_us"
       ) |>
       # calculate period lengths
@@ -387,7 +385,10 @@ if (!file.exists(filn)) {
 
   saveRDS(df_fia_us, file = here::here("data/inputs/df_fia_us.rds"))
 } else {
-  df_fia_us <- readRDS(here::here("data/inputs/df_fia_us.rds"))
+  # Refresh derived diameters in caches created with the rounded conversion.
+  df_fia_us <- readRDS(here::here("data/inputs/df_fia_us.rds")) |>
+    select(-any_of(c("logQMD", "logDensity"))) |>
+    mutate(QMD = ba_to_qmd(ba, density))
 }
 
 # add coords and biomes
@@ -412,7 +413,7 @@ df_fia_us <- phos_coords_latlon(df_fia_us)
 df_fia_us <- orgc_coords_latlon(df_fia_us)
 
 ggplot() +
-  geom_point(data = df_fia_us, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_fia_us, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_fia_us, size = 0.5, alpha = 0.5)
@@ -524,7 +525,7 @@ df_nfi_switzerland <- orgc_coords_latlon(df_nfi_switzerland)
 ggplot() +
   geom_point(
     data = df_nfi_switzerland, 
-    aes(x = logQMD, y = logDensity), 
+    aes(x = log(QMD), y = log(density)),
     alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE
   )
 
@@ -597,7 +598,7 @@ df_nfi_norway <- phos_coords_latlon(df_nfi_norway)
 df_nfi_norway <- orgc_coords_latlon(df_nfi_norway)
 
 ggplot() +
-  geom_point(data = df_nfi_norway, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_nfi_norway, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_nfi_norway, size = 0.5, alpha = 0.5)
@@ -670,7 +671,7 @@ efm_swi <- efm_stand |>
     density = TreesPerHectareAHC1_2
   ) |>
   mutate(
-    qmd = sqrt(ba / (0.0000785 * density)),
+    qmd = ba_to_qmd(ba, density),
     biomass = (AbovegroundAHC1_2_Mgperha + RootmassAHC1_2_Mgperha) * 1000
   ) |>
   filter(density != 0) |>
@@ -712,7 +713,7 @@ df_efm_swi <- phos_coords_latlon(df_efm_swi)
 df_efm_swi <- orgc_coords_latlon(df_efm_swi)
 
 ggplot() +
-  geom_point(data = df_efm_swi, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_efm_swi, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_efm_swi, size = 0.5, alpha = 0.5)
@@ -793,7 +794,7 @@ df_uholka <- phos_coords_latlon(df_uholka)
 df_uholka <- orgc_coords_latlon(df_uholka)
 
 ggplot() +
-  geom_point(data = df_uholka, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_uholka, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_uholka, size = 0.5, alpha = 0.5)
@@ -883,7 +884,7 @@ df_fep_gre <- phos_coords_latlon(df_fep_gre)
 df_fep_gre <- orgc_coords_latlon(df_fep_gre)
 
 ggplot() +
-  geom_point(data = df_fep_gre, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_fep_gre, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_fep_gre, size = 0.5, alpha = 0.5)
@@ -963,7 +964,7 @@ df_inrae_lessem <- phos_coords_latlon(df_inrae_lessem)
 df_inrae_lessem <- orgc_coords_latlon(df_inrae_lessem)
 
 ggplot() +
-  geom_point(data = df_inrae_lessem, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_inrae_lessem, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_inrae_lessem, size = 0.5, alpha = 0.5)
@@ -1033,7 +1034,7 @@ df_bnp <- phos_coords_latlon(df_bnp)
 df_bnp <- orgc_coords_latlon(df_bnp)
 
 ggplot() +
-  geom_point(data = df_bnp, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_bnp, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_bnp, size = 0.5, alpha = 0.5)
@@ -1101,7 +1102,7 @@ df_czu <- phos_coords_latlon(df_czu)
 df_czu <- orgc_coords_latlon(df_czu)
 
 ggplot() +
-  geom_point(data = df_czu, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_czu, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_czu, size = 0.5, alpha = 0.5)
@@ -1169,7 +1170,7 @@ df_fvabw <- phos_coords_latlon(df_fvabw)
 df_fvabw <- orgc_coords_latlon(df_fvabw)
 
 ggplot() +
-  geom_point(data = df_fvabw, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_fvabw, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_fvabw, size = 0.5, alpha = 0.5)
@@ -1232,7 +1233,7 @@ df_iberbas <- phos_coords_latlon(df_iberbas)
 df_iberbas <- orgc_coords_latlon(df_iberbas)
 
 ggplot() +
-  geom_point(data = df_iberbas, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_iberbas, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_iberbas, size = 0.5, alpha = 0.5)
@@ -1330,7 +1331,7 @@ df_unitbv <- phos_coords_latlon(df_unitbv)
 df_unitbv <- orgc_coords_latlon(df_unitbv)
 
 ggplot() +
-  geom_point(data = df_unitbv, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_unitbv, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_unitbv, size = 0.5, alpha = 0.5)
@@ -1413,7 +1414,7 @@ df_lwf <- phos_coords_latlon(df_lwf)
 df_lwf <- orgc_coords_latlon(df_lwf)
 
 ggplot() +
-  geom_point(data = df_lwf, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_lwf, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_lwf, size = 0.5, alpha = 0.5)
@@ -1486,7 +1487,7 @@ df_npvbw <- phos_coords_latlon(df_npvbw)
 df_npvbw <- orgc_coords_latlon(df_npvbw)
 
 ggplot() +
-  geom_point(data = df_npvbw, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_npvbw, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_npvbw, size = 0.5, alpha = 0.5)
@@ -1554,7 +1555,7 @@ nfr_swi <- nfr_stand |>
     density = TreesPerHectareAHC1_2
   ) |>
   mutate(
-    qmd = sqrt(ba / (0.0000785 * density)),
+    qmd = ba_to_qmd(ba, density),
     biomass = (AbovegroundAHC1_2_Mgperha + RootmassAHC1_2_Mgperha) * 1000
   ) |>
   filter(density != 0) |>
@@ -1601,7 +1602,7 @@ df_nfr_swi <- phos_coords_latlon(df_nfr_swi)
 df_nfr_swi <- orgc_coords_latlon(df_nfr_swi)
 
 ggplot() +
-  geom_point(data = df_nfr_swi, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_nfr_swi, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_nfr_swi, size = 0.5, alpha = 0.5)
@@ -1684,7 +1685,7 @@ df_nwfva <- phos_coords_latlon(df_nwfva)
 df_nwfva <- orgc_coords_latlon(df_nwfva)
 
 ggplot() +
-  geom_point(data = df_nwfva, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_nwfva, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_nwfva, size = 0.5, alpha = 0.5)
@@ -1772,7 +1773,7 @@ df_tuzvo <- phos_coords_latlon(df_tuzvo)
 df_tuzvo <- orgc_coords_latlon(df_tuzvo)
 
 ggplot() +
-  geom_point(data = df_tuzvo, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_tuzvo, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_tuzvo, size = 0.5, alpha = 0.5)
@@ -1851,7 +1852,7 @@ df_ul <- phos_coords_latlon(df_ul)
 df_ul <- orgc_coords_latlon(df_ul)
 
 ggplot() +
-  geom_point(data = df_ul, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_ul, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_ul, size = 0.5, alpha = 0.5)
@@ -2051,7 +2052,7 @@ df_unito <- phos_coords_latlon(df_unito)
 df_unito <- orgc_coords_latlon(df_unito)
 
 ggplot() +
-  geom_point(data = df_unito, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_unito, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_unito, size = 0.5, alpha = 0.5)
@@ -2108,7 +2109,7 @@ df_urk <- phos_coords_latlon(df_urk)
 df_urk <- orgc_coords_latlon(df_urk)
 
 ggplot() +
-  geom_point(data = df_urk, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_urk, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_urk, size = 0.5, alpha = 0.5)
@@ -2201,7 +2202,7 @@ df_wuls <- phos_coords_latlon(df_wuls)
 df_wuls <- orgc_coords_latlon(df_wuls)
 
 ggplot() +
-  geom_point(data = df_wuls, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_wuls, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_wuls, size = 0.5, alpha = 0.5)
@@ -2291,7 +2292,7 @@ df_luquillo <- phos_coords_latlon(df_luquillo)
 df_luquillo <- orgc_coords_latlon(df_luquillo)
 
 ggplot() +
-  geom_point(data = df_luquillo, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_luquillo, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_luquillo, size = 0.5, alpha = 0.5)
@@ -2394,7 +2395,7 @@ df_bci <- phos_coords_latlon(df_bci)
 df_bci <- orgc_coords_latlon(df_bci)
 
 ggplot() +
-  geom_point(data = df_bci, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_bci, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_bci, size = 0.5, alpha = 0.5)
@@ -2485,7 +2486,7 @@ df_scbi <- phos_coords_latlon(df_scbi)
 df_scbi <- orgc_coords_latlon(df_scbi)
 
 ggplot() +
-  geom_point(data = df_scbi, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_scbi, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_scbi, size = 0.5, alpha = 0.5)
@@ -2541,7 +2542,7 @@ df_palanam <- from_tree_data(palanam) |>
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
   ungroup() |>
-  filter(logQMD > 1) |>
+  filter(log(QMD) > 1) |>
   mutate(
     management_cat = 2,
     management = 0
@@ -2569,7 +2570,7 @@ df_palanam <- phos_coords_latlon(df_palanam)
 df_palanam <- orgc_coords_latlon(df_palanam)
 
 ggplot() +
-  geom_point(data = df_palanam, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_palanam, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_palanam, size = 0.5, alpha = 0.5)
@@ -2647,7 +2648,7 @@ df_serc <- from_tree_data(serc) |>
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
   ungroup() |>
-  filter(logQMD > 1) |>
+  filter(log(QMD) > 1) |>
   mutate(
     management_cat = 2,
     management = 0
@@ -2675,7 +2676,7 @@ df_serc <- phos_coords_latlon(df_serc)
 df_serc <- orgc_coords_latlon(df_serc)
 
 ggplot() +
-  geom_point(data = df_serc, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_serc, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_serc, size = 0.5, alpha = 0.5)
@@ -2755,7 +2756,7 @@ df_wytham <- phos_coords_latlon(df_wytham)
 df_wytham <- orgc_coords_latlon(df_wytham)
 
 ggplot() +
-  geom_point(data = df_wytham, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_wytham, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_wytham, size = 0.5, alpha = 0.5)
@@ -2843,7 +2844,7 @@ df_pasoh <- from_tree_data(pasoh) |>
     management_cat = 2,
     management = 0
   ) |>
-  filter(logDensity > 7.5) # outliers, possible errors
+  filter(log(density) > 7.5) # outliers, possible errors
 
 # add coords and biomes
 df_pasoh <- biomes_coords_latlon(df_pasoh)
@@ -2867,7 +2868,7 @@ df_pasoh <- phos_coords_latlon(df_pasoh)
 df_pasoh <- orgc_coords_latlon(df_pasoh)
 
 ggplot() +
-  geom_point(data = df_pasoh, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_pasoh, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_pasoh, size = 0.5, alpha = 0.5)
@@ -2934,7 +2935,7 @@ df_mudumalai <- phos_coords_latlon(df_mudumalai)
 df_mudumalai <- orgc_coords_latlon(df_mudumalai)
 
 ggplot() +
-  geom_point(data = df_mudumalai, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_mudumalai, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_mudumalai, size = 0.5, alpha = 0.5)
@@ -3070,7 +3071,7 @@ df_forestplots <- from_tree_data(forestplots) |>
     management = 0,
     management_cat = 2
     ) |>
-  filter(logQMD < 4.5) # remove outliers
+  filter(log(QMD) < 4.5) # remove outliers
 
 # add coords and biomes
 df_forestplots <- biomes_coords_latlon(df_forestplots)
@@ -3094,7 +3095,7 @@ df_forestplots <- phos_coords_latlon(df_forestplots)
 df_forestplots <- orgc_coords_latlon(df_forestplots)
 
 ggplot() +
-  geom_point(data = df_forestplots, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_forestplots, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_forestplots, size = 0.5, alpha = 0.5)
@@ -3177,7 +3178,7 @@ df_aus <- phos_coords_latlon(df_aus)
 df_aus <- orgc_coords_latlon(df_aus)
 
 ggplot() +
-  geom_point(data = df_aus, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_aus, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_aus, size = 0.5, alpha = 0.5) +
@@ -3226,10 +3227,10 @@ rainfor_plots <- rainfor_plots |>
     year = round(census_date),
     management_since_census1_yrs = NA,
     management = 0,
-    management_cat = 3,
+    management_cat = 2,  # beni: changed from 3 to 2
     species = NA,
     biomass = NA,
-    dbh = 100 * sqrt((4 * mean_ba) / pi)
+    dbh = ba_to_qmd(mean_ba, density = 1) # mean basal area per stem
   ) |> # DBH in centimetres
   left_join(rainfor_coords, by = "plot_code") |>
   rename(plotID = plot_code)
@@ -3284,7 +3285,7 @@ df_rainfor <- phos_coords_latlon(df_rainfor)
 df_rainfor <- orgc_coords_latlon(df_rainfor)
 
 ggplot() +
-  geom_point(data = df_rainfor, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(data = df_rainfor, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_rainfor, size = 0.5, alpha = 0.5)

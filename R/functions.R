@@ -179,6 +179,13 @@ plot_map_ai <- function(data) {
   return(map)
 }
 
+# Convert basal area (m2/ha) and stem density (stems/ha) to QMD (cm).
+# Both inputs must describe the same census and tree population. They may also
+# be totals for the same plot area; use density = 1 for mean basal area per stem.
+ba_to_qmd <- function(ba, density) {
+  100 * sqrt((4 * ba) / (pi * density))
+}
+
 # prepare_stand_data
 from_species_data <- function(data) {
   # get name of dataset
@@ -201,11 +208,9 @@ from_species_data <- function(data) {
       biomass = sum(biomass, na.rm = T)
     ) |>
     ungroup() |>
-    # calculate QMD and logs
+    # calculate QMD
     mutate(
-      QMD = sqrt(ba / (0.00007854 * density)),
-      logDensity = log(density),
-      logQMD = log(QMD),
+      QMD = ba_to_qmd(ba, density),
       dataset = datanm
     ) |>
     # calculate period lengths
@@ -245,11 +250,10 @@ from_stand_tree_data <- function(data_tree, data_stand) {
 
   # Aggregate data at stand level
   data_agg <- data_stand |>
-    # calculate QMD and logs
+    select(-any_of(c("logQMD", "logDensity"))) |>
+    # calculate QMD
     mutate(
-      QMD = sqrt(ba / (0.00007854 * density)),
-      logDensity = log(density),
-      logQMD = log(QMD),
+      QMD = ba_to_qmd(ba, density),
       dataset = datanm
     ) |>
     # calculate period lengths
@@ -275,51 +279,26 @@ from_stand_data <- function(data) {
   # get name of dataset
   datanm <- deparse(substitute(data))
 
-  if (deparse(substitute(data)) == "nfi_norway") {
-    # Aggregate data at stand level
-    data_agg <- data |>
-      # calculate QMD and logs
-      rename(QMD = qmd) |>
-      mutate(
-        logDensity = log(density),
-        logQMD = log(QMD),
-        dataset = datanm
-      ) |>
-      # calculate period lengths
-      arrange(plotID, year) |>
-      group_by(plotID) |>
-      mutate(period = year - lag(year)) |>
-      relocate(period, .after = year) |>
-      # calculate basal area increment
-      mutate(ba_inc = (ba - lag(ba)) / period) |>
-      relocate(ba_inc, .after = ba) |>
-      # calculate number of censuses
-      mutate(n_census = n()) |>
-      ungroup() |>
-      filter(density > 0)
-  } else {
-    # Aggregate data at stand level
-    data_agg <- data |>
-      # calculate QMD and logs
-      mutate(
-        QMD = sqrt(ba / (0.00007854 * density)),
-        logDensity = log(density),
-        logQMD = log(QMD),
-        dataset = datanm
-      ) |>
-      # calculate period lengths
-      arrange(plotID, year) |>
-      group_by(plotID) |>
-      mutate(period = year - lag(year)) |>
-      relocate(period, .after = year) |>
-      # calculate basal area increment
-      mutate(ba_inc = (ba - lag(ba)) / period) |>
-      relocate(ba_inc, .after = ba) |>
-      # calculate number of censuses
-      mutate(n_census = n()) |>
-      ungroup() |>
-      filter(density > 0)
-  }
+  # Aggregate data at stand level
+  data_agg <- data |>
+    select(-any_of(c("logQMD", "logDensity"))) |>
+    # calculate QMD
+    mutate(
+      QMD = ba_to_qmd(ba, density),
+      dataset = datanm
+    ) |>
+    # calculate period lengths
+    arrange(plotID, year) |>
+    group_by(plotID) |>
+    mutate(period = year - lag(year)) |>
+    relocate(period, .after = year) |>
+    # calculate basal area increment
+    mutate(ba_inc = (ba - lag(ba)) / period) |>
+    relocate(ba_inc, .after = ba) |>
+    # calculate number of censuses
+    mutate(n_census = n()) |>
+    ungroup() |>
+    filter(density > 0)
   return(data_agg)
 }
 
@@ -350,11 +329,9 @@ from_tree_data <- function(data) {
       biomass = sum(biomass, na.rm = F) / plotsize) |>
     ungroup() |>
     distinct() |>
-    # calculate QMD and logs
+    # calculate QMD
     mutate(
-      QMD = sqrt(ba / (0.00007854 * density)),
-      logDensity = log(density),
-      logQMD = log(QMD),
+      QMD = ba_to_qmd(ba, density),
       dataset = datanm
     ) |>
     # calculate period lengths
@@ -482,8 +459,8 @@ biomes_coords_utm <- function(data) {
 
   # Select variables to join datasets
   data_agg <- data_agg |>
-    select(dataset, country, plotID, plotsize, lon, lat, census, year, management, management_cat, management_since_census1_yrs, ba, dbh, QMD, density, logQMD, logDensity, period, ba_inc, biomass, n_census, species, biomeID, biome, type) %>%
-    relocate(any_of(c("dataset", "country", "plotID", "plotsize", "lon", "lat", "census", "year", "management", "management_cat","management_since_census1_yrs", "ba", "dbh", "QMD", "density", "logQMD", "logDensity", "period", "ba_inc", "biomass", "n_census", "species", "biomeID", "biome", "type"))) |>
+    select(dataset, country, plotID, plotsize, lon, lat, census, year, management, management_cat, management_since_census1_yrs, ba, dbh, QMD, density, period, ba_inc, biomass, n_census, species, biomeID, biome, type) %>%
+    relocate(any_of(c("dataset", "country", "plotID", "plotsize", "lon", "lat", "census", "year", "management", "management_cat","management_since_census1_yrs", "ba", "dbh", "QMD", "density", "period", "ba_inc", "biomass", "n_census", "species", "biomeID", "biome", "type"))) |>
     mutate(
       plotID = as.character(plotID),
       census = as.character(census)
@@ -535,8 +512,8 @@ biomes_coords_latlon <- function(data) {
 
   # Select variables to join datasets
   data_agg <- data_agg |>
-    select(dataset, country, plotID, plotsize, lon, lat, census, year, management, management_cat, management_since_census1_yrs, ba, dbh, QMD, density, logQMD, logDensity, period, ba_inc, biomass, n_census, species, biomeID, biome, type) %>%
-    relocate(any_of(c("dataset", "country", "plotID", "plotsize", "lon", "lat", "census", "year", "management", "management_cat", "management_since_census1_yrs", "ba", "dbh", "QMD", "density", "logQMD", "logDensity", "period", "ba_inc", "biomass", "n_census", "species", "biomeID", "biome", "type"))) |>
+    select(dataset, country, plotID, plotsize, lon, lat, census, year, management, management_cat, management_since_census1_yrs, ba, dbh, QMD, density, period, ba_inc, biomass, n_census, species, biomeID, biome, type) %>%
+    relocate(any_of(c("dataset", "country", "plotID", "plotsize", "lon", "lat", "census", "year", "management", "management_cat", "management_since_census1_yrs", "ba", "dbh", "QMD", "density", "period", "ba_inc", "biomass", "n_census", "species", "biomeID", "biome", "type"))) |>
     mutate(
       plotID = as.character(plotID),
       census = as.character(census)
