@@ -27,25 +27,12 @@ library(tidyr)
 library(stringr)
 library(lubridate)
 library(rFIA)
-library(patchwork)
-library(terra)
 library(sf)
-library(lme4)
-library(lmerTest)
-library(ggeffects)
-library(effects)
-library(sjPlot)
-library(measurements)
-library(sp)
-library(lqmm)
-library(ggforce)
-library(BIOMASS)
-library(rbeni)
-library(ingestr)
-library(lubridate)
+library(rgeco)
+library(here)
 
 # load functions ----
-source(file.path(here::here(), "/R/functions.R"))
+source(here::here("/R/functions.R"))
 
 # NFI Spain ----
 # Data providers: Paloma Ruiz-Benito and Veronica Cruz-Alonso
@@ -111,14 +98,17 @@ df_nfi_spain <- orgc_coords_latlon(df_nfi_spain)
 ggplot() +
   geom_point(data = df_nfi_spain, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_nfi_spain, size = 0.5, alpha = 0.5)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = ai), data = df_nfi_spain, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_nfi_spain, file = file.path(here::here(), "/data/inputs/df_nfi_spa.rds"))
+saveRDS(
+  df_nfi_spain,
+  file = here::here("data/inputs/df_nfi_spa.rds")
+)
 
 # NFI Sweeden ----
 # Data providers: Julian Tijerin-Triviño
@@ -211,20 +201,23 @@ df_nfi_sweeden <- orgc_coords_latlon(df_nfi_sweeden)
 ggplot() +
   geom_point(data = df_nfi_sweeden, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_nfi_sweeden, size = 0.5, alpha = 0.5)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = ai), data = df_nfi_sweeden, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_nfi_sweeden, file = file.path(here::here(), "/data/inputs/df_nfi_swe.rds"))
+saveRDS(
+  df_nfi_sweeden,
+  file = here::here("data/inputs/df_nfi_swe.rds")
+)
 
 # FIA US ----
 # Data providers: rFIA
 
 # Tree-level data
-filn <- file.path(here::here(), "data/inputs/data_fia_us.rds")
+filn <- here::here("data/inputs/data_fia_us.rds")
 
 if (!file.exists(filn)) {
   # Download FIA data ---
@@ -392,9 +385,9 @@ if (!file.exists(filn)) {
     # Remove entries with QMD = 0
     filter(QMD > 0)
 
-  saveRDS(df_fia_us, file = file.path(here::here(), "/data/inputs/df_fia_us.rds"))
+  saveRDS(df_fia_us, file = here::here("data/inputs/df_fia_us.rds"))
 } else {
-  df_fia_us <- readRDS(file.path(here::here(), "/data/inputs/df_fia_us.rds"))
+  df_fia_us <- readRDS(here::here("data/inputs/df_fia_us.rds"))
 }
 
 # add coords and biomes
@@ -421,11 +414,11 @@ df_fia_us <- orgc_coords_latlon(df_fia_us)
 ggplot() +
   geom_point(data = df_fia_us, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_fia_us, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_fia_us, file = file.path(here::here(), "/data/inputs/df_fia_us.rds"))
+saveRDS(df_fia_us, file = here::here("data/inputs/df_fia_us.rds"))
 
 # NFI Switzerland ----
 # Data providers: Brigitte Rohner
@@ -535,14 +528,14 @@ ggplot() +
     alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE
   )
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_nfi_switzerland, size = 0.5, alpha = 0.5) + 
   theme(legend.position = "bottom")
 
 # Save stand-level data
 saveRDS(
   df_nfi_switzerland,
-  file = here::here("/data/inputs/df_nfi_swi.rds")
+  file = here::here("data/inputs/df_nfi_swi.rds")
 )
 
 # NFI Norway ----
@@ -606,11 +599,14 @@ df_nfi_norway <- orgc_coords_latlon(df_nfi_norway)
 ggplot() +
   geom_point(data = df_nfi_norway, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_nfi_norway, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_nfi_norway, file = file.path(here::here(), "/data/inputs/df_nfi_nor.rds"))
+saveRDS(
+  df_nfi_norway,
+  file = here::here("data/inputs/df_nfi_nor.rds")
+)
 
 # EFM Switzerland ----
 # David Forrester and Jonas Glatthorn
@@ -718,11 +714,11 @@ df_efm_swi <- orgc_coords_latlon(df_efm_swi)
 ggplot() +
   geom_point(data = df_efm_swi, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_efm_swi, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_efm_swi, file = file.path(here::here(), "/data/inputs/df_efm_swi.rds"))
+saveRDS(df_efm_swi, file = here::here("data/inputs/df_efm_swi.rds"))
 
 # uholka ----
 # Data providers: Jonas Stillhard
@@ -737,7 +733,7 @@ saveRDS(df_efm_swi, file = file.path(here::here(), "/data/inputs/df_efm_swi.rds"
 
 # Tree-level data
 uholka <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/uholka/uholka_tree.csv", sep = ",")
-uholka <- read.csv("~/data/uholka/uholka_tree.csv", sep = ",")
+# uholka <- read.csv("~/data/uholka/uholka_tree.csv", sep = ",")
 
 # prepare data
 uholka <- uholka |>
@@ -799,11 +795,11 @@ df_uholka <- orgc_coords_latlon(df_uholka)
 ggplot() +
   geom_point(data = df_uholka, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_uholka, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_uholka, file = file.path(here::here(), "/data/inputs/df_uholka.rds"))
+saveRDS(df_uholka, file = here::here("data/inputs/df_uholka.rds"))
 
 # fep gre ----
 # Greece
@@ -815,7 +811,7 @@ saveRDS(df_uholka, file = file.path(here::here(), "/data/inputs/df_uholka.rds"))
 
 # tree-level data to estimate dominant species
 fep_gre_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_gre/fp_gre_tree.csv", sep = ",")
-fep_gre_tree <- read.csv("~/data/fp_gre/fp_gre_tree.csv", sep = ",")
+# fep_gre_tree <- read.csv("~/data/fp_gre/fp_gre_tree.csv", sep = ",")
 
 dom_species <- fep_gre_tree |>
   filter(status == "Alive") |> # filter alive trees
@@ -834,7 +830,7 @@ dom_species <- fep_gre_tree |>
 
 # stand-level data
 fep_gre_stand <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_gre/fp_gre_stand.csv", sep = ",")
-fep_gre_stand <- read.csv("~/data/fp_gre/fp_gre_stand.csv", sep = ",")
+# fep_gre_stand <- read.csv("~/data/fp_gre/fp_gre_stand.csv", sep = ",")
 
 # rename variable
 fep_gre_stand <- fep_gre_stand |>
@@ -889,11 +885,11 @@ df_fep_gre <- orgc_coords_latlon(df_fep_gre)
 ggplot() +
   geom_point(data = df_fep_gre, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_fep_gre, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_fep_gre, file = file.path(here::here(), "/data/inputs/df_fep_gre.rds"))
+saveRDS(df_fep_gre, file = here::here("data/inputs/df_fep_gre.rds"))
 
 # INRAE LESSEM ----
 # France
@@ -909,10 +905,10 @@ inrae_lessem_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/G
 inrae_lessem_species <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_fra/fra_sp_code.csv", sep = ",") |> as_tibble()
 inrae_lessem_status <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_fra/fra_sta_code.csv", sep = ",") |> as_tibble()
 
-inrae_lessem_plot <- read.csv("~/data/fp_fra/fp_fra_stand.csv", sep = ",")
-inrae_lessem_tree <- read.csv("~/data/fp_fra/fp_fra_tree.csv", sep = ",")
-inrae_lessem_species <- read.csv("~/data/fp_fra/fra_sp_code.csv", sep = ",")
-inrae_lessem_status <- read.csv("~/data/fp_fra/fra_sta_code.csv", sep = ",")
+# inrae_lessem_plot <- read.csv("~/data/fp_fra/fp_fra_stand.csv", sep = ",")
+# inrae_lessem_tree <- read.csv("~/data/fp_fra/fp_fra_tree.csv", sep = ",")
+# inrae_lessem_species <- read.csv("~/data/fp_fra/fra_sp_code.csv", sep = ",")
+# inrae_lessem_status <- read.csv("~/data/fp_fra/fra_sta_code.csv", sep = ",")
 
 # prepare data
 inrae_lessem <- inrae_lessem_tree |>
@@ -969,11 +965,14 @@ df_inrae_lessem <- orgc_coords_latlon(df_inrae_lessem)
 ggplot() +
   geom_point(data = df_inrae_lessem, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_inrae_lessem, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_inrae_lessem, file = file.path(here::here(), "/data/inputs/df_inrae_lessem.rds"))
+saveRDS(
+  df_inrae_lessem,
+  file = here::here("data/inputs/df_inrae_lessem.rds")
+)
 
 # EuFoRia plots ----
 
@@ -984,7 +983,7 @@ saveRDS(df_inrae_lessem, file = file.path(here::here(), "/data/inputs/df_inrae_l
 
 # Stand-level data by species
 bnp <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/bnp/euf_bnp.csv", sep = ",")
-bnp <- read.csv("~/data/euforia/bnp/euf_bnp.csv", sep = ",")
+# bnp <- read.csv("~/data/euforia/bnp/euf_bnp.csv", sep = ",")
 
 # prepare data
 bnp <- bnp |>
@@ -1036,11 +1035,11 @@ df_bnp <- orgc_coords_latlon(df_bnp)
 ggplot() +
   geom_point(data = df_bnp, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_bnp, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_bnp, file = file.path(here::here(), "/data/inputs/df_bnp.rds"))
+saveRDS(df_bnp, file = here::here("data/inputs/df_bnp.rds"))
 
 ## czu ----
 # Data providers: Miroslav Svoboda
@@ -1051,10 +1050,10 @@ saveRDS(df_bnp, file = file.path(here::here(), "/data/inputs/df_bnp.rds"))
 
 # Tree- and stand-level data by species
 czu_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/czu/euf_czu_tree.csv", sep = ",")
-czu_stand <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/czu/euf_czu_stand.csv", sep = ",")
+# czu_stand <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/czu/euf_czu_stand.csv", sep = ",")
 
 czu_tree <- read.csv("~/data/euforia/czu/euf_czu_tree.csv", sep = ",") 
-czu_stand <- read.csv("~/data/euforia/czu/euf_czu_stand.csv", sep = ",")
+# czu_stand <- read.csv("~/data/euforia/czu/euf_czu_stand.csv", sep = ",")
 
 # prepare data
 czu <- czu_stand |>
@@ -1104,11 +1103,11 @@ df_czu <- orgc_coords_latlon(df_czu)
 ggplot() +
   geom_point(data = df_czu, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_czu, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_czu, file = file.path(here::here(), "/data/inputs/df_czu.rds"))
+saveRDS(df_czu, file = here::here("data/inputs/df_czu.rds"))
 
 ## fvabw ----
 # Data providers: Yannek Käber and Lucia Seebach
@@ -1120,7 +1119,7 @@ saveRDS(df_czu, file = file.path(here::here(), "/data/inputs/df_czu.rds"))
 
 # Stand-level data by species
 fvabw <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/forst/euf_forst.csv", sep = ",")
-fvabw <- read.csv("~/data/euforia/forst/euf_forst.csv", sep = ",")
+# fvabw <- read.csv("~/data/euforia/forst/euf_forst.csv", sep = ",")
 
 # prepare data
 fvabw <- fvabw |>
@@ -1172,11 +1171,11 @@ df_fvabw <- orgc_coords_latlon(df_fvabw)
 ggplot() +
   geom_point(data = df_fvabw, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_fvabw, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_fvabw, file = file.path(here::here(), "/data/inputs/df_fvabw.rds"))
+saveRDS(df_fvabw, file = here::here("data/inputs/df_fvabw.rds"))
 
 ## iberbas ----
 # Data providers: Tzvetan Zlatanov
@@ -1186,7 +1185,7 @@ saveRDS(df_fvabw, file = file.path(here::here(), "/data/inputs/df_fvabw.rds"))
 
 # Tree-level data
 iberbas <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/iberbas/euf_iberbas.csv", sep = ",")
-iberbas <- read.csv("~/data/euforia/iberbas/euf_iberbas.csv", sep = ",")
+# iberbas <- read.csv("~/data/euforia/iberbas/euf_iberbas.csv", sep = ",")
 
 # prepare data
 iberbas <- iberbas |>
@@ -1235,11 +1234,11 @@ df_iberbas <- orgc_coords_latlon(df_iberbas)
 ggplot() +
   geom_point(data = df_iberbas, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_iberbas, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_iberbas, file = file.path(here::here(), "/data/inputs/df_iberbas.rds"))
+saveRDS(df_iberbas, file = here::here("data/inputs/df_iberbas.rds"))
 
 ## unitbv ----
 # Data providers: Any Mary Petritan, Cătălin Petritan
@@ -1250,7 +1249,7 @@ saveRDS(df_iberbas, file = file.path(here::here(), "/data/inputs/df_iberbas.rds"
 
 # Tree-level data
 unitbv <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/incds/euf_incds.csv", sep = ",")
-unitbv <- read.csv("~/data/euforia/incds/euf_incds.csv", sep = ",")
+# unitbv <- read.csv("~/data/euforia/incds/euf_incds.csv", sep = ",")
 
 unitbv <- unitbv |>
   select(-c(Height2003, Height2013, Height2023)) |>
@@ -1333,11 +1332,11 @@ df_unitbv <- orgc_coords_latlon(df_unitbv)
 ggplot() +
   geom_point(data = df_unitbv, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_unitbv, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_unitbv, file = file.path(here::here(), "/data/inputs/df_unitbv.rds"))
+saveRDS(df_unitbv, file = here::here("data/inputs/df_unitbv.rds"))
 
 ## lwf ----
 # Data providers: Markus Blaschke
@@ -1347,7 +1346,7 @@ saveRDS(df_unitbv, file = file.path(here::here(), "/data/inputs/df_unitbv.rds"))
 
 # Stand-level data
 lwf_stand <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/lwf/euf_lwf_stand.csv", sep = ";")
-lwf_stand <- read.csv("~/data/euforia/lwf/euf_lwf_stand.csv", sep = ";")
+# lwf_stand <- read.csv("~/data/euforia/lwf/euf_lwf_stand.csv", sep = ";")
 
 lwf_stand <- lwf_stand |>
   rename(
@@ -1361,7 +1360,7 @@ lwf_stand <- lwf_stand |>
 
 # Tree-level data
 lwf_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/lwf/euf_lwf_tree.csv", sep = ",")
-lwf_tree <- read.csv("~/data/euforia/lwf/euf_lwf_tree.csv", sep = ",")
+# lwf_tree <- read.csv("~/data/euforia/lwf/euf_lwf_tree.csv", sep = ",")
 
 # prepare data
 lwf_tree <- lwf_tree |>
@@ -1416,11 +1415,11 @@ df_lwf <- orgc_coords_latlon(df_lwf)
 ggplot() +
   geom_point(data = df_lwf, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_lwf, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_lwf, file = file.path(here::here(), "/data/inputs/df_lwf.rds"))
+saveRDS(df_lwf, file = here::here("data/inputs/df_lwf.rds"))
 
 ## npvbw ----
 # Data from Marco Heurich and Isabelle Klein
@@ -1430,7 +1429,7 @@ saveRDS(df_lwf, file = file.path(here::here(), "/data/inputs/df_lwf.rds"))
 
 # tree-level data
 npvbw <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/nbw/euf_nbw_tree.csv", sep = ",")
-npvbw <- read.csv("~/data/euforia/nbw/euf_nbw_tree.csv", sep = ",")
+# npvbw <- read.csv("~/data/euforia/nbw/euf_nbw_tree.csv", sep = ",")
 
 # prepare data
 npvbw <- npvbw |>
@@ -1489,11 +1488,11 @@ df_npvbw <- orgc_coords_latlon(df_npvbw)
 ggplot() +
   geom_point(data = df_npvbw, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_npvbw, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_npvbw, file = file.path(here::here(), "/data/inputs/df_npvbw.rds"))
+saveRDS(df_npvbw, file = here::here("data/inputs/df_npvbw.rds"))
 
 ## nfr ----
 # Martina Hobi and Harald Bugmann
@@ -1502,7 +1501,7 @@ saveRDS(df_npvbw, file = file.path(here::here(), "/data/inputs/df_npvbw.rds"))
 
 # Metadata
 nfr_metadata <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfr/raw/NFR_metadata.csv")
-nfr_metadata <- read.csv("~/data/euforia/nfr/raw/NFR_metadata.csv", sep = ",")
+# nfr_metadata <- read.csv("~/data/euforia/nfr/raw/NFR_metadata.csv", sep = ",")
 
 nfr_metadata <- nfr_metadata |>
   mutate(fg = as.character(fg)) |>
@@ -1511,7 +1510,7 @@ nfr_metadata <- nfr_metadata |>
 
 # Plot area
 nfr_plot_area <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfr/raw/NFR_plot_area.csv")
-nfr_plot_area <- read.csv("~/data/euforia/nfr/raw/NFR_plot_area.csv", sep = ",")
+# nfr_plot_area <- read.csv("~/data/euforia/nfr/raw/NFR_plot_area.csv", sep = ",")
 
 nfr_plot_area <- nfr_plot_area |>
   mutate(
@@ -1522,14 +1521,14 @@ nfr_plot_area <- nfr_plot_area |>
 
 # Last management intervention
 nfr_last_intervention <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfr/raw/NFR_last_intervention.csv")
-nfr_last_intervention <- read.csv("~/data/euforia/nfr/raw/NFR_last_intervention.csv", sep = ",")
+# nfr_last_intervention <- read.csv("~/data/euforia/nfr/raw/NFR_last_intervention.csv", sep = ",")
 
 nfr_last_intervention <- nfr_last_intervention |>
   mutate(fg = as.character(fg))
 
 # Stand level data (per plot, year and species)
 nfr_stand <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfr/raw/NFR_stand_data.RDS") # 291 plots From David Forrester data
-nfr_stand <- readRDS("~/data/euforia/nfr/raw/NFR_stand_data.RDS")
+# nfr_stand <- readRDS("~/data/euforia/nfr/raw/NFR_stand_data.RDS")
 
 # Select Stand level data for all species: "All species combined"
 dom_species_nfr <- nfr_stand |>
@@ -1604,11 +1603,11 @@ df_nfr_swi <- orgc_coords_latlon(df_nfr_swi)
 ggplot() +
   geom_point(data = df_nfr_swi, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_nfr_swi, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_nfr_swi, file = file.path(here::here(), "/data/inputs/df_nfr_swi.rds"))
+saveRDS(df_nfr_swi, file = here::here("data/inputs/df_nfr_swi.rds"))
 
 ## nwfva ----
 # Data providers: Peter Meyer
@@ -1617,11 +1616,11 @@ saveRDS(df_nfr_swi, file = file.path(here::here(), "/data/inputs/df_nfr_swi.rds"
 
 # Stand-level data
 nwfva_stand <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/nwfva/euf_nwfva_stand.csv", sep = ",")
-nwfva_stand <- read.csv("~/data/euforia/nwfva/euf_nwfva_stand.csv", sep = ",")
+# nwfva_stand <- read.csv("~/data/euforia/nwfva/euf_nwfva_stand.csv", sep = ",")
 
 # Tree-level data
 nwfva_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/nwfva/euf_nwfva_tree.csv", sep = ",")
-nwfva_tree <- read.csv("~/data/euforia/nwfva/euf_nwfva_tree.csv", sep = ",")
+# nwfva_tree <- read.csv("~/data/euforia/nwfva/euf_nwfva_tree.csv", sep = ",")
 
 # prepare data
 nwfva_stand <- nwfva_stand |>
@@ -1687,11 +1686,11 @@ df_nwfva <- orgc_coords_latlon(df_nwfva)
 ggplot() +
   geom_point(data = df_nwfva, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_nwfva, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_nwfva, file = here::here("/data/inputs/df_nwfva.rds"))
+saveRDS(df_nwfva, file = here::here("data/inputs/df_nwfva.rds"))
 
 ## tuzvo ----
 # Data providers: Stanislav Kucbel and Peter Jalovia
@@ -1700,7 +1699,7 @@ saveRDS(df_nwfva, file = here::here("/data/inputs/df_nwfva.rds"))
 
 # Stand-level data
 tuzvo_stand <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/tuzvo/euf_tuzvo_stand.csv", sep = ",")
-tuzvo_stand <- read.csv("~/data/euforia/tuzvo/euf_tuzvo_stand.csv", sep = ",")
+# tuzvo_stand <- read.csv("~/data/euforia/tuzvo/euf_tuzvo_stand.csv", sep = ",")
 
 tuzvo_stand <- tuzvo_stand |>
   rename(
@@ -1714,7 +1713,7 @@ tuzvo_stand <- tuzvo_stand |>
 
 # Tree-level data
 tuzvo_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/tuzvo/euf_tuzvo_tree.csv", sep = ",")
-tuzvo_tree <- read.csv("~/data/euforia/tuzvo/euf_tuzvo_tree.csv", sep = ",")
+# tuzvo_tree <- read.csv("~/data/euforia/tuzvo/euf_tuzvo_tree.csv", sep = ",")
 
 # prepare data
 # we use wood density from the BIOMASS pkg to estimate biomass given volume (m3)
@@ -1775,11 +1774,11 @@ df_tuzvo <- orgc_coords_latlon(df_tuzvo)
 ggplot() +
   geom_point(data = df_tuzvo, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_tuzvo, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_tuzvo, file = file.path(here::here(), "/data/inputs/df_tuzvo.rds"))
+saveRDS(df_tuzvo, file = here::here("data/inputs/df_tuzvo.rds"))
 
 ## ul ----
 # Thomas Nagel
@@ -1789,11 +1788,11 @@ saveRDS(df_tuzvo, file = file.path(here::here(), "/data/inputs/df_tuzvo.rds"))
 
 # tree-level data
 ul_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/ul/euf_ul_tree.csv", sep = ",")
-ul_tree <- read.csv("~/data/euforia/ul/euf_ul_tree.csv", sep = ",")
+# ul_tree <- read.csv("~/data/euforia/ul/euf_ul_tree.csv", sep = ",")
 
 # metadata
 ul_metadata <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/ul/euf_ul_meta.csv", sep = ",")
-ul_metadata <- read.csv("~/data/euforia/ul/euf_ul_meta.csv", sep = ",")
+# ul_metadata <- read.csv("~/data/euforia/ul/euf_ul_meta.csv", sep = ",")
 
 ul_metadata <- ul_metadata |>
   select(plotid, plot_size) |>
@@ -1801,7 +1800,7 @@ ul_metadata <- ul_metadata |>
   rename(plotsize = plot_size)
 
 ul_coords <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/ul/euf_ul_coor.csv", sep = ",")
-ul_coords <- read.csv("~/data/euforia/ul/euf_ul_coor.csv", sep = ",")
+# ul_coords <- read.csv("~/data/euforia/ul/euf_ul_coor.csv", sep = ",")
 
 ul_coords <- ul_coords |>
   select(plotid, lat, lon)
@@ -1854,11 +1853,11 @@ df_ul <- orgc_coords_latlon(df_ul)
 ggplot() +
   geom_point(data = df_ul, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_ul, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_ul, file = file.path(here::here(), "/data/inputs/df_ul.rds"))
+saveRDS(df_ul, file = here::here("data/inputs/df_ul.rds"))
 
 ## unito ----
 # Renzo Motta
@@ -1869,7 +1868,7 @@ saveRDS(df_ul, file = file.path(here::here(), "/data/inputs/df_ul.rds"))
 
 # Tree-level data
 unito <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/unito/euf_unito_tree.csv", sep = ",")
-unito <- read.csv("~/data/euforia/unito/euf_unito_tree.csv", sep = ",")
+# unito <- read.csv("~/data/euforia/unito/euf_unito_tree.csv", sep = ",")
 
 # Divide plot into grids of different size given the coordinates
 # plotsize = 100 * 100 = 1 ha
@@ -2054,11 +2053,11 @@ df_unito <- orgc_coords_latlon(df_unito)
 ggplot() +
   geom_point(data = df_unito, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_unito, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_unito, file = file.path(here::here(), "/data/inputs/df_unito.rds"))
+saveRDS(df_unito, file = here::here("data/inputs/df_unito.rds"))
 
 ## urk ----
 # Data providers: Srdjan Keren and Zbigniew Maciejewski
@@ -2068,7 +2067,7 @@ saveRDS(df_unito, file = file.path(here::here(), "/data/inputs/df_unito.rds"))
 
 # Stand-level data
 urk <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/urk/euf_urk_stand.csv", sep = ",")
-urk <- read.csv("~/data/euforia/urk/euf_urk_stand.csv", sep = ",")
+# urk <- read.csv("~/data/euforia/urk/euf_urk_stand.csv", sep = ",")
 
 # aggregate data from stand
 df_urk <- from_stand_data(urk) |>
@@ -2111,11 +2110,11 @@ df_urk <- orgc_coords_latlon(df_urk)
 ggplot() +
   geom_point(data = df_urk, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_urk, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_urk, file = file.path(here::here(), "/data/inputs/df_urk.rds"))
+saveRDS(df_urk, file = here::here("data/inputs/df_urk.rds"))
 
 ## wuls ----
 # Data providers: Bogdan Brzeziecki
@@ -2131,11 +2130,11 @@ wuls_areas <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglob
 wuls_coords <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/wuls/euf_wuls_coor.csv", sep = ",")
 wuls_species <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/wuls/euf_wuls_sp.csv", sep = ",")
 
-wuls_tree <- read.csv("~/data/euforia/wuls/euf_wuls_tree.csv", sep = ",")
-wuls_census <- read.csv("~/data/euforia/wuls/euf_wuls_census.csv", sep = ",")
-wuls_areas <- read.csv("~/data/euforia/wuls/euf_wuls_area.csv", sep = ",")
-wuls_coords <- read.csv("~/data/euforia/wuls/euf_wuls_coor.csv", sep = ",")
-wuls_species <- read.csv("~/data/euforia/wuls/euf_wuls_sp.csv", sep = ",")
+# wuls_tree <- read.csv("~/data/euforia/wuls/euf_wuls_tree.csv", sep = ",")
+# wuls_census <- read.csv("~/data/euforia/wuls/euf_wuls_census.csv", sep = ",")
+# wuls_areas <- read.csv("~/data/euforia/wuls/euf_wuls_area.csv", sep = ",")
+# wuls_coords <- read.csv("~/data/euforia/wuls/euf_wuls_coor.csv", sep = ",")
+# wuls_species <- read.csv("~/data/euforia/wuls/euf_wuls_sp.csv", sep = ",")
 
 wuls <- wuls_tree |>
   select(-c(H1, H2, H3, H4, H5, H6, H7, H8, V1, V2, V3, V4, V5, V6, V7, V8)) |>
@@ -2204,11 +2203,11 @@ df_wuls <- orgc_coords_latlon(df_wuls)
 ggplot() +
   geom_point(data = df_wuls, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_wuls, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_wuls, file = file.path(here::here(), "/data/inputs/df_wuls.rds"))
+saveRDS(df_wuls, file = here::here("data/inputs/df_wuls.rds"))
 
 ## Luquillo ----
 # Contact: Jess Zimmerman
@@ -2221,9 +2220,9 @@ luquillo <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/G
   lapply(read_csv) |>
   bind_rows()
 
-luquillo <- list.files(path = "~/data/forestgeo/luquillo", full.names = TRUE, pattern = "\\.csv$") |>
-  lapply(read_csv) |>
-  bind_rows()
+# luquillo <- list.files(path = "~/data/forestgeo/luquillo", full.names = TRUE, pattern = "\\.csv$") |>
+#   lapply(read_csv) |>
+#   bind_rows()
 
 ## Prepare data
 luquillo <- luquillo |>
@@ -2294,11 +2293,14 @@ df_luquillo <- orgc_coords_latlon(df_luquillo)
 ggplot() +
   geom_point(data = df_luquillo, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_luquillo, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_luquillo, file = file.path(here::here(), "/data/inputs/df_luquillo.rds"))
+saveRDS(
+  df_luquillo,
+  file = here::here("data/inputs/df_luquillo.rds")
+)
 
 ## BCI ----
 # contact: Salomon Aguilar, technician in BCI
@@ -2309,9 +2311,9 @@ bci <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYgl
   lapply(read_csv) |>
   bind_rows()
 
-bci <- list.files(path = "~/data/forestgeo/bci", full.names = TRUE, pattern = "\\.csv$") |>
-  lapply(read_csv) |>
-  bind_rows() 
+# bci <- list.files(path = "~/data/forestgeo/bci", full.names = TRUE, pattern = "\\.csv$") |>
+#   lapply(read_csv) |>
+#   bind_rows() 
 
 ## Prepare data
 bci <- bci |>
@@ -2366,6 +2368,7 @@ df_bci <- from_tree_data(bci) |>
 
 # check that lianas are excluded
 sp_lianas <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/bci/sp_lianas.csv")
+
 df_bci <- df_bci %>%
   filter(!df_bci$species %in% sp_lianas$species)
 
@@ -2393,11 +2396,11 @@ df_bci <- orgc_coords_latlon(df_bci)
 ggplot() +
   geom_point(data = df_bci, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_bci, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_bci, file = file.path(here::here(), "/data/inputs/df_bci.rds"))
+saveRDS(df_bci, file = here::here("data/inputs/df_bci.rds"))
 
 ## SCBI ----
 # Contact: Kristina J. Anderson-Teixeira, William J. McShea, Norman A. Bourg
@@ -2412,11 +2415,11 @@ scbi <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYg
   lapply(\(x) mutate(x, across(StemTag, as.double))) |>
   bind_rows()
 
-scbi <- list.files(path = "~/data/forestgeo/scbi", full.names = TRUE, pattern = "\\.csv$") |>
-  lapply(read_csv) |>
-  lapply(\(x) mutate(x, across(Tag, as.double))) |>
-  lapply(\(x) mutate(x, across(StemTag, as.double))) |>
-  bind_rows() 
+# scbi <- list.files(path = "~/data/forestgeo/scbi", full.names = TRUE, pattern = "\\.csv$") |>
+#   lapply(read_csv) |>
+#   lapply(\(x) mutate(x, across(Tag, as.double))) |>
+#   lapply(\(x) mutate(x, across(StemTag, as.double))) |>
+#   bind_rows() 
 
 ## Prepare data
 scbi <- scbi |>
@@ -2484,11 +2487,11 @@ df_scbi <- orgc_coords_latlon(df_scbi)
 ggplot() +
   geom_point(data = df_scbi, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_scbi, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_scbi, file = file.path(here::here(), "/data/inputs/df_scbi.rds"))
+saveRDS(df_scbi, file = here::here("data/inputs/df_scbi.rds"))
 
 ## Palanam ----
 # Contact: Perry S. Ong
@@ -2499,11 +2502,11 @@ palanam <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GF
   lapply(\(x) mutate(x, across(StemTag, as.double))) |>
   bind_rows()
 
-palanam <- list.files(path = "~/data/forestgeo/palanam", full.names = TRUE, pattern = "\\.csv$") |>
-  lapply(read_csv) |>
-  lapply(\(x) mutate(x, across(Tag, as.double))) |>
-  lapply(\(x) mutate(x, across(StemTag, as.double))) |>
-  bind_rows()  
+# palanam <- list.files(path = "~/data/forestgeo/palanam", full.names = TRUE, pattern = "\\.csv$") |>
+#   lapply(read_csv) |>
+#   lapply(\(x) mutate(x, across(Tag, as.double))) |>
+#   lapply(\(x) mutate(x, across(StemTag, as.double))) |>
+#   bind_rows()  
 
 ## Prepare data
 palanam <- palanam |>
@@ -2568,11 +2571,11 @@ df_palanam <- orgc_coords_latlon(df_palanam)
 ggplot() +
   geom_point(data = df_palanam, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_palanam, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_palanam, file = file.path(here::here(), "/data/inputs/df_palanam.rds"))
+saveRDS(df_palanam, file = here::here("data/inputs/df_palanam.rds"))
 
 ## SERC ----
 # Contact: Sean McMahon
@@ -2674,11 +2677,11 @@ df_serc <- orgc_coords_latlon(df_serc)
 ggplot() +
   geom_point(data = df_serc, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_serc, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_serc, file = file.path(here::here(), "/data/inputs/df_serc.rds"))
+saveRDS(df_serc, file = here::here("data/inputs/df_serc.rds"))
 
 ## Wytham ----
 # Data from Yadvinder Malhi
@@ -2689,8 +2692,8 @@ saveRDS(df_serc, file = file.path(here::here(), "/data/inputs/df_serc.rds"))
 wytham <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/wytham/wytham.csv")
 wytham_sp <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/wytham/wytham_sp.csv")
 
-wytham <- read.csv("~/data/forestgeo/wytham/wytham.csv")
-wytham_sp <- read.csv("~/data/forestgeo/wytham/wytham_sp.csv")
+# wytham <- read.csv("~/data/forestgeo/wytham/wytham.csv")
+# wytham_sp <- read.csv("~/data/forestgeo/wytham/wytham_sp.csv")
 
 # prepare data
 wytham <- wytham |>
@@ -2754,14 +2757,14 @@ df_wytham <- orgc_coords_latlon(df_wytham)
 ggplot() +
   geom_point(data = df_wytham, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_wytham, size = 0.5, alpha = 0.5)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = ai), data = df_wytham, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_wytham, file = file.path(here::here(), "/data/inputs/df_wytham.rds"))
+saveRDS(df_wytham, file = here::here("data/inputs/df_wytham.rds"))
 
 ## Pasho ----
 # Contact: Musalmah Nasardin, Yao Tze Leong
@@ -2784,13 +2787,13 @@ pasoh5 <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_dat
 pasoh6 <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/pasoh/pasoh6.rds")
 pasoh7 <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/pasoh/pasoh7.rds")
 
-pasoh1 <- readRDS("~/data/forestgeo/pasoh/pasoh1.rds")
-pasoh2 <- readRDS("~/data/forestgeo/pasoh/pasoh2.rds")
-pasoh3 <- readRDS("~/data/forestgeo/pasoh/pasoh3.rds")
-pasoh4 <- readRDS("~/data/forestgeo/pasoh/pasoh4.rds")
-pasoh5 <- readRDS("~/data/forestgeo/pasoh/pasoh5.rds")
-pasoh6 <- readRDS("~/data/forestgeo/pasoh/pasoh6.rds")
-pasoh7 <- readRDS("~/data/forestgeo/pasoh/pasoh7.rds")
+# pasoh1 <- readRDS("~/data/forestgeo/pasoh/pasoh1.rds")
+# pasoh2 <- readRDS("~/data/forestgeo/pasoh/pasoh2.rds")
+# pasoh3 <- readRDS("~/data/forestgeo/pasoh/pasoh3.rds")
+# pasoh4 <- readRDS("~/data/forestgeo/pasoh/pasoh4.rds")
+# pasoh5 <- readRDS("~/data/forestgeo/pasoh/pasoh5.rds")
+# pasoh6 <- readRDS("~/data/forestgeo/pasoh/pasoh6.rds")
+# pasoh7 <- readRDS("~/data/forestgeo/pasoh/pasoh7.rds")
 
 pasoh <- pasoh1 |>
   bind_rows(pasoh2) |>
@@ -2866,14 +2869,14 @@ df_pasoh <- orgc_coords_latlon(df_pasoh)
 ggplot() +
   geom_point(data = df_pasoh, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_pasoh, size = 0.5, alpha = 0.5)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = ai), data = df_pasoh, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_pasoh, file = file.path(here::here(), "/data/inputs/df_pasoh.rds"))
+saveRDS(df_pasoh, file = here::here("data/inputs/df_pasoh.rds"))
 
 ## Mudumalai ----
 # Contact: Raman Sukumar
@@ -2882,7 +2885,7 @@ saveRDS(df_pasoh, file = file.path(here::here(), "/data/inputs/df_pasoh.rds"))
 # Stand-level data
 mudumalai <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestgeo/mudumalai/mudumalai_stand.csv", sep = ",")
 
-mudumalai <- read.csv("~/data/forestgeo/mudumalai/mudumalai_stand.csv")
+# mudumalai <- read.csv("~/data/forestgeo/mudumalai/mudumalai_stand.csv")
 
 mudumalai <- mudumalai |>
   mutate(density = nindiv / plotsize) |>
@@ -2933,16 +2936,16 @@ df_mudumalai <- orgc_coords_latlon(df_mudumalai)
 ggplot() +
   geom_point(data = df_mudumalai, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_mudumalai, size = 0.5, alpha = 0.5)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = ai), data = df_mudumalai, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(
   df_mudumalai,
-  file = here::here("/data/inputs/df_mudumalai.rds")
+  file = here::here("data/inputs/df_mudumalai.rds")
 )
 
 # Forests plots MZ ----
@@ -2951,7 +2954,7 @@ saveRDS(
 # 0) Metadata
 meta_fp <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestplots/mahli_zhang/fp_mz_metadata.csv")
 
-meta_fp <- read.csv("~/data/forestplots/mahli_zhang/fp_mz_metadata.csv")
+# meta_fp <- read.csv("~/data/forestplots/mahli_zhang/fp_mz_metadata.csv")
 
 meta_fp <- meta_fp |>
   select(Plot_code, Country, Longitude, Latitude, Elevation..m., Plot.Size..ha.) |>
@@ -3093,13 +3096,13 @@ df_forestplots <- orgc_coords_latlon(df_forestplots)
 ggplot() +
   geom_point(data = df_forestplots, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_forestplots, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(
   df_forestplots,
-  file = here::here("/data/inputs/df_forestplots.rds")
+  file = here::here("data/inputs/df_forestplots.rds")
 )
 
 # Australian plots ----
@@ -3118,7 +3121,7 @@ saveRDS(
 # Stand-level data
 aus_plots <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/fp_aus/fp_aus_stand.RDS")
 
-aus_plots <- readRDS("~/data/fp_aus/fp_aus_stand.RDS")
+# aus_plots <- readRDS("~/data/fp_aus/fp_aus_stand.RDS")
 
 # prepare data
 aus_plots <- aus_plots |>
@@ -3176,12 +3179,12 @@ df_aus <- orgc_coords_latlon(df_aus)
 ggplot() +
   geom_point(data = df_aus, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_aus, size = 0.5, alpha = 0.5) +
   theme(legend.position = "bottom")
 
 # save stand-level data
-saveRDS(df_aus, file = here::here("/data/inputs/df_aus.rds"))
+saveRDS(df_aus, file = here::here("data/inputs/df_aus.rds"))
 
 # RAINFOR Amazon Forest Inventory Network ----
 # Data from Esquivel-Muelbert, et al. 2025 data published
@@ -3193,13 +3196,14 @@ rainfor_plots <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYg
 rainfor_bennet <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/rainfor/bennett_etal/table_s3.csv", sep = ",")
 rainfor_brienen <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/rainfor/brienen_etal/table_s1.csv", sep = ",")
 
-rainfor_plots <- read.csv("~/data/rainfor/esquivel_etal/full_final_dataset.csv")
-rainfor_bennet <- read.csv("~/data/rainfor/bennett_etal/table_s3.csv")
-rainfor_brienen <- read.csv("~/data/rainfor/brienen_etal/table_s1.csv")
+# rainfor_plots <- read.csv("~/data/rainfor/esquivel_etal/full_final_dataset.csv")
+# rainfor_bennet <- read.csv("~/data/rainfor/bennett_etal/table_s3.csv")
+# rainfor_brienen <- read.csv("~/data/rainfor/brienen_etal/table_s1.csv")
 
 # select variables from coordinates data
 rainfor_bennet <- rainfor_bennet |>
   select(plot_code, country, lon, lat)
+
 rainfor_brienen <- rainfor_brienen |>
   select(plot_code, country, lon, lat)
 
@@ -3282,8 +3286,8 @@ df_rainfor <- orgc_coords_latlon(df_rainfor)
 ggplot() +
   geom_point(data = df_rainfor, aes(x = logQMD, y = logDensity), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
-rbeni::plot_map_simpl() +
+rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat, color = biome), data = df_rainfor, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_rainfor, file = file.path(here::here(), "/data/inputs/df_rainfor.rds"))
+saveRDS(df_rainfor, file = here::here("data/inputs/df_rainfor.rds"))

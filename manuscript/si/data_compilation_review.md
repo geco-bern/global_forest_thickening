@@ -74,6 +74,8 @@ Remaining revisions of `00_raw_data.R`.
   - `bci` instead of `scbi`
   - `palanan` instead of `palanam`
   - `forestplots` instead of `df_forestplots`
+- Make the BA-QMD conversion into a function, using the exact value of $\pi$ (`100 * sqrt((4 * ba)/(pi * density))` instead of `QMD = sqrt(ba / (0.0000785 * density))`), and apply it to each constituent dataset.
+- Avoid creating new variables for `logQMD` and `logDensity`. These are now calculated with each model fit later in the workflow and specified as a "recipe".
 
 ## To check Laura
 
