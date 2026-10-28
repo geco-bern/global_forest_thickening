@@ -1,6 +1,6 @@
 # This script reads raw data from the original forest data files and process them to create the input data.
 
-# To avoid subjective decisions regarding management and forest use history, 
+# To avoid subjective decisions regarding management and forest use history,
 # we propose classifying each dataset into the following categories based on the information available:
 
 # Variable management_cat:
@@ -11,11 +11,11 @@
 # the calendar year of the last management intervention is indicated.
 
 # 2. Pristine/primary/old-growth/protected
-# The time since the last management before the first census is unknown. The forest was considered pristine, 
+# The time since the last management before the first census is unknown. The forest was considered pristine,
 # primary, old-growth, protected, or minimally used at the time of the first census.
 
 # 3. Unrecorded history
-# The time since the last management before the first census is unknown. The forest may have a history 
+# The time since the last management before the first census is unknown. The forest may have a history
 # of substantial past wood harvesting and/or visible signs of forest use before the first census.
 
 # load packages ----
@@ -38,7 +38,7 @@ source(here::here("R/functions.R"))
 # NFI Spain ----
 # Data providers: Paloma Ruiz-Benito and Veronica Cruz-Alonso
 
-# Management: 
+# Management:
 # Original info: Only plots were management was not registered during the inventory were provided.
 # Management category assigned to 3 for all plots.
 
@@ -130,12 +130,12 @@ saveRDS(
 # NFI Sweeden ----
 # Data providers: Julian Tijerin-Triviño
 
-# Management: 
+# Management:
 # Original info: Plots include the management variable (0-unmanaged, 1-managed).
 # Management category assigned to 3 for all plots.
-# Other variable that could be used: stand age. Plots with stand age > 80 years could indeed be considered as 
-# potentially unmanaged or at least without recent major interventions (Management category 2). 
-# This approach has limitations—some old forests may have experienced selective cuts or other human disturbances 
+# Other variable that could be used: stand age. Plots with stand age > 80 years could indeed be considered as
+# potentially unmanaged or at least without recent major interventions (Management category 2).
+# This approach has limitations—some old forests may have experienced selective cuts or other human disturbances
 # in the past that are not reflected in the current stand age.
 
 # Tree-level for species
@@ -162,7 +162,10 @@ nfi_sweeden_tree <- nfi_sweeden_tree |>
     values_to = "ba_tree"
   ) |>
   mutate(census = parse_number(census)) |>
-  left_join(species_code)
+  left_join(
+    species_code,
+    by = join_by(code)
+    )
 
 # Stand-level
 nfi_sweeden <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfi_swe/nfi_swe_stand.csv", sep = ",")
@@ -178,6 +181,7 @@ nfi_sweeden <- nfi_sweeden |>
     dbh = NA,
     plotID = parse_number(plotID)
   ) |>
+
   # create census
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
@@ -191,7 +195,7 @@ nfi_sweeden <- nfi_sweeden |>
     country = "Sweeden"
   )
 
-# aggregate data from stand to stand data
+# aggregate data from tree to stand data
 df_nfi_sweeden <- from_stand_tree_data(nfi_sweeden_tree, nfi_sweeden)
 
 # add coords and biomes
@@ -440,12 +444,12 @@ saveRDS(df_fia_us, file = here::here("data/inputs/df_fia_us.rds"))
 
 # NFI Switzerland ----
 # Data providers: Brigitte Rohner
-# Management: 
+# Management:
 # Original info: Each plots provides the variable LETZTENU, which provides information about
 # the number of years since last management before each census (LFI1 to LFI5).
-# LETZTENU: Number of years since the last silvicultural intervention according to the oral survey at the Forest Service (derivation LETZTENU in the Swiss NFI database). 
+# LETZTENU: Number of years since the last silvicultural intervention according to the oral survey at the Forest Service (derivation LETZTENU in the Swiss NFI database).
 # If it is known that no intervention has been carried out on this sample area for a very long time or
-# that it is almost certain that no intervention has ever been carried out, LETZTENU=999. 
+# that it is almost certain that no intervention has ever been carried out, LETZTENU=999.
 # Calculated variables:
 # - management_since_census1_yrs, sum of LETZTENU years, only when value increase over censuses. If values are not strictly increasing → NA.
 # - management = 1 if management_since_census1_yrs=NA, and management = 0 otherwise.
@@ -510,7 +514,7 @@ nfi_switzerland <- lfi_plot_census |>
   ungroup() |>
   mutate(
     management = ifelse(is.na(management_since_census1_yrs), 1, 0),
-    management_cat = 1, 
+    management_cat = 1,
     plotsize = PLOT_AREA_LARGE * 10^-4,
     country = "Switzerland"
   )
@@ -541,13 +545,13 @@ df_nfi_switzerland <- orgc_coords_latlon(df_nfi_switzerland)
 
 ggplot() +
   geom_point(
-    data = df_nfi_switzerland, 
+    data = df_nfi_switzerland,
     aes(x = log(QMD), y = log(density)),
     alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE
   )
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_nfi_switzerland, size = 0.5, alpha = 0.5) + 
+  geom_point(aes(lon, lat, color = biome), data = df_nfi_switzerland, size = 0.5, alpha = 0.5) +
   theme(legend.position = "bottom")
 
 # Save stand-level data
@@ -559,7 +563,7 @@ saveRDS(
 # NFI Norway ----
 # Data providers: Oliver Moen Snoksrud and Johannes Breidenbach
 # Management:
-# Original info: 
+# Original info:
 # - management_since_census1_yrs = 64,
 # - management_cat = 1 for all plots. (Recorded history)
 
@@ -573,7 +577,7 @@ nfi_norway <- nfi_norway |>
   mutate( # convert to cm
     dbh = dbh / 10,
     qmd = qmd / 10
-  ) |> 
+  ) |>
   rename(
     ba = basal_area,
     plotsize = area
@@ -585,13 +589,13 @@ nfi_norway <- nfi_norway |>
   relocate(census, .after = year) |>
   mutate(
     management = 0,
-    management_cat = 1, 
+    management_cat = 1,
     management_since_census1_yrs = 64,
     country = "Norway"
   )
 
 # aggregate data from stand
-df_nfi_norway <- from_stand_data(nfi_norway) 
+df_nfi_norway <- from_stand_data(nfi_norway)
 
 # add coords and biomes
 df_nfi_norway <- biomes_coords_latlon(df_nfi_norway)
@@ -657,9 +661,9 @@ efm_management <- efm_management |>
   mutate(FNUM = as.character(FNUM),
          management_since_census1_yrs = first_measurement - year_last_intervention) |>
   select(FNUM, management_since_census1_yrs)
-  
+
 # Stand level data (per plot, year and species)
-efm_stand <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/efm_stand.RDS") 
+efm_stand <- readRDS("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/efm/raw/efm_stand.RDS")
 #efm_stand <- readRDS("~/data/efm/raw/efm_stand.RDS")
 efm_stand <- efm_stand |>
   mutate(FNUM = as.character(FNUM)) |>
@@ -701,7 +705,7 @@ efm_swi <- efm_stand |>
   # create management variable
   mutate(
     management = 0,
-    management_cat = 1, 
+    management_cat = 1,
     country = "Switzerland"
   )
 
@@ -745,8 +749,8 @@ saveRDS(df_efm_swi, file = here::here("data/inputs/df_efm_swi.rds"))
 # status 3 Tree standing (1) or lying (0) Boolean
 # status 4 Only for dead trees: entire tree (1) or broken tree (snag), (0)
 
-# Management: 
-# Original info: Plots are considered to be primary in the sense that hey have not been managed in the past. 
+# Management:
+# Original info: Plots are considered to be primary in the sense that hey have not been managed in the past.
 # Derived info: Since history is known, we assign management_cat = 1 and management_since_census1_yrs = 999.
 
 # Tree-level data
@@ -775,7 +779,7 @@ uholka <- uholka |>
     country = "Ukraine"
     # management_since_census1_yrs = 999 (beni: changed to management_cat = 2)
   ) |>
-  drop_na(dbh) 
+  drop_na(dbh)
 
 # aggregate data from stand to stand data
 df_uholka <- from_tree_data(uholka) |>
@@ -822,7 +826,7 @@ saveRDS(df_uholka, file = here::here("data/inputs/df_uholka.rds"))
 # fep gre ----
 # Greece
 # Data providers: Gavriil Spyroglou and Nikolaos Fyllas
-# Management: 
+# Management:
 # The dataset provides year_last_intervention and year of first measurement (plot establishment)
 # Calculated: management_since_census1_yrs = first_measurement - year_last_intervention.
 # Note: Data also includes years_since_management. We did not use this variable.
@@ -1011,7 +1015,7 @@ bnp <- bnp |>
     dbh = mean_dbh,
     ba = basal_area,
     species = dominant_species
-  ) 
+  )
 
 # aggregate data from stand
 df_bnp <- from_stand_data(bnp) |>
@@ -1070,7 +1074,7 @@ saveRDS(df_bnp, file = here::here("data/inputs/df_bnp.rds"))
 czu_tree <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/czu/euf_czu_tree.csv", sep = ",")
 # czu_stand <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/euforia/czu/euf_czu_stand.csv", sep = ",")
 
-czu_tree <- read.csv("~/data/euforia/czu/euf_czu_tree.csv", sep = ",") 
+czu_tree <- read.csv("~/data/euforia/czu/euf_czu_tree.csv", sep = ",")
 # czu_stand <- read.csv("~/data/euforia/czu/euf_czu_stand.csv", sep = ",")
 
 # prepare data
@@ -1132,7 +1136,7 @@ saveRDS(df_czu, file = here::here("data/inputs/df_czu.rds"))
 # Before called forst
 # Management:
 # Original: In Table S1 indicated that last management was before the time of designation
-# Confirm what is tsc variable? 
+# Confirm what is tsc variable?
 # Assigned management_cat = 2
 
 # Stand-level data by species
@@ -1396,7 +1400,7 @@ lwf_tree <- lwf_tree |>
     status = Status,
     dbh = DBH
   ) |>
-  left_join(lwf_stand) 
+  left_join(lwf_stand)
 
 # aggregate data from tree to stand data
 df_lwf <- from_tree_data(lwf_tree) |>
@@ -1668,7 +1672,7 @@ nwfva_tree <- nwfva_tree |>
     x = distance * cos(azimuth),
     y = distance * sin(azimuth),
     biomass = NA
-  ) 
+  )
 
 # aggregate data from tree to stand data
 df_nwfva <- from_tree_data(nwfva_tree) |>
@@ -1712,7 +1716,7 @@ saveRDS(df_nwfva, file = here::here("data/inputs/df_nwfva.rds"))
 
 ## tuzvo ----
 # Data providers: Stanislav Kucbel and Peter Jalovia
-# Original dataset does not include info on management. 
+# Original dataset does not include info on management.
 # In Table S1, management_since_census1_yrs = NA, management_cat = 2
 
 # Stand-level data
@@ -1800,7 +1804,7 @@ saveRDS(df_tuzvo, file = here::here("data/inputs/df_tuzvo.rds"))
 
 ## ul ----
 # Thomas Nagel
-# Management: 
+# Management:
 # Original info: Plots are considered to be old forest with no management.
 # Derived info: We assign management_cat = 2 and management_since_census1_yrs = NA
 
@@ -1880,7 +1884,7 @@ saveRDS(df_ul, file = here::here("data/inputs/df_ul.rds"))
 ## unito ----
 # Renzo Motta
 
-# Management: 
+# Management:
 # Original info: No information
 # Derived info: In Table S1, assign to 50 years. Need to confirm with data providers.
 
@@ -2332,7 +2336,7 @@ bci <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYgl
 
 # bci <- list.files(path = "~/data/forestgeo/bci", full.names = TRUE, pattern = "\\.csv$") |>
 #   lapply(read_csv) |>
-#   bind_rows() 
+#   bind_rows()
 
 ## Prepare data
 bci <- bci |>
@@ -2438,7 +2442,7 @@ scbi <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYg
 #   lapply(read_csv) |>
 #   lapply(\(x) mutate(x, across(Tag, as.double))) |>
 #   lapply(\(x) mutate(x, across(StemTag, as.double))) |>
-#   bind_rows() 
+#   bind_rows()
 
 ## Prepare data
 scbi <- scbi |>
@@ -2525,7 +2529,7 @@ palanam <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GF
 #   lapply(read_csv) |>
 #   lapply(\(x) mutate(x, across(Tag, as.double))) |>
 #   lapply(\(x) mutate(x, across(StemTag, as.double))) |>
-#   bind_rows()  
+#   bind_rows()
 
 ## Prepare data
 palanam <- palanam |>
@@ -2847,7 +2851,7 @@ pasoh <- pasoh |>
   filter(dbh > 0) |>
   drop_na(PX) |>
   drop_na(PY) |>
-  drop_na(year) 
+  drop_na(year)
 
 # aggregate data from stand to stand data
 df_pasoh <- from_tree_data(pasoh) |>
@@ -3028,7 +3032,7 @@ gabon <- gabon |>
   mutate(year = as.integer(year)) |>
   mutate(dbh = dbh / 10) |>
   filter(dbh != 0) |>
-  left_join(meta_fp |> 
+  left_join(meta_fp |>
   select(-country), by = "plotID")
 
 # 3) Ghana
@@ -3046,7 +3050,7 @@ ghana <- ghana |>
   mutate(year = as.integer(year)) |>
   mutate(dbh = dbh / 10) |>
   filter(dbh != 0) |>
-  left_join(meta_fp |> 
+  left_join(meta_fp |>
   select(-country), by = "plotID")
 
 # 4) Malaysia
@@ -3064,7 +3068,7 @@ malaysia <- malaysia |>
   mutate(year = as.integer(year)) |>
   mutate(dbh = dbh / 10) |>
   filter(dbh != 0) |>
-  left_join(meta_fp |> 
+  left_join(meta_fp |>
   select(-country), by = "plotID")
 
 # Join all plots
@@ -3130,9 +3134,9 @@ saveRDS(
 # Forestry Corporation of NSW: Mike Sutton
 # Queensland data: Michael Ngug or John Neldner
 # Victoria: Andrew Clark
-# TERN: Open 
+# TERN: Open
 # Includes management info.
-# Data has last management intervention. This shows the last year when some of the trees were labelled as thinned. 
+# Data has last management intervention. This shows the last year when some of the trees were labelled as thinned.
 # Many plots did not have any trees labelled as being thinned.
 # If year_last_management = NA, no management among censuses, management_cat = 2
 # If year_last_management is numeric, thinning among censuses, management_cat = 3
@@ -3159,8 +3163,8 @@ aus_plots <- aus_plots |>
     year = as.integer(year),
     management = ifelse(year_last_management < min(year, na.rm = TRUE), 0, 1), # beni: added this to be sure
     management_since_census1_yrs = ifelse(
-      management == 0, 
-      min(year, na.rm = TRUE) - year_last_management, 
+      management == 0,
+      min(year, na.rm = TRUE) - year_last_management,
       NA
     ), # beni: added this instead of considering it NA
     # management_cat = ifelse(is.na(year_last_management), 2, 3)  # beni: changed this to cat = 1: known history
@@ -3172,7 +3176,7 @@ df_aus <- from_stand_data(aus_plots) |>
   # create census
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
-  ungroup() 
+  ungroup()
 
 # add coords and biomes
 df_aus <- biomes_coords_latlon(df_aus)

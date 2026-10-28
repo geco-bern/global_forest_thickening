@@ -97,7 +97,7 @@ data_filter90_fc <- function(data_unm) {
     ) |>
     filter(logDensity > low_density & logDensity < upp_density) |>
     filter(logQMD > low_QMD & logQMD < upp_QMD)
-  
+
   return(data_fil)
 }
 
@@ -127,7 +127,7 @@ data_filter55_fc <- function(data_unm) {
     ) |>
     filter(logDensity > low_density & logDensity < upp_density) |>
     filter(logQMD > low_QMD & logQMD < upp_QMD)
-  
+
   return(data_fil)
 }
 
@@ -216,7 +216,7 @@ from_species_data <- function(data) {
       QMD = ba_to_qmd(ba, density),
       dataset = datanm
     ) |>
-    
+
     # calculate period lengths
     arrange(plotID, year) |>
     group_by(plotID) |>
@@ -241,6 +241,7 @@ from_species_data <- function(data) {
 
 # prepare_stand_data
 from_stand_tree_data <- function(data_tree, data_stand) {
+
   # get name of dataset
   datanm <- harmonise_dataset_names(deparse(substitute(data_stand)))
 
@@ -258,23 +259,28 @@ from_stand_tree_data <- function(data_tree, data_stand) {
   # Aggregate data at stand level
   data_agg <- data_stand |>
     select(-any_of(c("logQMD", "logDensity"))) |>
+
     # calculate QMD
     mutate(
       QMD = ba_to_qmd(ba, density),
       dataset = datanm
     ) |>
+
     # calculate period lengths
     arrange(plotID, year) |>
     group_by(plotID) |>
     mutate(period = year - lag(year)) |>
     relocate(period, .after = year) |>
+
     # calculate basal area increment
     mutate(ba_inc = (ba - lag(ba)) / period) |>
     relocate(ba_inc, .after = ba) |>
+
     # calculate number of censuses
     mutate(n_census = n()) |>
     ungroup() |>
     filter(density > 0) |>
+
     # join dominant species to data
     left_join(dom_species)
 
@@ -567,19 +573,19 @@ ai_coords_latlon <- function(data) {
 }
 
 ai_coords_latlon_optim <- function(data){
-  
+
   # read raster
   rasta <- rast("~/data/aridityindex_zomer_2022/Global-AI_ET0_v3_annual/ai_v3_yr.tif")
   values(rasta) <- values(rasta) * 1e-4
-  
+
   # aggregate to 0.1 deg
   fact_val <- round(res(rasta)[1]^-1 * 0.1)
   rasta_agg <- aggregate(rasta, fact = fact_val, fun = "mean", filename = "~/data/tmp_ai_agg.tif", overwrite = TRUE)
   rasta_agg <- rast("~/data/tmp_ai_agg.tif")  # reload smaller raster
-  
+
   # extract coordinates
   coords <- data[, c("lon", "lat")]
-  
+
   # extract in chunks
   chunk_size <- 10000
   ai_values <- numeric(nrow(coords))
@@ -587,7 +593,7 @@ ai_coords_latlon_optim <- function(data){
     idx <- i:min(i+chunk_size-1, nrow(coords))
     ai_values[idx] <- terra::extract(rasta_agg, coords[idx,], xy=FALSE, ID=FALSE)[,1]
   }
-  
+
   # add AI to data
   data$ai <- ai_values
   return(data)
@@ -759,34 +765,34 @@ orgc_coords_latlon <- function(data) {
 }
 
 # add coords and MAT - Mean Anual Temperature (tavg, °C) from WorldClim
-# (averaged over 1970-2000) at 30 seconds spatial resolution 
+# (averaged over 1970-2000) at 30 seconds spatial resolution
 tavg_coords_latlon <- function(data){
-  
+
   siteinfo <- data |>
     select(plotID, lon, lat) |>
     rename(sitename = plotID) |>
     distinct()
-  
+
   settings_worldclim <- list(varnam = c("tavg"))
-  
+
   df_worldclim <- ingest(
     siteinfo,
     source    = "worldclim",
     settings  = settings_worldclim,
     dir       = "~/data/worldclim_fick_2017"
   )
-  
+
   df_worldclim <- df_worldclim |>
     unnest(cols = data) |>
     rename(plotID = sitename) |>
     group_by(plotID) |>
     summarise(tavg = mean(tavg, na.rm = T)) |>
     ungroup()
-  
+
   # Join CN ratio to data
-  data_agg <- data |> 
-    left_join(df_worldclim) 
-  
+  data_agg <- data |>
+    left_join(df_worldclim)
+
   return(data_agg)
 }
 
