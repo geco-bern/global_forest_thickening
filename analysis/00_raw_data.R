@@ -341,7 +341,7 @@ if (!file.exists(filn)) {
   data_stand <- readRDS(file.path(raw_data_dir, "fia_us/obs/data_stand_us.rds"))
 
   # We want to filter the unmanaged plots. For that we select those plots classified as Reserves.
-  # COND table RESERVCD==1 represents the reserves, where no interventions have been carried out.
+  # COND table RESERVCD == 1 identifies plots classified as forest reserves.
   data_cond_sel <- data_cond |>
     select(plotID, UNITCD, STATECD, COUNTYCD, PLOT, RESERVCD) |>
     distinct(plotID, .keep_all = T)
@@ -353,6 +353,8 @@ if (!file.exists(filn)) {
   # Join tables
   df_fia_us <- data_stand |>
     left_join(data_cond_sel) |>
+    # Require an explicit reserve classification; exclude non-reserves and NA.
+    filter(RESERVCD == 1) |>
     left_join(data_plot_sel) |>
     
     # rename variable
@@ -388,6 +390,11 @@ if (!file.exists(filn)) {
     select(-any_of(c("logQMD", "logDensity"))) |>
     mutate(QMD = ba_to_qmd(ba, density))
 }
+
+# Apply the reserve restriction to cached data too: the FIA mapping above sets
+# management = RESERVCD - 1, so only management == 0 identifies reserves.
+df_fia_us <- df_fia_us |>
+  filter(management == 0)
 
 # Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
 df_fia_us <- standardise_stand_data(df_fia_us)
