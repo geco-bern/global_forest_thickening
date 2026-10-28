@@ -204,8 +204,10 @@ from_species_data <- function(data) {
   data_agg <- data |>
     group_by(plotID, plotsize, lon, lat, year) |>
     summarise(
-      density = sum(density, na.rm = T),  # beni: to check: in tree-level datasets, we cannot sum densities, but have to count observations with n()
-      ba = sum(ba, na.rm = T),
+      # Species-level density and basal area are already per-hectare totals.
+      # Mean species DBH cannot recover a missing basal-area total.
+      density = sum(density, na.rm = FALSE),
+      ba = sum(ba, na.rm = FALSE),
       dbh = mean(dbh, na.rm = T),
       biomass = sum(biomass, na.rm = T)
     ) |>
@@ -230,7 +232,7 @@ from_species_data <- function(data) {
     # calculate number of censuses
     mutate(n_census = n()) |>
     ungroup() |>
-    filter(density > 0) |>
+    filter(is.na(density) | density > 0) |>
 
     # join dominant species to data
     left_join(dom_species) |>
@@ -247,7 +249,7 @@ from_stand_tree_data <- function(data_tree, data_stand) {
   # identify dominant species
   dom_species <- data_tree |>
     group_by(plotID, census, species) |>
-    summarise(ba = sum(ba_tree)) |>
+    summarise(ba = sum(ba_tree, na.rm = FALSE)) |>
     distinct() |>
     ungroup() |>
     group_by(plotID, census) |>
@@ -314,10 +316,15 @@ from_tree_data <- function(data) {
   # get name of dataset
   datanm <- harmonise_dataset_names(deparse(substitute(data)))
 
+  # Preserve supplied individual basal areas (m2). Fill only missing values
+  # from that tree's DBH (cm); if both are missing, retain NA in the total.
+  data <- data |>
+    mutate(ba_tree = coalesce(ba_tree, pi * (dbh / 200)^2, NA_real_))
+
   # identify dominant species
   dom_species <- data |>
     group_by(plotID, year, species) |>
-    reframe(ba = sum(ba_tree) / plotsize) |>
+    reframe(ba = sum(ba_tree, na.rm = FALSE) / plotsize) |>
     distinct() |>
     ungroup() |>
     group_by(plotID, year) |>
@@ -330,7 +337,7 @@ from_tree_data <- function(data) {
     group_by(country, plotID, lon, lat, year, plotsize) |>
     reframe(
       density = n() / plotsize,
-      ba = sum(ba_tree, na.rm = T) / plotsize,
+      ba = sum(ba_tree, na.rm = FALSE) / plotsize,
       dbh = mean(dbh, na.rm = T),
       management_since_census1_yrs = mean(management_since_census1_yrs, na.rm = T),
       biomass = sum(biomass, na.rm = F) / plotsize) |>

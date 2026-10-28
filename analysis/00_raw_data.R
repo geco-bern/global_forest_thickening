@@ -33,6 +33,8 @@ library(here)
 
 # load functions ----
 # Aggregation helpers harmonise dataset identifiers for all downstream labels.
+# Retain missing tree DBH values through the eligibility filters: if individual
+# basal area cannot be recovered, the stand basal-area sum must remain NA.
 source(here::here("R/functions.R"))
 
 # NFI Spain ----
@@ -323,7 +325,7 @@ if (!file.exists(filn)) {
     dom_species <- currentDF |>
       mutate(plotID = paste(UNITCD, STATECD, COUNTYCD, PLOT, sep = "_")) |>
       group_by(plotID, INVYR, species) |>
-      summarize(ba = sum((pi * DIA * DIA / 4) * TPA_UNADJ * 0.00064516 / 0.405, na.rm = TRUE)) |>
+      summarize(ba = sum((pi * DIA * DIA / 4) * TPA_UNADJ * 0.00064516 / 0.405, na.rm = FALSE)) |>
       slice_max(ba, with_ties = FALSE) |>
       ungroup() |>
       select(plotID, INVYR, species)
@@ -335,9 +337,9 @@ if (!file.exists(filn)) {
       group_by(plotID, INVYR, census) |>
       summarize(
         abg_biomass_kg_ha = sum(DRYBIO_AG * TPA_UNADJ * 0.453 / 0.405, na.rm = TRUE),
-        density = sum(TPA_UNADJ / 0.405, na.rm = TRUE),
+        density = sum(TPA_UNADJ / 0.405, na.rm = FALSE),
         dbh = mean(DIA * 2.54, na.rm = TRUE),
-        ba = sum((pi * DIA * DIA / 4) * TPA_UNADJ * 0.00064516 / 0.405, na.rm = TRUE)
+        ba = sum((pi * DIA * DIA / 4) * TPA_UNADJ * 0.00064516 / 0.405, na.rm = FALSE)
       ) |>
       ungroup() |>
       mutate(
@@ -380,6 +382,7 @@ if (!file.exists(filn)) {
   df_fia_us <- data_stand |>
     left_join(data_cond_sel) |>
     left_join(data_plot_sel) |>
+    
     # rename variable
     rename(
       year = INVYR,
@@ -395,13 +398,19 @@ if (!file.exists(filn)) {
       management_since_census1_yrs = NA,
       management_cat = 2
     ) |>
+    
     # Remove entries with density = 0
-    filter(density > 0) |>
+    filter(is.na(density) | density > 0) |>
+    
     # Remove entries with QMD = 0
-    filter(QMD > 0)
+    filter(is.na(QMD) | QMD > 0)
 
   saveRDS(df_fia_us, file = here::here("data/inputs/df_fia_us.rds"))
+
 } else {
+
+  # These are cached stand totals. Rebuild from TREE tables to apply changes
+  # to missing-value handling; recalculating QMD cannot repair partial BA sums.
   # Refresh derived diameters in caches created with the rounded conversion.
   df_fia_us <- readRDS(here::here("data/inputs/df_fia_us.rds")) |>
     select(-any_of(c("logQMD", "logDensity"))) |>
@@ -473,7 +482,7 @@ dom_species <- lfi_tree_census |>
   add_tally() |>
   mutate(density = REPRESENTATION * n) |>
   mutate(ba_tree = pi * (DBH * 0.01)^2 / 4 * density) |>
-  summarise(ba = sum(ba_tree, na.rm = T)) |>
+  summarise(ba = sum(ba_tree, na.rm = FALSE)) |>
   slice_max(ba, with_ties = FALSE) |>
   ungroup() |>
   select(PLOTID, year, species)
@@ -774,8 +783,7 @@ uholka <- uholka |>
     biomass = NA,
     country = "Ukraine"
     # management_since_census1_yrs = 999 (beni: changed to management_cat = 2)
-  ) |>
-  drop_na(dbh) 
+  )
 
 # aggregate data from stand to stand data
 df_uholka <- from_tree_data(uholka) |>
@@ -841,7 +849,7 @@ dom_species <- fep_gre_tree |>
   add_tally() |>
   mutate(density = n,
          ba_tree = pi * (dbh * 0.01)^2 / 4 * density) |>
-  summarise(ba = sum(ba_tree, na.rm = T)) |>
+  summarise(ba = sum(ba_tree, na.rm = FALSE)) |>
   slice_max(ba, with_ties = FALSE) |>
   ungroup() |>
   select(plotID, year, species)
@@ -1207,7 +1215,7 @@ iberbas <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_d
 
 # prepare data
 iberbas <- iberbas |>
-  filter(dbh != 0) |>
+  filter(is.na(dbh) | dbh != 0) |>
   rename(plotsize = plot_size) |>
   # calculate basal area
   mutate(
@@ -1577,13 +1585,16 @@ nfr_swi <- nfr_stand |>
   ) |>
   filter(density != 0) |>
   filter(is.na(density) == FALSE) |>
+
   # Remove plotID because it has a disproportionately high BA and Biomass increment, as suggested by David Forrester
   filter(plotID != 7007028, plotID != 7005006, plotID != 7005003, plotID != 7005002, plotID != 7001001, plotID != 7001002, plotID != 7001003, plotID != 7002003) |>
+  
   # create census
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
   ungroup() |>
   relocate(census, .after = year) |>
+  
   # create management variable
   mutate(
     country = "Switzerland",
@@ -2272,7 +2283,7 @@ luquillo <- luquillo |>
     species = ifelse(species == "Ficus spp", "Ficus spp.", species)
   ) |>
   filter(status == "alive") |>
-  filter(dbh > 0) |>
+  filter(is.na(dbh) | dbh > 0) |>
   drop_na(PX) |>
   drop_na(PY) |>
   drop_na(year)
@@ -2337,7 +2348,6 @@ bci <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYgl
 ## Prepare data
 bci <- bci |>
   select(-species) |>
-  drop_na(DBH) |>
   rename(
     plotID = Quadrat,
     census = Census,
@@ -2365,7 +2375,7 @@ bci <- bci |>
     management_since_census1_yrs = NA,
     country = "Panama"
   ) |>
-  filter(dbh > 0) |>
+  filter(is.na(dbh) | dbh > 0) |>
   filter(status == "alive") |>
   drop_na(PX) |>
   drop_na(PY) |>
@@ -2465,7 +2475,7 @@ scbi <- scbi |>
     country = "USA",
     species = ifelse(species == "Carya sp", "Carya spp.", species)
   ) |>
-  filter(dbh > 0) |>
+  filter(is.na(dbh) | dbh > 0) |>
   filter(status == "alive") |>
   drop_na(PX) |>
   drop_na(PY) |>
@@ -2548,7 +2558,7 @@ palanam <- palanam |>
     management_since_census1_yrs = NA,
     country = "Philippines"
   ) |>
-  filter(dbh > 0) |>
+  filter(is.na(dbh) | dbh > 0) |>
   filter(status == "alive") |>
   drop_na(PX) |>
   drop_na(PY) |>
@@ -2560,7 +2570,7 @@ df_palanam <- from_tree_data(palanam) |>
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
   ungroup() |>
-  filter(log(QMD) > 1) |>
+  filter(is.na(QMD) | log(QMD) > 1) |>
   mutate(
     management_cat = 2,
     management = 0
@@ -2652,7 +2662,7 @@ serc <- serc |>
     management_since_census1_yrs = NA,
     country = "USA"
   ) |>
-  filter(dbh > 0) |>
+  filter(is.na(dbh) | dbh > 0) |>
   filter(status == "alive") |>
   drop_na(PX) |>
   drop_na(PY) |>
@@ -2666,7 +2676,7 @@ df_serc <- from_tree_data(serc) |>
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
   ungroup() |>
-  filter(log(QMD) > 1) |>
+  filter(is.na(QMD) | log(QMD) > 1) |>
   mutate(
     management_cat = 2,
     management = 0
@@ -2735,7 +2745,7 @@ wytham <- wytham |>
     management_since_census1_yrs = NA,
     country = "UK"
   ) |>
-  filter(dbh > 0) |>
+  filter(is.na(dbh) | dbh > 0) |>
   filter(status != "D") |>
   drop_na(PX) |>
   drop_na(PY) |>
@@ -2844,7 +2854,7 @@ pasoh <- pasoh |>
     country = "Malaysia"
   ) |>
   filter(DFstatus == "alive") |>
-  filter(dbh > 0) |>
+  filter(is.na(dbh) | dbh > 0) |>
   drop_na(PX) |>
   drop_na(PY) |>
   drop_na(year) 
@@ -3006,7 +3016,7 @@ multiplots <- multiplots |>
     dbh = rowMeans(across(D0:D4), na.rm = TRUE),
     dbh = dbh / 10
   ) |>
-  filter(dbh != 0) |>
+  filter(is.na(dbh) | dbh != 0) |>
   select(-c(D0, D1, D2, D3, D4)) |>
   left_join(meta_fp |> select(-country), by = "plotID") |>
   as_tibble()
@@ -3027,7 +3037,7 @@ gabon <- gabon |>
   rename(plotID = plot_code) |>
   mutate(year = as.integer(year)) |>
   mutate(dbh = dbh / 10) |>
-  filter(dbh != 0) |>
+  filter(is.na(dbh) | dbh != 0) |>
   left_join(meta_fp |> 
   select(-country), by = "plotID")
 
@@ -3045,7 +3055,7 @@ ghana <- ghana |>
   select(country, plotID, treeID, species, year, dbh) |>
   mutate(year = as.integer(year)) |>
   mutate(dbh = dbh / 10) |>
-  filter(dbh != 0) |>
+  filter(is.na(dbh) | dbh != 0) |>
   left_join(meta_fp |> 
   select(-country), by = "plotID")
 
@@ -3063,7 +3073,7 @@ malaysia <- malaysia |>
   select(country, plotID, treeID, species, year, dbh) |>
   mutate(year = as.integer(year)) |>
   mutate(dbh = dbh / 10) |>
-  filter(dbh != 0) |>
+  filter(is.na(dbh) | dbh != 0) |>
   left_join(meta_fp |> 
   select(-country), by = "plotID")
 
@@ -3089,7 +3099,7 @@ df_forestplots <- from_tree_data(forestplots) |>
     management = 0,
     management_cat = 2
     ) |>
-  filter(log(QMD) < 4.5) # remove outliers
+  filter(is.na(QMD) | log(QMD) < 4.5) # remove outliers
 
 # add coords and biomes
 df_forestplots <- biomes_coords_latlon(df_forestplots)
