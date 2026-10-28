@@ -134,11 +134,10 @@ saveRDS(
 
 # Management:
 # Original info: Plots include the management variable (0-unmanaged, 1-managed).
-# Management category assigned to 3 for all plots.
-# Other variable that could be used: stand age. Plots with stand age > 80 years could indeed be considered as
-# potentially unmanaged or at least without recent major interventions (Management category 2).
-# This approach has limitations—some old forests may have experienced selective cuts or other human disturbances
-# in the past that are not reflected in the current stand age.
+# Retain whole plots only when management is recorded as 0 at every census.
+# Assign management_cat = 1 (recorded history). Use stand_age at the first
+# available census as a proxy for years since management before that census,
+# keeping this baseline interval constant across the plot's later censuses.
 
 # Tree-level for species
 species_code <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/nfi_swe/swe_sp_code.csv", sep = ",")
@@ -184,16 +183,21 @@ nfi_sweeden <- nfi_sweeden |>
     plotID = parse_number(plotID)
   ) |>
 
-  # create census
+  # Select whole plots with no management at any available census. Missing
+  # management indicators cannot establish that the plot remained unmanaged.
+  arrange(plotID, year) |>
   group_by(plotID) |>
-  mutate(census = match(year, unique(year))) |>
+  filter(all(!is.na(management) & management == 0)) |>
+  mutate(
+    census = match(year, unique(year)),
+    management_since_census1_yrs = first(stand_age)
+  ) |>
   ungroup() |>
   relocate(census, .after = year) |>
   mutate(
     plotsize = NA,
     biomass = NA,
-    management_since_census1_yrs = NA,
-    management_cat = 3,
+    management_cat = 1,
     country = "Sweeden"
   )
 

@@ -130,7 +130,7 @@ Abbrevation & \textit{N} & Long name & Filter & Reference \\
 \endlastfoot
   nfi\_spain & 27642 & Spanish National Forest Inventory & No management intervention observed during monitoring & Restricted data (not publicly available) \\
   nfi\_norway & 25156 & Norwegian National Forest Inventory & No management intervention observed during monitoring & Restricted data (not publicly available) \\
-  nfi\_sweeden & 15954 & Swedish National Forest Inventory & No management intervention observed during monitoring & Restricted data (not publicly available) \\
+  nfi\_sweeden & 15954 & Swedish National Forest Inventory & No management intervention at any available census & Restricted data (not publicly available) \\
   bnp & 9423 & Berchtesgaden National Park & Forest reserves & Restricted data (not publicly available) \\
   fia\_us & 7022 & Forest Inventory and Analysis, US & Forest reserves & Doser JW, Stanke H, Finley AO (2025). rFIA: Estimation of Forest Variables using the FIA Database. R package version 1.1.0, \url{https://CRAN.R-project.org/package=rFIA} \\
   aus\_plots & 6259 & Sustainable Timber Tasmania, Forestry Corporation of NSW, Queensland, Victoria and Australia's Terrestrial Ecosystem Research Network & No management intervention observed during monitoring & Restricted data (not publicly available) \\
@@ -174,7 +174,9 @@ The supplied selection of plots without registered management during monitoring 
 
 % analysis/00_raw_data.R:123-221; R/functions.R:230-274.
 \subsubsection{Swedish National Forest Inventory}
-For the Swedish inventory (\texttt{nfi\_sweeden}), we used the supplied stand-level density and basal area, together with plot identifiers, geographic coordinates, and year. Plot identifiers were converted to numeric codes and census indices were generated within each plot. QMD was derived from stand basal area and density using Eq.~\ref{eq:qmd2}. The separate tree/species table was reshaped across its three census-specific basal-area columns and joined to a species-code lookup to identify the dominant species by basal area. This supplementary tree table did not replace the supplied stand-level density and basal area in the QMD calculation. The source stand table already contained a management indicator (0 for unmanaged and 1 for managed), which was retained for the later selection of records with \texttt{management = 0}. All records were assigned \texttt{management\_cat = 3}, with a missing elapsed-time value.
+For the Swedish inventory (\texttt{nfi\_sweeden}), we used the supplied stand-level density and basal area, together with plot identifiers, geographic coordinates, and year. Plot identifiers were converted to numeric codes and census indices were generated in chronological order within each plot. QMD was derived from stand basal area and density using Eq.~\ref{eq:qmd2}. The separate tree/species table was reshaped across its three census-specific basal-area columns and joined to a species-code lookup to identify the dominant species by basal area. This supplementary tree table did not replace the supplied stand-level density and basal area in the QMD calculation.
+
+The source stand table contained a management indicator (0 for unmanaged and 1 for managed). We retained a plot only if this indicator was recorded as 0 at every available census; a managed census or a missing indicator excluded the entire plot. Retained records were assigned \texttt{management\_cat = 1} (recorded history). We used the supplied \texttt{stand\_age} at the earliest available census as a proxy for the time since management before monitoring began, assigning this value to \texttt{management\_since\_census1\_yrs}. This baseline interval was held constant across all censuses of the plot.
 
 % \input{dataset_figures/nfi_sweeden.tex}
 
