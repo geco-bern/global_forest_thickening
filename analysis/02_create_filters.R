@@ -133,7 +133,7 @@ df_unm <- df_unm |>
           dataset == "forestplots", 
           "forestplots",
           ifelse(
-            dataset == "df_rainfor",
+            dataset == "rainfor",
             "rainfor",
             dataset
           )
@@ -293,6 +293,7 @@ ggsave(
 ### Barplot: observations by sources over time ----------------
 plot_hist_year_biome <- function(df, biome_name, xmin) {
   df |>
+    mutate(dataset = harmonise_dataset_names(dataset)) |>
     filter(biome_major == biome_name) |>
     ggplot(aes(x = year, fill = dataset)) +
     geom_histogram(
@@ -311,7 +312,9 @@ plot_hist_year_biome <- function(df, biome_name, xmin) {
     ) +
     viridis::scale_fill_viridis(discrete = TRUE) +
     theme(
-      legend.position = "right"
+      legend.position = "right",
+      legend.key.height = grid::unit(0.35, "cm"),
+      legend.text = element_text(size = 9)
     )
 }
 

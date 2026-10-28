@@ -141,7 +141,7 @@ Abbrevation & \textit{N} & Long name & Filter & Reference \\
   wytham & 1200 & Wytham Woods & No management intervention observed during monitoring & \url{https://forestgeo.si.edu} \\
   serc & 1026 & Smithsonian Environmental Research Center & No management intervention observed during monitoring & \url{https://forestgeo.si.edu} \\
   pasoh & 1007 & Pasoh & No management intervention observed during monitoring & \url{https://forestgeo.si.edu} \\
-  df\_rainfor & 988 & Amazon Forest Inventory Network (RAINFOR) & No management intervention ocurred & Esquivel-Muelbert, A., Banbury Morgan, R., Brienen, R. et al. Increasing tree size across Amazonia. Nat. Plants 11, 2016–2025 (2025). \url{https://doi.org/10.1038/s41477-025-02097-4} \\
+  rainfor & 988 & Amazon Forest Inventory Network (RAINFOR) & No management intervention ocurred & Esquivel-Muelbert, A., Banbury Morgan, R., Brienen, R. et al. Increasing tree size across Amazonia. Nat. Plants 11, 2016–2025 (2025). \url{https://doi.org/10.1038/s41477-025-02097-4} \\
   nfr\_swi & 729 & Swiss Natural Forest Reserves & Forest reserves & Restricted data (not publicly available) \\
   fvabw & 537 & Forest Research Institute Baden-Württemberg & Forest reserves & Restricted data (not publicly available) \\
   palanan & 484 & & No management intervention observed during monitoring & \url{https://forestgeo.si.edu} \\
@@ -399,13 +399,13 @@ The variable \texttt{year\_last\_management} from the source was used to specify
 
 % analysis/00_raw_data.R:3146-3249.
 \subsubsection{RAINFOR Amazon Forest Inventory Network}
-We obtained data of the RAINFOR Amazon Forest Inventory Network (\texttt{df\_rainfor} in Table~\ref{tab:datasets}; \texttt{rainfor\_plots} in the script) from published sources. Forest structural information (basal area, tree density) and other information (plot area, plot code, census date) was obtained from \citet{esquivelmuelbert25natplants}. Geographic coordinates of plots were obtained from \citet{bennett23natcc} and \citet{brienen_long-term_2015} and matched with the data from \citet{esquivelmuelbert25natplants} by the common plot codes, retaining the first available entry for each plot code. Coordinates were first matched using the complete plot code. Missing values were then filled from the first available coordinate record sharing the prefix before the first hyphen. Thus, some plots received coordinates representative of their site group rather than a separately matched plot location. Plot area was retained from the source summary table. 
+We obtained data of the RAINFOR Amazon Forest Inventory Network (\texttt{rainfor}) from published sources. Forest structural information (basal area, tree density) and other information (plot area, plot code, census date) was obtained from \citet{esquivelmuelbert25natplants}. Geographic coordinates of plots were obtained from \citet{bennett23natcc} and \citet{brienen_long-term_2015} and matched with the data from \citet{esquivelmuelbert25natplants} by the common plot codes, retaining the first available entry for each plot code. Coordinates were first matched using the complete plot code. Missing values were then filled from the first available coordinate record sharing the prefix before the first hyphen. Thus, some plots received coordinates representative of their site group rather than a separately matched plot location. Plot area was retained from the source summary table.
 
 The supplied stand-summary fields \texttt{number\_stems} and \texttt{total\_BA} were used as the density and basal-area inputs, respectively, without an additional division by plot area in this script. QMD was calculated from their ratio using Eq.~\ref{eq:qmd2}. Decimal census dates were rounded to the nearest calendar year. Geographic coordinates were assembled from two ancillary coordinate tables
 
 Plots were assigned \texttt{management = 0} and \texttt{management\_cat = 2}. Forest plots of the RAINFOR network have been described as old-growth \citep{phillips09sci}, ``lacking signs of recent anthropogenic impacts'' \citep{brienen_long-term_2015}, and ``structurally intact'' \citep{bennett23natcc}.
 
-% \input{dataset_figures/rainfor_plots.tex}
+% \input{dataset_figures/rainfor.tex}
 
 \subsection{Data coverage}
 \label{sec:datacoverage}
@@ -427,7 +427,7 @@ Plots were assigned \texttt{management = 0} and \texttt{management\_cat = 2}. Fo
 \begin{figure}
 \centering
 \includegraphics[width=0.9\textwidth]{../figures/fig_hist_year.pdf}
-\caption{Distribution of forest census data over time, grouped by biome (a-f). Dataset names are explained in Tab. \ref{tab:datasets}.}
+\caption{Distribution of forest census data over time, grouped by biome (a-d). Dataset names are explained in Tab. \ref{tab:datasets}.}
 \end{figure}
 
 \clearpage

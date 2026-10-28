@@ -25,7 +25,7 @@ datasets <- c(
   "fvabw", "iberbas", "unitbv", "lwf", "nbw", "nfr_swi",
   "nwfva", "tuzvo", "ul", "unito", "urk", "wuls",
   "luquillo", "scbi", "palanan", "serc", "wytham", "pasoh", "mudumalai",
-  "forestplots", "aus_plots", "rainfor_plots"
+  "forestplots", "aus_plots", "rainfor"
 )
 d <- readRDS(input) |>
   mutate(dataset = harmonise_dataset_names(dataset))

@@ -34,9 +34,11 @@ The draft, now integrated into `main.tex`, describes executable transformations 
 
 - **Swiss NFI:** the block sums strictly increasing `LETZTENU` values, although the variable is described as years since intervention at each census (`analysis/00_raw_data.R:493–496`). This is not generally the same as time since intervention at the first census. Any occurrence of 999 overrides missing values in other censuses; otherwise missing or non-increasing values produce `management = 1`. There is no explicit 70-year threshold matching information in Table S1. Confirm the intended calculation and table wording. The manuscript describes the implemented screening variable without endorsing it as a first-census interval. (@lauramarques)
 - **Australia:** all plots are assigned `management = 0`, even when `year_last_management` is present. The date changes `management_cat` only (missing date: 2; recorded date: 3), and the elapsed-time variable remains missing. Thus, recorded thinning does not exclude a plot from the common zero-value management filter, but category 3 excludes it from the stricter history subsets. Reconcile this with the table's within-monitoring description.
+  - Beni: revised code for interpreting management information.
 - **Source criteria versus executable filters:** the table caption now distinguishes reported source selection from row removal in the raw-data script. Most datasets receive `management = 0` as an assignment. Sweden retains the source flag; FIA uses the first retained condition record per plot and `RESERVCD - 1`; Swiss NFI derives the flag from its interval calculation. Verify upstream selection where the input itself contains no intervention history.
 - **French INRAE LESSEM:** comments describe subtracting a last-harvest date from first measurement, but the executable block does not calculate the interval. `from_tree_data()` requires the elapsed-time column to exist in the joined input. Verify that the supplied metadata contain it and document its derivation; otherwise this block cannot run as written.
 - **Fixed intervals and special codes:** Norway (64 years), CZU (69), IBERBAS (70), and SCBI (53) receive dataset-wide constants rather than intervals derived from plot-specific dates. Confirm their provenance and relevance to the first census; the CZU comment explicitly requests clarification. Uholka is category 1 with marker 999 and therefore passes the 30- and 100-year thresholds but not the category-2-only filter. The manuscript distinguishes 999 from a measured interval.
+  - Beni: Changed Uholka to management category 2.
 - **Comments versus assignments:** UNITO and WULS are category 2 with missing intervals, rather than the possible 50- and 20-year intervals in comments. NPV-BW and BNP use date differences rather than the commented 42- and 6-year constants. NW-FVA also uses date differences; its comments flag disagreement with a 52-year interval in supplementary information. BNP is subsequently reclassified to category 2 in `analysis/02_create_filters.R:77–78`. LWF remains category 3 despite the table's reserve designation. Dataset paragraphs now describe these distinctions explicitly.
 - **Two filtering routes:** `data_unm_fc()` in `R/functions.R`, called by `analysis/01_clean_data.R`, retains intervals of at least 30 years **or missing intervals**, alongside `management == 0`. The current `analysis/02_create_filters.R` instead reads `df_all.rds` and applies `management == 0` without a common age threshold. Its downstream sensitivity filters in `R/analyse_biome.R` retain `(category 1 AND interval >= 30 or 100 years) OR category 2`, or category 2 alone. The manuscript describes this latter route; confirm that the reported results use it.
 - The FIA download/read branch contains a malformed tree-file `read.csv()` call (`analysis/00_raw_data.R:302`), and its cache existence check uses a different filename from the one subsequently loaded. The combining script assigns `data_all` and then continues from `df_all` (`analysis/01_clean_data.R:221–260`). These existing execution issues were not changed by the writing task.
@@ -61,9 +63,10 @@ Remaining revisions of `00_raw_data.R`.
 - Avoid any use of the factor 0.00007853982. Instead, use R's internal `pi` explicitly in all respective calculations. For example $0.00007853982 = (1/(100\cdot\sqrt{4/\pi}))^2$.
 - For US FIA data processing, explicitly remove plots that were not classified as forest reserve.
 - Add column in table providing information of data provider. Name should be part of the author list.
+- Separate forestplots data into separate dataset by country and take this separation forward in the documentation of constituent datasets in the supplementary information
 - Add to constituent dataset tables information as additional columns:
   - Names of data providers or reference if taken from published sources
-- Harmonise names, also in table and plot labels: 
+<!-- - Harmonise names, also in table and plot labels: 
   - `fep_gre_stand` instead of `greece_stand`
   - `inrae_lessem` instead of `france`
   - `fvabw` instead of `forst`
@@ -75,7 +78,7 @@ Remaining revisions of `00_raw_data.R`.
   - `ul` instead of `ul_tree`
   - `bci` instead of `scbi`
   - `palanan` instead of `palanam`
-  - `forestplots` instead of `df_forestplots`
+  - `forestplots` instead of `df_forestplots` -->
 <!-- - Make the BA-QMD conversion into a function, using the exact value of $\pi$ (`100 * sqrt((4 * ba)/(pi * density))` instead of `QMD = sqrt(ba / (0.0000785 * density))`), and apply it to each constituent dataset. -->
 <!-- - Avoid creating new variables for `logQMD` and `logDensity`. These are now calculated with each model fit later in the workflow and specified as a "recipe". -->
 
