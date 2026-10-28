@@ -60,11 +60,13 @@ Remaining revisions of `00_raw_data.R`.
 
 ## To do
 
-- Do not calculate the logarithm of N and QMD nd do not append this as a new variable to the data at this step.
+<!-- - Do not calculate the logarithm of N and QMD nd do not append this as a new variable to the data at this step. -->
+- Do the extraction from global fields of environmental variables (biome, aridity index, nitrogen deposition, mean annual temperature, soil C:N ratio, soil organic C, etc.) in `01_clean_data.R` for all plot locations (given lon and lat) at once instead of the per-dataset steps implemented in `00_raw_data.R`. 
 - For the tree-level aggregation, do not omit missing individual basal areas from basal-area sums. Instead, impute missing basal area values based on the diameter at breast height (DBH) for the respective tree. If this variable is missing as well, do not calculate the basal area and make it `NA` instead.
-- Avoid any use of the factor 0.00007853982. Instead, use R's internal `pi` explicitly in all respective calculations. For example $0.00007853982 = (1/(100\cdot\sqrt{4/\pi}))^2$.
+<!-- - Avoid any use of the factor 0.00007853982. Instead, use R's internal `pi` explicitly in all respective calculations. For example $0.00007853982 = (1/(100\cdot\sqrt{4/\pi}))^2$. -->
 - For US FIA data processing, explicitly remove plots that were not classified as forest reserve.
 - Add column in table providing information of data provider. Name should be part of the author list.
+- Add information about how management information was provided. For some datasets (mostly national forest inventories), we obtained only a subset of plots that the data providers identified as unmanaged (`management = 0`). Describe whether this was the case (may have to be confirmed again with authors explicitly) in the description of the constituent datasets in the SI. Alternatively, there are cases, where management information was accessed from the original data by interpreting particular variables. Docoument how this was done. For yet others, all plots in the network are unmanaged. Describe if this was known (or assumed) to be the case.
 - Separate forestplots data into separate dataset by country and take this separation forward in the documentation of constituent datasets in the supplementary information
 - Add to constituent dataset tables information as additional columns:
   - Names of data providers or reference if taken from published sources
