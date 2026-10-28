@@ -209,7 +209,7 @@ from_species_data <- function(data) {
       density = sum(density, na.rm = FALSE),
       ba = sum(ba, na.rm = FALSE),
       dbh = mean(dbh, na.rm = T),
-      biomass = sum(biomass, na.rm = T)
+      biomass = sum(biomass, na.rm = FALSE)
     ) |>
     ungroup() |>
 
@@ -297,23 +297,28 @@ from_stand_data <- function(data) {
   # Aggregate data at stand level
   data_agg <- data |>
     select(-any_of(c("logQMD", "logDensity"))) |>
+
     # calculate QMD
     mutate(
       QMD = ba_to_qmd(ba, density),
       dataset = datanm
     ) |>
+    
     # calculate period lengths
     arrange(plotID, year) |>
     group_by(plotID) |>
     mutate(period = year - lag(year)) |>
     relocate(period, .after = year) |>
+
     # calculate basal area increment
     mutate(ba_inc = (ba - lag(ba)) / period) |>
     relocate(ba_inc, .after = ba) |>
+
     # calculate number of censuses
     mutate(n_census = n()) |>
     ungroup() |>
     filter(density > 0)
+
   return(data_agg)
 }
 
@@ -346,7 +351,7 @@ from_tree_data <- function(data) {
       ba = sum(ba_tree, na.rm = FALSE) / plotsize,
       dbh = mean(dbh, na.rm = T),
       management_since_census1_yrs = mean(management_since_census1_yrs, na.rm = T),
-      biomass = sum(biomass, na.rm = F) / plotsize) |>
+      biomass = sum(biomass, na.rm = FALSE) / plotsize) |>
     ungroup() |>
     distinct() |>
     # calculate QMD

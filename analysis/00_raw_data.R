@@ -787,12 +787,7 @@ uholka <- uholka |>
     biomass = NA,
     country = "Ukraine"
     # management_since_census1_yrs = 999 (beni: changed to management_cat = 2)
-<<<<<<< HEAD
   )
-=======
-  ) |>
-  drop_na(dbh)
->>>>>>> 0711e3818c862ff543e1b9f4ec16093f2284b987
 
 # aggregate data from stand to stand data
 df_uholka <- from_tree_data(uholka) |>
@@ -3012,7 +3007,18 @@ multiplots <- read.csv("/data/archive_restricted/GFDYglobe_marques_2025/GFDYglob
 
 # select and rename variables
 multiplots <- multiplots |>
-  select(Country, Plot.Code, TreeID, Species, Census.Date, D0, D1, D2, D3, D4) |>
+  select(
+    Country,
+    Plot.Code,
+    TreeID,
+    Species,
+    Census.Date,
+    D0,
+    D1,
+    D2,
+    D3,
+    D4
+  ) |>
   rename(
     plotID = Plot.Code,
     treeID = TreeID,
@@ -3023,7 +3029,7 @@ multiplots <- multiplots |>
   mutate(year = as.integer(year)) |>
   mutate(
     dbh = rowMeans(across(D0:D4), na.rm = TRUE),
-    dbh = dbh / 10
+    dbh = dbh / 10 # must be in cm
   ) |>
   filter(is.na(dbh) | dbh != 0) |>
   select(-c(D0, D1, D2, D3, D4)) |>
@@ -3045,15 +3051,13 @@ gabon <- gabon |>
   select(country, plot_code, treeID, species, year, dbh) |>
   rename(plotID = plot_code) |>
   mutate(year = as.integer(year)) |>
-  mutate(dbh = dbh / 10) |>
-<<<<<<< HEAD
+  mutate(dbh = dbh / 10) |>  # must be in cm
   filter(is.na(dbh) | dbh != 0) |>
-  left_join(meta_fp |> 
-=======
-  filter(dbh != 0) |>
-  left_join(meta_fp |>
->>>>>>> 0711e3818c862ff543e1b9f4ec16093f2284b987
-  select(-country), by = "plotID")
+  left_join(
+    meta_fp |>
+      select(-country),
+    by = "plotID"
+  )
 
 # 3) Ghana
 ghana <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestplots/mahli_zhang/ghana", full.names = TRUE, pattern = "\\.csv$") |>
@@ -3068,15 +3072,13 @@ ghana <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDY
 ghana <- ghana |>
   select(country, plotID, treeID, species, year, dbh) |>
   mutate(year = as.integer(year)) |>
-  mutate(dbh = dbh / 10) |>
-<<<<<<< HEAD
+  mutate(dbh = dbh / 10) |> # must be in cm
   filter(is.na(dbh) | dbh != 0) |>
-  left_join(meta_fp |> 
-=======
-  filter(dbh != 0) |>
-  left_join(meta_fp |>
->>>>>>> 0711e3818c862ff543e1b9f4ec16093f2284b987
-  select(-country), by = "plotID")
+  left_join(
+    meta_fp |>
+      select(-country),
+    by = "plotID"
+  )
 
 # 4) Malaysia
 malaysia <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/GFDYglobe_data_raw/forestplots/mahli_zhang/malaysia", full.names = TRUE, pattern = "\\.csv$") |>
@@ -3091,14 +3093,9 @@ malaysia <- list.files(path = "/data/archive_restricted/GFDYglobe_marques_2025/G
 malaysia <- malaysia |>
   select(country, plotID, treeID, species, year, dbh) |>
   mutate(year = as.integer(year)) |>
-  mutate(dbh = dbh / 10) |>
-<<<<<<< HEAD
+  mutate(dbh = dbh / 10) |>  # must be in cm
   filter(is.na(dbh) | dbh != 0) |>
   left_join(meta_fp |> 
-=======
-  filter(dbh != 0) |>
-  left_join(meta_fp |>
->>>>>>> 0711e3818c862ff543e1b9f4ec16093f2284b987
   select(-country), by = "plotID")
 
 # Join all plots
@@ -3108,7 +3105,7 @@ forestplots <- multiplots |>
   bind_rows(malaysia) |>
   # calculate basal area
   mutate(
-    ba_tree = pi * (dbh * 0.01 / 2)^2,
+    ba_tree = pi * (dbh * 0.01 / 2)^2,  # ba in m2, dbh in cm
     biomass = NA,
     management_since_census1_yrs = NA
   )

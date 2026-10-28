@@ -11,6 +11,7 @@ The draft, now integrated into `main.tex`, describes executable transformations 
 3. **Wytham 2008** — `analysis/00_raw_data.R:2669–2688` reshapes `dbh_2008` but only status columns for 2010, 2016, and 2021. The 2008 rows therefore receive missing status and are discarded by `filter(status != "D")`. The draft lists the reshaped years but does not assert that 2008 survives. Confirm whether dropping that census is intended. @lauramarques
 
 4. **Missing diameters and multiple stems** — `R/functions.R:333–375` counts input rows for density (`n() / plotsize`) but omits missing basal areas from the basal-area sum. Several dataset blocks do not explicitly remove missing diameter after selecting living trees. Nor does the common helper collapse multiple stem records to unique tree tags. Verify whether each source has already dealt with these cases. The draft explicitly distinguishes retained records/stems from unique biological individuals.
+  - Resolved by commit 0711e38..d99f55e. Sums in aggregation to stand-level are now `na.rm = FALSE`. If BA is missing, but DBH is available, BA is calculated from DBH.
 
 5. **Calendar year versus census** — `from_tree_data()` groups by calendar year, not the source census identifier. Pasoh derives year from each tree's exact measurement date (`analysis/00_raw_data.R:2787–2798`), while Palanam and SERC override only selected census years. If a census spans multiple years, partial within-census counts could be divided by the entire plot area. RAINFOR rounds decimal census dates. Confirm the intended time unit and whether within-census years were standardised upstream.
 
@@ -62,7 +63,7 @@ Remaining revisions of `00_raw_data.R`.
 
 <!-- - Do not calculate the logarithm of N and QMD nd do not append this as a new variable to the data at this step. -->
 - Do the extraction from global fields of environmental variables (biome, aridity index, nitrogen deposition, mean annual temperature, soil C:N ratio, soil organic C, etc.) in `01_clean_data.R` for all plot locations (given lon and lat) at once instead of the per-dataset steps implemented in `00_raw_data.R`. 
-- For the tree-level aggregation, do not omit missing individual basal areas from basal-area sums. Instead, impute missing basal area values based on the diameter at breast height (DBH) for the respective tree. If this variable is missing as well, do not calculate the basal area and make it `NA` instead.
+<!-- - For the tree-level aggregation, do not omit missing individual basal areas from basal-area sums. Instead, impute missing basal area values based on the diameter at breast height (DBH) for the respective tree. If this variable is missing as well, do not calculate the basal area and make it `NA` instead. -->
 <!-- - Avoid any use of the factor 0.00007853982. Instead, use R's internal `pi` explicitly in all respective calculations. For example $0.00007853982 = (1/(100\cdot\sqrt{4/\pi}))^2$. -->
 - For US FIA data processing, explicitly remove plots that were not classified as forest reserve.
 - Add column in table providing information of data provider. Name should be part of the author list.
