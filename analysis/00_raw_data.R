@@ -102,36 +102,16 @@ df_nfi_spain <- from_species_data(nfi_spain) |>
 #   summarise(ba_tot_test = sum(ba)) |>
 #   pull(ba_tot_test)
 
-# add coords and biomes
-df_nfi_spain <- biomes_coords_utm(df_nfi_spain) |>
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_nfi_spain <- coords_to_lonlat(df_nfi_spain, crs = 25830) |>
+  standardise_stand_data() |>
   as_tibble()
-
-# add coords and aridity index
-df_nfi_spain <- ai_coords_latlon(df_nfi_spain)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_nfi_spain <- lai_coords_latlon(df_nfi_spain)
-
-# add coords and N deposition (Lamarque 2011)
-df_nfi_spain <- ndep_coords_latlon(df_nfi_spain)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_nfi_spain <- cn_coords_latlon(df_nfi_spain)
-
-# add coords and Phosphorus P - Bray (PBR)
-df_nfi_spain <- phos_coords_latlon(df_nfi_spain)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_nfi_spain <- orgc_coords_latlon(df_nfi_spain)
 
 ggplot() +
   geom_point(data = df_nfi_spain, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_nfi_spain, size = 0.5, alpha = 0.5)
-
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = ai), data = df_nfi_spain, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_nfi_spain, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(
@@ -211,35 +191,14 @@ nfi_sweeden <- nfi_sweeden |>
 # aggregate data from tree to stand data
 df_nfi_sweeden <- from_stand_tree_data(nfi_sweeden_tree, nfi_sweeden)
 
-# add coords and biomes
-df_nfi_sweeden <- biomes_coords_latlon(df_nfi_sweeden)
-
-# add coords and aridity index
-df_nfi_sweeden <- ai_coords_latlon(df_nfi_sweeden)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_nfi_sweeden <- lai_coords_latlon(df_nfi_sweeden)
-
-# add coords and N deposition (Lamarque 2011)
-df_nfi_sweeden <- ndep_coords_latlon(df_nfi_sweeden)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_nfi_sweeden <- cn_coords_latlon(df_nfi_sweeden)
-
-# add coords and Phosphorus P - Bray (PBR)
-df_nfi_sweeden <- phos_coords_latlon(df_nfi_sweeden)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_nfi_sweeden <- orgc_coords_latlon(df_nfi_sweeden)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_nfi_sweeden <- standardise_stand_data(df_nfi_sweeden)
 
 ggplot() +
   geom_point(data = df_nfi_sweeden, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_nfi_sweeden, size = 0.5, alpha = 0.5)
-
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = ai), data = df_nfi_sweeden, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_nfi_sweeden, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(
@@ -409,7 +368,7 @@ if (!file.exists(filn)) {
       plotsize = 0.4,
       country = "USA",
       management_since_census1_yrs = NA,
-      management_cat = 2
+      management_cat = 3
     ) |>
     
     # Remove entries with density = 0
@@ -430,32 +389,14 @@ if (!file.exists(filn)) {
     mutate(QMD = ba_to_qmd(ba, density))
 }
 
-# add coords and biomes
-df_fia_us <- biomes_coords_latlon(df_fia_us)
-
-# add coords and aridity index
-df_fia_us <- ai_coords_latlon(df_fia_us)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_fia_us <- lai_coords_latlon(df_fia_us)
-
-# add coords and N deposition (Lamarque 2011)
-df_fia_us <- ndep_coords_latlon(df_fia_us)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_fia_us <- cn_coords_latlon(df_fia_us)
-
-# add coords and Phosphorus P - Bray (PBR)
-df_fia_us <- phos_coords_latlon(df_fia_us)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_fia_us <- orgc_coords_latlon(df_fia_us)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_fia_us <- standardise_stand_data(df_fia_us)
 
 ggplot() +
   geom_point(data = df_fia_us, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_fia_us, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_fia_us, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_fia_us, file = here::here("data/inputs/df_fia_us.rds"))
@@ -536,26 +477,8 @@ nfi_switzerland <- lfi_plot_census |>
 # aggregate data from stand to stand data
 df_nfi_switzerland <- from_stand_data(nfi_switzerland)
 
-# add coords and biomes
-df_nfi_switzerland <- biomes_coords_latlon(df_nfi_switzerland)
-
-# add coords and aridity index
-df_nfi_switzerland <- ai_coords_latlon(df_nfi_switzerland)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_nfi_switzerland <- lai_coords_latlon(df_nfi_switzerland)
-
-# add coords and N deposition (Lamarque 2011)
-df_nfi_switzerland <- ndep_coords_latlon(df_nfi_switzerland)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_nfi_switzerland <- cn_coords_latlon(df_nfi_switzerland)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_nfi_switzerland <- phos_coords_latlon(df_nfi_switzerland)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_nfi_switzerland <- orgc_coords_latlon(df_nfi_switzerland)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_nfi_switzerland <- standardise_stand_data(df_nfi_switzerland)
 
 ggplot() +
   geom_point(
@@ -565,7 +488,7 @@ ggplot() +
   )
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_nfi_switzerland, size = 0.5, alpha = 0.5) +
+  geom_point(aes(lon, lat), data = df_nfi_switzerland, size = 0.5, alpha = 0.5) +
   theme(legend.position = "bottom")
 
 # Save stand-level data
@@ -610,32 +533,14 @@ nfi_norway <- nfi_norway |>
 # aggregate data from stand
 df_nfi_norway <- from_stand_data(nfi_norway)
 
-# add coords and biomes
-df_nfi_norway <- biomes_coords_latlon(df_nfi_norway)
-
-# add coords and aridity index
-df_nfi_norway <- ai_coords_latlon(df_nfi_norway)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_nfi_norway <- lai_coords_latlon(df_nfi_norway)
-
-# add coords and N deposition (Lamarque 2011)
-df_nfi_norway <- ndep_coords_latlon(df_nfi_norway)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_nfi_norway <- cn_coords_latlon(df_nfi_norway)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_nfi_norway <- phos_coords_latlon(df_nfi_norway)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_nfi_norway <- orgc_coords_latlon(df_nfi_norway)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_nfi_norway <- standardise_stand_data(df_nfi_norway)
 
 ggplot() +
   geom_point(data = df_nfi_norway, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_nfi_norway, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_nfi_norway, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(
@@ -720,32 +625,14 @@ efm_swi <- efm_stand |>
 # aggregate data from stand
 df_efm_swi <- from_stand_data(efm_swi)
 
-# add coords and biomes
-df_efm_swi <- biomes_coords_latlon(df_efm_swi)
-
-# add coords and aridity index
-df_efm_swi <- ai_coords_latlon(df_efm_swi)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_efm_swi <- lai_coords_latlon(df_efm_swi)
-
-# add coords and N deposition (Lamarque 2011)
-df_efm_swi <- ndep_coords_latlon(df_efm_swi)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_efm_swi <- cn_coords_latlon(df_efm_swi)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_efm_swi <- phos_coords_latlon(df_efm_swi)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_efm_swi <- orgc_coords_latlon(df_efm_swi)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_efm_swi <- standardise_stand_data(df_efm_swi)
 
 ggplot() +
   geom_point(data = df_efm_swi, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_efm_swi, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_efm_swi, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_efm_swi, file = here::here("data/inputs/df_efm_swi.rds"))
@@ -799,32 +686,14 @@ df_uholka <- from_tree_data(uholka) |>
     management_cat = 2
   )
 
-# add coords and biomes
-df_uholka <- biomes_coords_latlon(df_uholka)
-
-# add coords and aridity index
-df_uholka <- ai_coords_latlon(df_uholka)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_uholka <- lai_coords_latlon(df_uholka)
-
-# add coords and N deposition (Lamarque 2011)
-df_uholka <- ndep_coords_latlon(df_uholka)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_uholka <- cn_coords_latlon(df_uholka)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_uholka <- phos_coords_latlon(df_uholka)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_uholka <- orgc_coords_latlon(df_uholka)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_uholka <- standardise_stand_data(df_uholka)
 
 ggplot() +
   geom_point(data = df_uholka, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_uholka, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_uholka, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_uholka, file = here::here("data/inputs/df_uholka.rds"))
@@ -887,32 +756,14 @@ df_fep_gre <- from_stand_data(fep_gre_stand) |>
     country = "Greece"
   )
 
-# add coords and biomes
-df_fep_gre <- biomes_coords_latlon(df_fep_gre)
-
-# add coords and aridity index
-df_fep_gre <- ai_coords_latlon(df_fep_gre)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_fep_gre <- lai_coords_latlon(df_fep_gre)
-
-# add coords and N deposition (Lamarque 2011)
-df_fep_gre <- ndep_coords_latlon(df_fep_gre)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_fep_gre <- cn_coords_latlon(df_fep_gre)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_fep_gre <- phos_coords_latlon(df_fep_gre)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_fep_gre <- orgc_coords_latlon(df_fep_gre)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_fep_gre <- standardise_stand_data(df_fep_gre)
 
 ggplot() +
   geom_point(data = df_fep_gre, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_fep_gre, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_fep_gre, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_fep_gre, file = here::here("data/inputs/df_fep_gre.rds"))
@@ -963,32 +814,14 @@ df_inrae_lessem <- from_tree_data(inrae_lessem) |>
   management_cat = 1
 )
 
-# add coords and biomes
-df_inrae_lessem <- biomes_coords_latlon(df_inrae_lessem)
-
-# add coords and aridity index
-df_inrae_lessem <- ai_coords_latlon(df_inrae_lessem)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_inrae_lessem <- lai_coords_latlon(df_inrae_lessem)
-
-# add coords and N deposition (Lamarque 2011)
-df_inrae_lessem <- ndep_coords_latlon(df_inrae_lessem)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_inrae_lessem <- cn_coords_latlon(df_inrae_lessem)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_inrae_lessem <- phos_coords_latlon(df_inrae_lessem)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_inrae_lessem <- orgc_coords_latlon(df_inrae_lessem)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_inrae_lessem <- standardise_stand_data(df_inrae_lessem)
 
 ggplot() +
   geom_point(data = df_inrae_lessem, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_inrae_lessem, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_inrae_lessem, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(
@@ -1032,32 +865,14 @@ df_bnp <- from_stand_data(bnp) |>
   ) |>
   ungroup()
 
-# add coords and biomes
-df_bnp <- biomes_coords_latlon(df_bnp)
-
-# add coords and aridity index
-df_bnp <- ai_coords_latlon(df_bnp)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_bnp <- lai_coords_latlon(df_bnp)
-
-# add coords and N deposition (Lamarque 2011)
-df_bnp <- ndep_coords_latlon(df_bnp)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_bnp <- cn_coords_latlon(df_bnp)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_bnp <- phos_coords_latlon(df_bnp)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_bnp <- orgc_coords_latlon(df_bnp)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_bnp <- standardise_stand_data(df_bnp)
 
 ggplot() +
   geom_point(data = df_bnp, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_bnp, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_bnp, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_bnp, file = here::here("data/inputs/df_bnp.rds"))
@@ -1098,32 +913,14 @@ df_czu <- from_stand_data(czu) |>
     country = "Czech Republic"
   )
 
-# add coords and biomes
-df_czu <- biomes_coords_latlon(df_czu)
-
-# add coords and aridity index
-df_czu <- ai_coords_latlon(df_czu)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_czu <- lai_coords_latlon(df_czu)
-
-# add coords and N deposition (Lamarque 2011)
-df_czu <- ndep_coords_latlon(df_czu)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_czu <- cn_coords_latlon(df_czu)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_czu <- phos_coords_latlon(df_czu)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_czu <- orgc_coords_latlon(df_czu)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_czu <- standardise_stand_data(df_czu)
 
 ggplot() +
   geom_point(data = df_czu, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_czu, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_czu, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_czu, file = here::here("data/inputs/df_czu.rds"))
@@ -1165,32 +962,15 @@ df_fvabw <- from_species_data(fvabw) |>
     country = "Germany",
   )
 
-# add coords and biomes
-df_fvabw <- biomes_coords_utm(df_fvabw)
-
-# add coords and aridity index
-df_fvabw <- ai_coords_latlon(df_fvabw)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_fvabw <- lai_coords_latlon(df_fvabw)
-
-# add coords and N deposition (Lamarque 2011)
-df_fvabw <- ndep_coords_latlon(df_fvabw)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_fvabw <- cn_coords_latlon(df_fvabw)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_fvabw <- phos_coords_latlon(df_fvabw)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_fvabw <- orgc_coords_latlon(df_fvabw)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_fvabw <- coords_to_lonlat(df_fvabw, crs = 25832) |>
+  standardise_stand_data()
 
 ggplot() +
   geom_point(data = df_fvabw, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_fvabw, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_fvabw, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_fvabw, file = here::here("data/inputs/df_fvabw.rds"))
@@ -1227,32 +1007,14 @@ df_iberbas <- from_tree_data(iberbas) |>
     management_cat = 1
   )
 
-# add coords and biomes
-df_iberbas <- biomes_coords_latlon(df_iberbas)
-
-# add coords and aridity index
-df_iberbas <- ai_coords_latlon(df_iberbas)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_iberbas <- lai_coords_latlon(df_iberbas)
-
-# add coords and N deposition (Lamarque 2011)
-df_iberbas <- ndep_coords_latlon(df_iberbas)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_iberbas <- cn_coords_latlon(df_iberbas)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_iberbas <- phos_coords_latlon(df_iberbas)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_iberbas <- orgc_coords_latlon(df_iberbas)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_iberbas <- standardise_stand_data(df_iberbas)
 
 ggplot() +
   geom_point(data = df_iberbas, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_iberbas, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_iberbas, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_iberbas, file = here::here("data/inputs/df_iberbas.rds"))
@@ -1324,32 +1086,14 @@ df_unitbv <- from_tree_data(unitbv) |>
     management = 0
   )
 
-# add coords and biomes
-df_unitbv <- biomes_coords_latlon(df_unitbv)
-
-# add coords and aridity index
-df_unitbv <- ai_coords_latlon(df_unitbv)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_unitbv <- lai_coords_latlon(df_unitbv)
-
-# add coords and N deposition (Lamarque 2011)
-df_unitbv <- ndep_coords_latlon(df_unitbv)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_unitbv <- cn_coords_latlon(df_unitbv)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_unitbv <- phos_coords_latlon(df_unitbv)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_unitbv <- orgc_coords_latlon(df_unitbv)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_unitbv <- standardise_stand_data(df_unitbv)
 
 ggplot() +
   geom_point(data = df_unitbv, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_unitbv, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_unitbv, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_unitbv, file = here::here("data/inputs/df_unitbv.rds"))
@@ -1405,32 +1149,15 @@ df_lwf <- from_tree_data(lwf_tree) |>
     management = 0
   )
 
-# add coords and biomes
-df_lwf <- biomes_coords_utm(df_lwf)
-
-# add coords and aridity index
-df_lwf <- ai_coords_latlon(df_lwf)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_lwf <- lai_coords_latlon(df_lwf)
-
-# add coords and N deposition (Lamarque 2011)
-df_lwf <- ndep_coords_latlon(df_lwf)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_lwf <- cn_coords_latlon(df_lwf)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_lwf <- phos_coords_latlon(df_lwf)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_lwf <- orgc_coords_latlon(df_lwf)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_lwf <- coords_to_lonlat(df_lwf, crs = 25832) |>
+  standardise_stand_data()
 
 ggplot() +
   geom_point(data = df_lwf, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_lwf, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_lwf, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_lwf, file = here::here("data/inputs/df_lwf.rds"))
@@ -1477,32 +1204,14 @@ df_npvbw <- from_tree_data(npvbw) |>
     management = 0
   )
 
-# add coords and biomes
-df_npvbw <- biomes_coords_latlon(df_npvbw)
-
-# add coords and aridity index
-df_npvbw <- ai_coords_latlon(df_npvbw)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_npvbw <- lai_coords_latlon(df_npvbw)
-
-# add coords and N deposition (Lamarque 2011)
-df_npvbw <- ndep_coords_latlon(df_npvbw)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_npvbw <- cn_coords_latlon(df_npvbw)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_npvbw <- phos_coords_latlon(df_npvbw)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_npvbw <- orgc_coords_latlon(df_npvbw)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_npvbw <- standardise_stand_data(df_npvbw)
 
 ggplot() +
   geom_point(data = df_npvbw, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_npvbw, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_npvbw, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_npvbw, file = here::here("data/inputs/df_npvbw.rds"))
@@ -1591,32 +1300,14 @@ df_nfr_swi <- from_stand_data(nfr_swi) |>
     management = 0
   )
 
-# add coords and biomes
-df_nfr_swi <- biomes_coords_latlon(df_nfr_swi)
-
-# add coords and aridity index
-df_nfr_swi <- ai_coords_latlon(df_nfr_swi)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_nfr_swi <- lai_coords_latlon(df_nfr_swi)
-
-# add coords and N deposition (Lamarque 2011)
-df_nfr_swi <- ndep_coords_latlon(df_nfr_swi)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_nfr_swi <- cn_coords_latlon(df_nfr_swi)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_nfr_swi <- phos_coords_latlon(df_nfr_swi)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_nfr_swi <- orgc_coords_latlon(df_nfr_swi)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_nfr_swi <- standardise_stand_data(df_nfr_swi)
 
 ggplot() +
   geom_point(data = df_nfr_swi, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_nfr_swi, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_nfr_swi, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_nfr_swi, file = here::here("data/inputs/df_nfr_swi.rds"))
@@ -1672,32 +1363,15 @@ df_nwfva <- from_tree_data(nwfva_tree) |>
     management = 0
   )
 
-# add coords and biomes
-df_nwfva <- biomes_coords_utm(df_nwfva)
-
-# add coords and aridity index
-df_nwfva <- ai_coords_latlon(df_nwfva)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_nwfva <- lai_coords_latlon(df_nwfva)
-
-# add coords and N deposition (Lamarque 2011)
-df_nwfva <- ndep_coords_latlon(df_nwfva)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_nwfva <- cn_coords_latlon(df_nwfva)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_nwfva <- phos_coords_latlon(df_nwfva)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_nwfva <- orgc_coords_latlon(df_nwfva)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_nwfva <- coords_to_lonlat(df_nwfva, crs = 31467) |>
+  standardise_stand_data()
 
 ggplot() +
   geom_point(data = df_nwfva, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_nwfva, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_nwfva, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_nwfva, file = here::here("data/inputs/df_nwfva.rds"))
@@ -1758,32 +1432,14 @@ df_tuzvo <- from_tree_data(tuzvo_tree) |>
     management = 0
   )
 
-# add coords and biomes
-df_tuzvo <- biomes_coords_latlon(df_tuzvo)
-
-# add coords and aridity index
-df_tuzvo <- ai_coords_latlon(df_tuzvo)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_tuzvo <- lai_coords_latlon(df_tuzvo)
-
-# add coords and N deposition (Lamarque 2011)
-df_tuzvo <- ndep_coords_latlon(df_tuzvo)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_tuzvo <- cn_coords_latlon(df_tuzvo)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_tuzvo <- phos_coords_latlon(df_tuzvo)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_tuzvo <- orgc_coords_latlon(df_tuzvo)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_tuzvo <- standardise_stand_data(df_tuzvo)
 
 ggplot() +
   geom_point(data = df_tuzvo, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_tuzvo, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_tuzvo, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_tuzvo, file = here::here("data/inputs/df_tuzvo.rds"))
@@ -1834,32 +1490,14 @@ df_ul <- from_tree_data(ul_tree) |>
     management = 0
   )
 
-# add coords and biomes
-df_ul <- biomes_coords_latlon(df_ul)
-
-# add coords and aridity index
-df_ul <- ai_coords_latlon(df_ul)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_ul <- lai_coords_latlon(df_ul)
-
-# add coords and N deposition (Lamarque 2011)
-df_ul <- ndep_coords_latlon(df_ul)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_ul <- cn_coords_latlon(df_ul)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_ul <- phos_coords_latlon(df_ul)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_ul <- orgc_coords_latlon(df_ul)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_ul <- standardise_stand_data(df_ul)
 
 ggplot() +
   geom_point(data = df_ul, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_ul, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_ul, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_ul, file = here::here("data/inputs/df_ul.rds"))
@@ -2033,32 +1671,15 @@ df_unito <- from_tree_data(unito) |>
     management = 0
   )
 
-# add coords and biomes
-df_unito <- biomes_coords_utm(df_unito)
-
-# add coords and aridity index
-df_unito <- ai_coords_latlon(df_unito)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_unito <- lai_coords_latlon(df_unito)
-
-# add coords and N deposition (Lamarque 2011)
-df_unito <- ndep_coords_latlon(df_unito)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_unito <- cn_coords_latlon(df_unito)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_unito <- phos_coords_latlon(df_unito)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_unito <- orgc_coords_latlon(df_unito)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_unito <- coords_to_lonlat(df_unito, crs = 32632) |>
+  standardise_stand_data()
 
 ggplot() +
   geom_point(data = df_unito, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_unito, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_unito, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_unito, file = here::here("data/inputs/df_unito.rds"))
@@ -2089,32 +1710,14 @@ df_urk <- from_stand_data(urk) |>
   # ) |>
   # ungroup()
 
-# add coords and biomes
-df_urk <- biomes_coords_latlon(df_urk)
-
-# add coords and aridity index
-df_urk <- ai_coords_latlon(df_urk)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_urk <- lai_coords_latlon(df_urk)
-
-# add coords and N deposition (Lamarque 2011)
-df_urk <- ndep_coords_latlon(df_urk)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_urk <- cn_coords_latlon(df_urk)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_urk <- phos_coords_latlon(df_urk)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_urk <- orgc_coords_latlon(df_urk)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_urk <- standardise_stand_data(df_urk)
 
 ggplot() +
   geom_point(data = df_urk, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_urk, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_urk, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_urk, file = here::here("data/inputs/df_urk.rds"))
@@ -2177,32 +1780,14 @@ df_wuls <- from_tree_data(wuls) |>
     management = 0
   )
 
-# add coords and biomes
-df_wuls <- biomes_coords_latlon(df_wuls)
-
-# add coords and aridity index
-df_wuls <- ai_coords_latlon(df_wuls)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_wuls <- lai_coords_latlon(df_wuls)
-
-# add coords and N deposition (Lamarque 2011)
-df_wuls <- ndep_coords_latlon(df_wuls)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_wuls <- cn_coords_latlon(df_wuls)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_wuls <- phos_coords_latlon(df_wuls)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_wuls <- orgc_coords_latlon(df_wuls)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_wuls <- standardise_stand_data(df_wuls)
 
 ggplot() +
   geom_point(data = df_wuls, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_wuls, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_wuls, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_wuls, file = here::here("data/inputs/df_wuls.rds"))
@@ -2265,32 +1850,14 @@ df_luquillo <- from_tree_data(luquillo) |>
     management = 0
   )
 
-# add coords and biomes
-df_luquillo <- biomes_coords_latlon(df_luquillo)
-
-# add coords and aridity index
-df_luquillo <- ai_coords_latlon(df_luquillo)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_luquillo <- lai_coords_latlon(df_luquillo)
-
-# add coords and N deposition (Lamarque 2011)
-df_luquillo <- ndep_coords_latlon(df_luquillo)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_luquillo <- cn_coords_latlon(df_luquillo)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_luquillo <- phos_coords_latlon(df_luquillo)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_luquillo <- orgc_coords_latlon(df_luquillo)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_luquillo <- standardise_stand_data(df_luquillo)
 
 ggplot() +
   geom_point(data = df_luquillo, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_luquillo, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_luquillo, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(
@@ -2364,32 +1931,14 @@ sp_lianas <- read.csv(file.path(raw_data_dir, "forestgeo/bci/sp_lianas.csv"))
 df_bci <- df_bci %>%
   filter(!df_bci$species %in% sp_lianas$species)
 
-# add coords and biomes
-df_bci <- biomes_coords_latlon(df_bci)
-
-# add coords and aridity index
-df_bci <- ai_coords_latlon(df_bci)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_bci <- lai_coords_latlon(df_bci)
-
-# add coords and N deposition (Lamarque 2011)
-df_bci <- ndep_coords_latlon(df_bci)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_bci <- cn_coords_latlon(df_bci)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_bci <- phos_coords_latlon(df_bci)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_bci <- orgc_coords_latlon(df_bci)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_bci <- standardise_stand_data(df_bci)
 
 ggplot() +
   geom_point(data = df_bci, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_bci, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_bci, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_bci, file = here::here("data/inputs/df_bci.rds"))
@@ -2450,32 +1999,14 @@ df_scbi <- from_tree_data(scbi) |>
     management = 0
   )
 
-# add coords and biomes
-df_scbi <- biomes_coords_latlon(df_scbi)
-
-# add coords and aridity index
-df_scbi <- ai_coords_latlon(df_scbi)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_scbi <- lai_coords_latlon(df_scbi)
-
-# add coords and N deposition (Lamarque 2011)
-df_scbi <- ndep_coords_latlon(df_scbi)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_scbi <- cn_coords_latlon(df_scbi)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_scbi <- phos_coords_latlon(df_scbi)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_scbi <- orgc_coords_latlon(df_scbi)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_scbi <- standardise_stand_data(df_scbi)
 
 ggplot() +
   geom_point(data = df_scbi, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_scbi, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_scbi, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_scbi, file = here::here("data/inputs/df_scbi.rds"))
@@ -2529,32 +2060,14 @@ df_palanam <- from_tree_data(palanam) |>
     management = 0
   )
 
-# add coords and biomes
-df_palanam <- biomes_coords_latlon(df_palanam)
-
-# add coords and aridity index
-df_palanam <- ai_coords_latlon(df_palanam)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_palanam <- lai_coords_latlon(df_palanam)
-
-# add coords and N deposition (Lamarque 2011)
-df_palanam <- ndep_coords_latlon(df_palanam)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_palanam <- cn_coords_latlon(df_palanam)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_palanam <- phos_coords_latlon(df_palanam)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_palanam <- orgc_coords_latlon(df_palanam)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_palanam <- standardise_stand_data(df_palanam)
 
 ggplot() +
   geom_point(data = df_palanam, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_palanam, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_palanam, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_palanam, file = here::here("data/inputs/df_palanam.rds"))
@@ -2632,32 +2145,14 @@ df_serc <- from_tree_data(serc) |>
     management = 0
   )
 
-# add coords and biomes
-df_serc <- biomes_coords_latlon(df_serc)
-
-# add coords and aridity index
-df_serc <- ai_coords_latlon(df_serc)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_serc <- lai_coords_latlon(df_serc)
-
-# add coords and N deposition (Lamarque 2011)
-df_serc <- ndep_coords_latlon(df_serc)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_serc <- cn_coords_latlon(df_serc)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_serc <- phos_coords_latlon(df_serc)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_serc <- orgc_coords_latlon(df_serc)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_serc <- standardise_stand_data(df_serc)
 
 ggplot() +
   geom_point(data = df_serc, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_serc, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_serc, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_serc, file = here::here("data/inputs/df_serc.rds"))
@@ -2710,35 +2205,14 @@ df_wytham <- from_tree_data(wytham) |>
     management = 0
   )
 
-# add coords and biomes
-df_wytham <- biomes_coords_latlon(df_wytham)
-
-# add coords and aridity index
-df_wytham <- ai_coords_latlon(df_wytham)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_wytham <- lai_coords_latlon(df_wytham)
-
-# add coords and N deposition (Lamarque 2011)
-df_wytham <- ndep_coords_latlon(df_wytham)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_wytham <- cn_coords_latlon(df_wytham)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_wytham <- phos_coords_latlon(df_wytham)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_wytham <- orgc_coords_latlon(df_wytham)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_wytham <- standardise_stand_data(df_wytham)
 
 ggplot() +
   geom_point(data = df_wytham, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_wytham, size = 0.5, alpha = 0.5)
-
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = ai), data = df_wytham, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_wytham, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_wytham, file = here::here("data/inputs/df_wytham.rds"))
@@ -2814,35 +2288,14 @@ df_pasoh <- from_tree_data(pasoh) |>
   ) |>
   filter(log(density) > 7.5) # outliers, possible errors
 
-# add coords and biomes
-df_pasoh <- biomes_coords_latlon(df_pasoh)
-
-# add coords and aridity index
-df_pasoh <- ai_coords_latlon(df_pasoh)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_pasoh <- lai_coords_latlon(df_pasoh)
-
-# add coords and N deposition (Lamarque 2011)
-df_pasoh <- ndep_coords_latlon(df_pasoh)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_pasoh <- cn_coords_latlon(df_pasoh)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_pasoh <- phos_coords_latlon(df_pasoh)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_pasoh <- orgc_coords_latlon(df_pasoh)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_pasoh <- standardise_stand_data(df_pasoh)
 
 ggplot() +
   geom_point(data = df_pasoh, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_pasoh, size = 0.5, alpha = 0.5)
-
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = ai), data = df_pasoh, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_pasoh, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_pasoh, file = here::here("data/inputs/df_pasoh.rds"))
@@ -2873,42 +2326,14 @@ df_mudumalai <- from_stand_data(mudumalai) |>
     management = 0
   )
 
-# add coords and biomes
-df_mudumalai <- biomes_coords_latlon(df_mudumalai)
-
-# Clasify biome manually as Tropical & Subtropical Dry Broadleaf Forests
-df_mudumalai <- df_mudumalai |>
-  mutate(
-    biomeID = 2,
-    biome = "Tropical & Subtropical Dry Broadleaf Forests"
-  )
-
-# add coords and aridity index
-df_mudumalai <- ai_coords_latlon(df_mudumalai)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_mudumalai <- lai_coords_latlon(df_mudumalai)
-
-# add coords and N deposition (Lamarque 2011)
-df_mudumalai <- ndep_coords_latlon(df_mudumalai)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_mudumalai <- cn_coords_latlon(df_mudumalai)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_mudumalai <- phos_coords_latlon(df_mudumalai)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_mudumalai <- orgc_coords_latlon(df_mudumalai)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_mudumalai <- standardise_stand_data(df_mudumalai)
 
 ggplot() +
   geom_point(data = df_mudumalai, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_mudumalai, size = 0.5, alpha = 0.5)
-
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = ai), data = df_mudumalai, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_mudumalai, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(
@@ -3046,32 +2471,14 @@ df_forestplots <- from_tree_data(forestplots) |>
     ) |>
   filter(is.na(QMD) | log(QMD) < 4.5) # remove outliers
 
-# add coords and biomes
-df_forestplots <- biomes_coords_latlon(df_forestplots)
-
-# add coords and aridity index
-df_forestplots <- ai_coords_latlon(df_forestplots)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_forestplots <- lai_coords_latlon(df_forestplots)
-
-# add coords and N deposition (Lamarque 2011)
-df_forestplots <- ndep_coords_latlon(df_forestplots)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_forestplots <- cn_coords_latlon(df_forestplots)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_forestplots <- phos_coords_latlon(df_forestplots)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_forestplots <- orgc_coords_latlon(df_forestplots)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_forestplots <- standardise_stand_data(df_forestplots)
 
 ggplot() +
   geom_point(data = df_forestplots, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_forestplots, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_forestplots, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(
@@ -3128,32 +2535,14 @@ df_aus <- from_stand_data(aus_plots) |>
   mutate(census = match(year, unique(year))) |>
   ungroup()
 
-# add coords and biomes
-df_aus <- biomes_coords_latlon(df_aus)
-
-# add coords and aridity index
-df_aus <- ai_coords_latlon(df_aus)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_aus <- lai_coords_latlon(df_aus)
-
-# add coords and N deposition (Lamarque 2011)
-df_aus <- ndep_coords_latlon(df_aus)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_aus <- cn_coords_latlon(df_aus)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_aus <- phos_coords_latlon(df_aus)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_aus <- orgc_coords_latlon(df_aus)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_aus <- standardise_stand_data(df_aus)
 
 ggplot() +
   geom_point(data = df_aus, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_aus, size = 0.5, alpha = 0.5) +
+  geom_point(aes(lon, lat), data = df_aus, size = 0.5, alpha = 0.5) +
   theme(legend.position = "bottom")
 
 # save stand-level data
@@ -3232,32 +2621,14 @@ rainfor_plots %>%
 # aggregate data from stand
 df_rainfor <- from_stand_data(rainfor_plots)
 
-# add coords and biomes
-df_rainfor <- biomes_coords_latlon(df_rainfor)
-
-# add coords and aridity index
-df_rainfor <- ai_coords_latlon(df_rainfor)
-
-# add coords and LAI Modis or NDVI (0.5 degrees)
-df_rainfor <- lai_coords_latlon(df_rainfor)
-
-# add coords and N deposition (Lamarque 2011)
-df_rainfor <- ndep_coords_latlon(df_rainfor)
-
-# add coords and C:N ratio (ISRIC WISE)
-df_rainfor <- cn_coords_latlon(df_rainfor)
-
-# add coords and Phosphorus P - Bray (PBR) or Olsen (POL)
-df_rainfor <- phos_coords_latlon(df_rainfor)
-
-# add coords and ORGC - Organic carbon content (g kg-1) (ISRIC WISE)
-df_rainfor <- orgc_coords_latlon(df_rainfor)
+# Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
+df_rainfor <- standardise_stand_data(df_rainfor)
 
 ggplot() +
   geom_point(data = df_rainfor, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
 
 rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat, color = biome), data = df_rainfor, size = 0.5, alpha = 0.5)
+  geom_point(aes(lon, lat), data = df_rainfor, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
 saveRDS(df_rainfor, file = here::here("data/inputs/df_rainfor.rds"))

@@ -1,4 +1,4 @@
-# This script clean data and prepares them for the analyses.
+# Compile stand records for all datasets, before environmental extraction.
 
 # load packages ----
 # library(renv)
@@ -9,211 +9,109 @@ source(here::here("R/functions.R"))
 
 # NFI Spain ----
 df_nfi_spain <- readRDS(here::here("data/inputs/df_nfi_spa.rds"))
-df_nfi_spain
-plot_stl(df_nfi_spain)
-plot_map(df_nfi_spain)
 
 # NFI Sweeden ----
 df_nfi_sweeden <- readRDS(here::here("data/inputs/df_nfi_swe.rds"))
-df_nfi_sweeden
-plot_stl(df_nfi_sweeden)
-plot_map(df_nfi_sweeden)
 
 # FIA US ----
 df_fia_us <- readRDS(here::here("data/inputs/df_fia_us.rds"))
-df_fia_us
-plot_stl(df_fia_us)
-plot_map(df_fia_us)
 
 # NFI Switzerland ----
 df_nfi_switzerland <- readRDS(here::here("data/inputs/df_nfi_swi.rds"))
-df_nfi_switzerland
-plot_stl(df_nfi_switzerland)
-plot_map(df_nfi_switzerland)
 
 # NFI Norway ----
 df_nfi_norway <- readRDS(here::here("data/inputs/df_nfi_nor.rds"))
-df_nfi_norway
-plot_stl(df_nfi_norway)
-plot_map(df_nfi_norway)
 
 # EFM Switzerland ----
 df_efm_swi <- readRDS(here::here("data/inputs/df_efm_swi.rds"))
-df_efm_swi
-plot_stl(df_efm_swi)
-plot_map(df_efm_swi)
 
 # Uholka plot ----
 df_uholka <- readRDS(here::here("data/inputs/df_uholka.rds"))
-df_uholka
-plot_stl(df_uholka)
-plot_map(df_uholka)
 
 # Greece sites ----
 df_fep_gre <- readRDS(here::here("data/inputs/df_fep_gre.rds"))
-df_fep_gre
-plot_stl(df_fep_gre)
-plot_map(df_fep_gre)
 
 # France sites ----
 df_inrae_lessem <- readRDS(here::here("data/inputs/df_inrae_lessem.rds"))
-df_inrae_lessem
-plot_stl(df_inrae_lessem)
-plot_map(df_inrae_lessem)
 
 # EuFoRia plots ----
 
 ## bnp ----
 df_bnp <- readRDS(here::here("data/inputs/df_bnp.rds"))
-df_bnp
-plot_stl(df_bnp)
-plot_map(df_bnp)
 
 ## czu ----
 df_czu <- readRDS(here::here("data/inputs/df_czu.rds"))
-df_czu
-plot_stl(df_czu)
-plot_map(df_czu)
 
 ## fvabw ----
 df_fvabw <- readRDS(here::here("data/inputs/df_fvabw.rds"))
-df_fvabw
-plot_stl(df_fvabw)
-plot_map(df_fvabw)
 
 ## iberbas ----
 df_iberbas <- readRDS(here::here("data/inputs/df_iberbas.rds"))
-df_iberbas
-plot_stl(df_iberbas)
-plot_map(df_iberbas)
 
 ## unitbv ----
 df_unitbv <- readRDS(here::here("data/inputs/df_unitbv.rds"))
-df_unitbv
-plot_stl(df_unitbv)
-plot_map(df_unitbv)
 
 ## lwf ----
 df_lwf <- readRDS(here::here("data/inputs/df_lwf.rds"))
-df_lwf
-plot_stl(df_lwf)
-plot_map(df_lwf)
 
 ## npvbw ----
 df_npvbw <- readRDS(here::here("data/inputs/df_npvbw.rds"))
-df_npvbw
-plot_stl(df_npvbw)
-plot_map(df_npvbw)
 
 ## nfr ----
 df_nfr_swi <- readRDS(here::here("data/inputs/df_nfr_swi.rds"))
-df_nfr_swi
-plot_stl(df_nfr_swi)
-plot_map(df_nfr_swi)
 
 ## nwfva ----
 df_nwfva <- readRDS(here::here("data/inputs/df_nwfva.rds"))
-df_nwfva
-plot_stl(df_nwfva)
-plot_map(df_nwfva)
 
 ## tuzvo ----
 df_tuzvo <- readRDS(here::here("data/inputs/df_tuzvo.rds"))
-df_tuzvo
-plot_stl(df_tuzvo)
-plot_map(df_tuzvo)
 
 ## ul ----
 df_ul <- readRDS(here::here("data/inputs/df_ul.rds"))
-df_ul
-plot_stl(df_ul)
-plot_map(df_ul)
 
 ## unito ----
 df_unito <- readRDS(here::here("data/inputs/df_unito.rds"))
-df_unito
-plot_stl(df_unito)
-plot_map(df_unito)
 
 ## urk ----
 df_urk <- readRDS(here::here("data/inputs/df_urk.rds"))
-df_urk
-plot_stl(df_urk)
-plot_map(df_urk)
 
 ## wuls ----
 df_wuls <- readRDS(here::here("data/inputs/df_wuls.rds"))
-df_wuls
-plot_stl(df_wuls)
-plot_map(df_wuls)
 
 # ForestGEO ----
 
 ## Luquillo ----
-df_luquillo <- readRDS(here::here("data/inputs/df_luquillo.rds")) 
-df_luquillo
-plot_stl(df_luquillo)
-plot_map(df_luquillo)
+df_luquillo <- readRDS(here::here("data/inputs/df_luquillo.rds"))
 
 ## BCI ----
 df_bci <- readRDS(here::here("data/inputs/df_bci.rds"))
-df_bci
-plot_stl(df_bci)
-plot_map(df_bci)
 
 ## SCBI ----
 df_scbi <- readRDS(here::here("data/inputs/df_scbi.rds"))
-df_scbi
-plot_stl(df_scbi)
-plot_map(df_scbi)
 
 ## Palanam ----
 df_palanam <- readRDS(here::here("data/inputs/df_palanam.rds"))
-df_palanam
-plot_stl(df_palanam)
-plot_map(df_palanam)
 
 ## SERC ----
 df_serc <- readRDS(here::here("data/inputs/df_serc.rds"))
-df_serc
-plot_stl(df_serc)
-plot_map(df_serc)
 
 ## Wytham woods ----
 df_wytham <- readRDS(here::here("data/inputs/df_wytham.rds"))
-df_wytham
-plot_stl(df_wytham)
-plot_map(df_wytham)
 
 ## Pasoh woods ----
 df_pasoh <- readRDS(here::here("data/inputs/df_pasoh.rds"))
-df_pasoh
-plot_stl(df_pasoh)
-plot_map(df_pasoh)
 
 ## Mudumalai ----
 df_mudumalai <- readRDS(here::here("data/inputs/df_mudumalai.rds"))
-df_mudumalai
-plot_stl(df_mudumalai)
-plot_map(df_mudumalai)
 
 # Forest plots ----
 df_forestplots <- readRDS(here::here("data/inputs/df_forestplots.rds"))
-df_forestplots
-plot_stl(df_forestplots)
-plot_map(df_forestplots)
 
 # Australian plots ----
 df_aus <- readRDS(here::here("data/inputs/df_aus.rds"))
-df_aus
-plot_stl(df_aus)
-plot_map(df_aus)
 
 # RAINFOR plots ----
-df_rainfor <- readRDS(here::here("/data/inputs/df_rainfor.rds"))
-df_rainfor
-plot_stl(df_rainfor)
-plot_map(df_rainfor)
+df_rainfor <- readRDS(here::here("data/inputs/df_rainfor.rds"))
 
 # Write data from all plots ----
 
@@ -257,7 +155,6 @@ data_all <- bind_rows(
 
 df_all <- data_all |>
   mutate(dataset = harmonise_dataset_names(dataset)) |>
-  mutate(ndep = noy + nhx) |>
   # unite plotID and dataset to ensure there are not matches form different sources
   rename(plotIDD = plotID) |>
   unite(plotID, dataset, plotIDD, sep = "_", remove = FALSE) |>
@@ -271,6 +168,13 @@ df_all <- data_all |>
 
 saveRDS(df_all, file = here::here("data/inputs/df_all.rds"))
 
+# Next run the plot-extraction section in 00_collect_global_drivers.R,
+# then apply the common analysis filters in 02_create_filters.R.
+
+# Historical analyses retained for reference; superseded by 02_create_filters.R.
+# They require environmental and log columns that this compilation no longer adds.
+run_legacy_analyses <- FALSE
+if (run_legacy_analyses) {
 # Write unmanaged data ----
 # NEW APPROACH:
 # Management categories 1,2,3 depending on the knowledge of the forest use history.
@@ -556,3 +460,5 @@ table_s2 <- data %>%
             density_sd=sd(density,na.rm=T))
 table_s2
 write.csv(table_s2, file = here::here("/data/outputs/tableS2.csv"))
+
+}

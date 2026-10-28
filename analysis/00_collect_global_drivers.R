@@ -1,3 +1,5 @@
+# Run after 01_clean_data.R has created data/inputs/df_all.rds.
+# First attach environmental predictors to plots, then prepare the global grid.
 # This creates the data frame for all grids globally (0.5 deg) containing data
 # on all environmental predictors determined in 03_env_drivers.R and used in
 # 04_globalcsink.R for global upscaling.
@@ -11,6 +13,28 @@ library(readr)
 library(tidyterra)
 library(here)
 library(ingestr)
+
+# Extract global environmental fields for all plot locations ----
+# This section can also be rerun independently using the saved compilation.
+source(here::here("R/extract_plot_environment.R"))
+
+# Edit individual paths here if the global fields are stored elsewhere.
+environment_paths <- plot_environment_paths()
+
+# GSDE/Shangguan is required on the server. Set FALSE only when deliberately
+# omitting phosphorus; PBR will then be NA. LAI is no longer extracted.
+include_phosphorus <- TRUE
+
+df_all <- readRDS(here::here("data/inputs/df_all.rds"))
+df_all <- extract_plot_environment(
+  df_all,
+  paths = environment_paths,
+  include_phosphorus = include_phosphorus
+)
+
+# Retain all records, including missing environmental values. Forest and other
+# analysis filters are applied downstream in 02_create_filters.R.
+saveRDS(df_all, file = here::here("data/inputs/df_all.rds"))
 
 # Forest cover fraction --------------------------------------------------------
 r_fcf <- terra::rast(
