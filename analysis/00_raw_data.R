@@ -58,7 +58,7 @@ nfi_spain <- nfi_spain |>
     species = Nombre234,
     biomass = bioa
   ) |>
-  mutate(plotsize = 0.20)
+  mutate(plotsize = 0.20) # beni: all have the same value, in ha?
 
 # aggregate data from species to stand data
 df_nfi_spain <- from_species_data(nfi_spain) |>
@@ -73,6 +73,22 @@ df_nfi_spain <- from_species_data(nfi_spain) |>
     management_cat = 3,
     country = "Spain"
   )
+
+# # test: ba_tot is repeated for each species within plot and census, the following give identical results
+# nfi_spain |>
+#   filter(
+#     census == 3,
+#     plotID == "100008A1"
+#   ) |>
+#   pull(batot)
+# nfi_spain |>
+#   filter(
+#     census == 3,
+#     plotID == "100008A1"
+#   ) |>
+#   group_by(plotID, census) |>
+#   summarise(ba_tot_test = sum(ba)) |>
+#   pull(ba_tot_test)
 
 # add coords and biomes
 df_nfi_spain <- biomes_coords_utm(df_nfi_spain) |>

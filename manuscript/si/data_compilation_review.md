@@ -20,6 +20,8 @@ The draft, now integrated into `main.tex`, describes executable transformations 
 
 8. **ForestPlots diameter fields** — `analysis/00_raw_data.R:2950–2954` takes the arithmetic mean of D0–D4 before converting to centimetres. Confirm the meaning of these fields. If they represent separate stems, averaging diameters would not preserve either the number of stems or summed basal area. The draft reports the calculation without assigning an unsupported interpretation to the fields. No live/dead filter is applied in this block or in IBERBAS; verify any upstream selection. @lauramarques
 
+9. **Tree-level data**: In tree-level datasets, we cannot sum densities, but have to count observations with `n()`. This affects the function `from_species_data()`, defined in `R/functions.R`.
+
 ## Dataset identity and metadata
 
 - **Table S1 versus current object names:** the draft retains the table identifiers and gives aliases where useful. Current script names include `fvabw` (table: `forst`), `unitbv` (`incds`), `npvbw` (`nbw`), `inrae_lessem` (`france`), and `fep_gre_stand` (`greece_stand`). `from_tree_data()` and related helpers derive the dataset field from the input object's name; consequently ForestPlots and RAINFOR currently receive `forestplots` and `rainfor_plots`, whereas downstream code sometimes checks `df_forestplots` and `df_rainfor`. Reconcile these names separately from the prose edit.

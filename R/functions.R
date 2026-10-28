@@ -204,29 +204,34 @@ from_species_data <- function(data) {
   data_agg <- data |>
     group_by(plotID, plotsize, lon, lat, year) |>
     summarise(
-      density = sum(density, na.rm = T),
+      density = sum(density, na.rm = T),  # beni: to check: in tree-level datasets, we cannot sum densities, but have to count observations with n()
       ba = sum(ba, na.rm = T),
       dbh = mean(dbh, na.rm = T),
       biomass = sum(biomass, na.rm = T)
     ) |>
     ungroup() |>
+
     # calculate QMD
     mutate(
       QMD = ba_to_qmd(ba, density),
       dataset = datanm
     ) |>
+    
     # calculate period lengths
     arrange(plotID, year) |>
     group_by(plotID) |>
     mutate(period = year - lag(year)) |>
     relocate(period, .after = year) |>
+
     # calculate basal area increment
     mutate(ba_inc = (ba - lag(ba)) / period) |>
     relocate(ba_inc, .after = ba) |>
+
     # calculate number of censuses
     mutate(n_census = n()) |>
     ungroup() |>
     filter(density > 0) |>
+
     # join dominant species to data
     left_join(dom_species) |>
     ungroup()
@@ -424,7 +429,7 @@ biomes_coords_utm <- function(data) {
   # Identify biomes for each plot using coordinates
   # WWF Ecoregions data
   wwf_eco <- terra::vect(
-    file.path(here::here(), "/data/wwf/wwf_terr_ecos.shp")
+    here::here("data/wwf/wwf_terr_ecos.shp")
   )
 
   # extract coordinates from data
@@ -444,7 +449,7 @@ biomes_coords_utm <- function(data) {
     distinct()
 
   # read legend for wwf biomes
-  legend_wwf <- read.csv(file.path(here::here(), "/data/wwf/legend.csv"))
+  legend_wwf <- read.csv(here::here("/data/wwf/legend.csv"))
 
   # Join biomes to data
   data_agg <- data_agg |>
