@@ -33,7 +33,7 @@ library(here)
 
 # load functions ----
 # Aggregation helpers harmonise dataset identifiers for all downstream labels.
-source(here::here("/R/functions.R"))
+source(here::here("R/functions.R"))
 
 # NFI Spain ----
 # Data providers: Paloma Ruiz-Benito and Veronica Cruz-Alonso
