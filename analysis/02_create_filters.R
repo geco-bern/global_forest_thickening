@@ -77,9 +77,6 @@ df_unm <- df_all |>
   ungroup() |>
   relocate(n_census_unm, .after = n_census) |> 
 
-  # Re-define all bnp plots as management_cat == 2 (primary), see email Rupert Seidl, 16.04.2026
-  mutate(management_cat = ifelse(dataset == "bnp", 2, management_cat)) |>
-
   # Re-group into "major biomes"
   mutate(
     biome_major = ifelse(

@@ -207,10 +207,10 @@ saveRDS(
 )
 
 # FIA US ----
-# Data providers: rFIA
+# Data providers: rFIA R package (doi:10.32614/CRAN.package.rFIA)
 
-# Tree-level data
-filn <- here::here("data/inputs/data_fia_us.rds")
+# Cache unfiltered stand totals, so changing management criteria can restore plots.
+filn <- file.path(raw_data_dir, "fia_us/obs/data_stand_us_v2026.rds")
 
 if (!file.exists(filn)) {
   # Download FIA data ---
@@ -222,42 +222,19 @@ if (!file.exists(filn)) {
   # Data unavailable for:  DC, MH
   st <- st[-which(st %in% c("DC", "MH"))]
 
-  for (i in st) {
-    getFIA(states = i, dir = file.path(raw_data_dir, "fia_us/obs"), tables = "COND", load = FALSE)
-    getFIA(states = i, dir = file.path(raw_data_dir, "fia_us/obs"), tables = "PLOT", load = FALSE)
-    options(timeout = 3600)
-    getFIA(states = i, dir = file.path(raw_data_dir, "fia_us/obs"), tables = "TREE", load = FALSE)
-  }
+  # Don't re-download. They are available locally.
+  # for (i in st) {
+  #   getFIA(states = i, dir = file.path(raw_data_dir, "fia_us/obs"), tables = "COND", load = FALSE)
+  #   getFIA(states = i, dir = file.path(raw_data_dir, "fia_us/obs"), tables = "PLOT", load = FALSE)
+  #   options(timeout = 3600)
+  #   getFIA(states = i, dir = file.path(raw_data_dir, "fia_us/obs"), tables = "TREE", load = FALSE)
+  # }
 
   # Read data ---
   # UNITCD Survey unit code
   # STATECD State code
   # COUNTYCD County code
   # PLOT Plot number
-
-  ## PLOT table ---
-  # meta info for forest plots
-  data_plot <- list.files(path = file.path(raw_data_dir, "fia_us/obs"), pattern = "*_PLOT.csv", full.names = TRUE) |>
-    purrr::map(read.csv) |>
-    lapply(\(x) mutate(x, across(ECO_UNIT_PNW, as.character))) |>
-    bind_rows() |>
-    # Make a unique ID for each plot, irrespective of time
-    mutate(plotID = paste(UNITCD, STATECD, COUNTYCD, PLOT, sep = "_"))
-
-  ## COND table ---
-  # used for filtering unmanaged forest plots (reserves)
-  data_cond <- list.files(path = file.path(raw_data_dir, "fia_us/obs"), pattern = "*_COND.csv", full.names = TRUE) |>
-    purrr::map(read.csv) |>
-    # lapply(read_csv) |>
-    lapply(\(x) mutate(x, across(HABTYPCD1, as.character))) |>
-    lapply(\(x) mutate(x, across(HABTYPCD2, as.character))) |>
-    lapply(\(x) mutate(x, across(HABTYPCD1_DESCR_PUB_CD, as.character))) |>
-    lapply(\(x) mutate(x, across(HABTYPCD2_DESCR_PUB_CD, as.character))) |>
-    lapply(\(x) mutate(x, across(HABTYPCD1_PUB_CD, as.character))) |>
-    lapply(\(x) mutate(x, across(HABTYPCD2_PUB_CD, as.character))) |>
-    bind_rows() |>
-    # Make a unique ID for each plot, irrespective of time
-    mutate(plotID = paste(UNITCD, STATECD, COUNTYCD, PLOT, sep = "_"))
 
   ## TREE table ---
   # Aggregate from tree to forest plot level
@@ -278,6 +255,7 @@ if (!file.exists(filn)) {
   species <- read.csv(file.path(raw_data_dir, "fia_us/obs/species_code.csv"))
   states <- read.csv(file.path(raw_data_dir, "fia_us/obs/states.csv"))
   st <- states$State.abbreviation
+
   # Data unavailable for:  DC, MH
   st <- st[-which(st %in% c("DC", "MH"))]
 
@@ -288,6 +266,7 @@ if (!file.exists(filn)) {
       left_join(species) |>
       relocate(species, .after = SPCD) |>
       mutate(plotID = paste(UNITCD, STATECD, COUNTYCD, PLOT, sep = "_")) |>
+
       # create census
       group_by(plotID) |>
       mutate(census = match(INVYR, unique(INVYR))) |>
@@ -303,8 +282,10 @@ if (!file.exists(filn)) {
       select(plotID, INVYR, species)
 
     currentDF <- currentDF |>
+
       # Filter trees alive
       filter(STATUSCD == 1) |>
+
       # aggregate data
       group_by(plotID, INVYR, census) |>
       summarize(
@@ -318,83 +299,103 @@ if (!file.exists(filn)) {
         QMD = ba_to_qmd(ba, density),
         dataset = "fia_us"
       ) |>
+
       # calculate period lengths
       arrange(plotID, INVYR) |>
       group_by(plotID) |>
       mutate(period = INVYR - lag(INVYR)) |>
       relocate(period, .after = INVYR) |>
+
       # calculate basal area increment
       mutate(ba_inc = (ba - lag(ba)) / period) |>
       relocate(ba_inc, .after = ba) |>
+
       # calculate number of censuses
       mutate(n_census = n()) |>
       ungroup() |>
       filter(INVYR != 9999) |>
+
       # join dominant species to data
       left_join(dom_species) |>
       ungroup()
 
     data_stand <- rbind(data_stand, currentDF)
   }
-  saveRDS(data_stand, file = file.path(raw_data_dir, "fia_us/obs/data_stand_us.rds"))
 
-  data_stand <- readRDS(file.path(raw_data_dir, "fia_us/obs/data_stand_us.rds"))
-
-  # We want to filter the unmanaged plots. For that we select those plots classified as Reserves.
-  # COND table RESERVCD == 1 identifies plots classified as forest reserves.
-  data_cond_sel <- data_cond |>
-    select(plotID, UNITCD, STATECD, COUNTYCD, PLOT, RESERVCD) |>
-    distinct(plotID, .keep_all = T)
-
-  data_plot_sel <- data_plot |>
-    select(plotID, LAT, LON, ELEV) |>
-    distinct(plotID, .keep_all = T)
-
-  # Join tables
-  df_fia_us <- data_stand |>
-    left_join(data_cond_sel) |>
-    # Require an explicit reserve classification; exclude non-reserves and NA.
-    filter(RESERVCD == 1) |>
-    left_join(data_plot_sel) |>
-    
-    # rename variable
-    rename(
-      year = INVYR,
-      lat = LAT,
-      lon = LON,
-      biomass = abg_biomass_kg_ha
-    ) |>
-    # convert RESERVCD=1 to management=0 = "no managed"
-    mutate(
-      management = RESERVCD - 1,
-      plotsize = 0.4,
-      country = "USA",
-      management_since_census1_yrs = NA,
-      management_cat = 3
-    ) |>
-    
-    # Remove entries with density = 0
-    filter(is.na(density) | density > 0) |>
-    
-    # Remove entries with QMD = 0
-    filter(is.na(QMD) | QMD > 0)
-
-  saveRDS(df_fia_us, file = here::here("data/inputs/df_fia_us.rds"))
-
+  saveRDS(data_stand, file = filn)
 } else {
-
-  # These are cached stand totals. Rebuild from TREE tables to apply changes
-  # to missing-value handling; recalculating QMD cannot repair partial BA sums.
-  # Refresh derived diameters in caches created with the rounded conversion.
-  df_fia_us <- readRDS(here::here("data/inputs/df_fia_us.rds")) |>
-    select(-any_of(c("logQMD", "logDensity"))) |>
-    mutate(QMD = ba_to_qmd(ba, density))
+  # Rebuild this cache from TREE tables when changing aggregation/missing-BA rules.
+  data_stand <- readRDS(filn)
 }
 
-# Apply the reserve restriction to cached data too: the FIA mapping above sets
-# management = RESERVCD - 1, so only management == 0 identifies reserves.
-df_fia_us <- df_fia_us |>
-  filter(management == 0)
+# Refresh derived diameters in older caches, retaining every unfiltered plot.
+data_stand <- data_stand |>
+  select(-any_of(c("logQMD", "logDensity"))) |>
+  mutate(QMD = ba_to_qmd(ba, density))
+
+## PLOT table ---
+# meta info for forest plots
+data_plot <- list.files(path = file.path(raw_data_dir, "fia_us/obs"), pattern = "*_PLOT.csv", full.names = TRUE) |>
+  purrr::map(read.csv) |>
+  lapply(\(x) mutate(x, across(ECO_UNIT_PNW, as.character))) |>
+  bind_rows() |>
+
+  # Make a unique ID for each plot, irrespective of time
+  mutate(plotID = paste(UNITCD, STATECD, COUNTYCD, PLOT, sep = "_"))
+
+
+data_plot_sel <- data_plot |>
+  select(plotID, LAT, LON, ELEV) |>
+  distinct(plotID, .keep_all = T)
+
+# Join tables
+df_fia_us <- data_stand |>
+  left_join(data_plot_sel) |>
+
+  # rename variable
+  rename(
+    year = INVYR,
+    lat = LAT,
+    lon = LON,
+    biomass = abg_biomass_kg_ha
+  ) |>
+  # Management classification is assigned from COND history below.
+  mutate(
+    plotsize = 0.4,
+    country = "USA"
+  ) |>
+
+  # Remove entries with density = 0
+  filter(is.na(density) | density > 0) |>
+
+  # Remove entries with QMD = 0
+  filter(is.na(QMD) | QMD > 0)
+
+# Retain forest reserves with no evidence of management between censuses.
+# Category 2: old growth at the first census; category 1: dated prior treatment
+# or a valid first-census stand age (used as a proxy); category 3: unknown history.
+# Original COND records are required even when using cached stand totals.
+source(here::here("R/prepare_fia_management.R"))
+fia_condition_history <- read_fia_condition_history(file.path(raw_data_dir, "fia_us/obs"))
+df_fia_us <- prepare_fia_management(df_fia_us, fia_condition_history)
+
+message(
+  "FIA management selection: ",
+  n_distinct(df_fia_us$plotID),
+  " plots, ",
+  nrow(df_fia_us),
+  " plot-census records retained."
+)
+
+# check final data availability
+df_fia_us |>
+  filter(management == 0) |>
+  group_by(management_cat) |>
+  summarise(
+    n_plots = n_distinct(plotID),
+    n_plot_censuses = n(),
+    .groups = "drop"
+  )
 
 # Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
 df_fia_us <- standardise_stand_data(df_fia_us)
@@ -406,7 +407,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_fia_us, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_fia_us, file = here::here("data/inputs/df_fia_us.rds"))
+saveRDS(df_fia_us, file = here::here("data/inputs/df_fia_us_v2026.rds"))
 
 # NFI Switzerland ----
 # Data providers: Brigitte Rohner
@@ -501,7 +502,7 @@ rgeco::plot_map_simpl() +
 # Save stand-level data
 saveRDS(
   df_nfi_switzerland,
-  file = here::here("data/inputs/df_nfi_swi.rds")
+  file = here::here("data/inputs/df_nfi_swi_v2026.rds")
 )
 
 # NFI Norway ----
@@ -552,7 +553,7 @@ rgeco::plot_map_simpl() +
 # Save stand-level data
 saveRDS(
   df_nfi_norway,
-  file = here::here("data/inputs/df_nfi_nor.rds")
+  file = here::here("data/inputs/df_nfi_nor_v2026.rds")
 )
 
 # EFM Switzerland ----
@@ -584,7 +585,7 @@ efm_management <- efm_management |>
   select(FNUM, management_since_census1_yrs)
 
 # Stand level data (per plot, year and species)
-efm_stand <- readRDS(file.path(raw_data_dir, "efm/raw/efm_stand.RDS"))
+efm_stand <- readRDS(file.path(raw_data_dir, "efm/raw/efm_stand_v2026.rds"))
 efm_stand <- efm_stand |>
   mutate(FNUM = as.character(FNUM)) |>
   select(-BA)
@@ -642,7 +643,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_efm_swi, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_efm_swi, file = here::here("data/inputs/df_efm_swi.rds"))
+saveRDS(df_efm_swi, file = here::here("data/inputs/df_efm_swi_v2026.rds"))
 
 # uholka ----
 # Data providers: Jonas Stillhard
@@ -703,7 +704,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_uholka, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_uholka, file = here::here("data/inputs/df_uholka.rds"))
+saveRDS(df_uholka, file = here::here("data/inputs/df_uholka_v2026.rds"))
 
 # fep gre ----
 # Greece
@@ -773,7 +774,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_fep_gre, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_fep_gre, file = here::here("data/inputs/df_fep_gre.rds"))
+saveRDS(df_fep_gre, file = here::here("data/inputs/df_fep_gre_v2026.rds"))
 
 # INRAE LESSEM ----
 # France
@@ -833,7 +834,7 @@ rgeco::plot_map_simpl() +
 # Save stand-level data
 saveRDS(
   df_inrae_lessem,
-  file = here::here("data/inputs/df_inrae_lessem.rds")
+  file = here::here("data/inputs/df_inrae_lessem_v2026.rds")
 )
 
 # EuFoRia plots ----
@@ -882,7 +883,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_bnp, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_bnp, file = here::here("data/inputs/df_bnp.rds"))
+saveRDS(df_bnp, file = here::here("data/inputs/df_bnp_v2026.rds"))
 
 ## czu ----
 # Data providers: Miroslav Svoboda
@@ -930,7 +931,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_czu, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_czu, file = here::here("data/inputs/df_czu.rds"))
+saveRDS(df_czu, file = here::here("data/inputs/df_czu_v2026.rds"))
 
 ## fvabw ----
 # Data providers: Yannek Käber and Lucia Seebach
@@ -980,7 +981,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_fvabw, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_fvabw, file = here::here("data/inputs/df_fvabw.rds"))
+saveRDS(df_fvabw, file = here::here("data/inputs/df_fvabw_v2026.rds"))
 
 ## iberbas ----
 # Data providers: Tzvetan Zlatanov
@@ -1024,7 +1025,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_iberbas, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_iberbas, file = here::here("data/inputs/df_iberbas.rds"))
+saveRDS(df_iberbas, file = here::here("data/inputs/df_iberbas_v2026.rds"))
 
 ## unitbv ----
 # Data providers: Any Mary Petritan, Cătălin Petritan
@@ -1103,7 +1104,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_unitbv, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_unitbv, file = here::here("data/inputs/df_unitbv.rds"))
+saveRDS(df_unitbv, file = here::here("data/inputs/df_unitbv_v2026.rds"))
 
 ## lwf ----
 # Data providers: Markus Blaschke
@@ -1167,7 +1168,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_lwf, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_lwf, file = here::here("data/inputs/df_lwf.rds"))
+saveRDS(df_lwf, file = here::here("data/inputs/df_lwf_v2026.rds"))
 
 ## npvbw ----
 # Data from Marco Heurich and Isabelle Klein
@@ -1221,7 +1222,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_npvbw, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_npvbw, file = here::here("data/inputs/df_npvbw.rds"))
+saveRDS(df_npvbw, file = here::here("data/inputs/df_npvbw_v2026.rds"))
 
 ## nfr ----
 # Martina Hobi and Harald Bugmann
@@ -1253,7 +1254,7 @@ nfr_last_intervention <- nfr_last_intervention |>
   mutate(fg = as.character(fg))
 
 # Stand level data (per plot, year and species)
-nfr_stand <- readRDS(file.path(raw_data_dir, "nfr/raw/NFR_stand_data.RDS")) # 291 plots From David Forrester data
+nfr_stand <- readRDS(file.path(raw_data_dir, "nfr/raw/NFR_stand_data_v2026.rds")) # 291 plots From David Forrester data
 
 # Select Stand level data for all species: "All species combined"
 dom_species_nfr <- nfr_stand |>
@@ -1317,7 +1318,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_nfr_swi, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_nfr_swi, file = here::here("data/inputs/df_nfr_swi.rds"))
+saveRDS(df_nfr_swi, file = here::here("data/inputs/df_nfr_swi_v2026.rds"))
 
 ## nwfva ----
 # Data providers: Peter Meyer
@@ -1381,7 +1382,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_nwfva, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_nwfva, file = here::here("data/inputs/df_nwfva.rds"))
+saveRDS(df_nwfva, file = here::here("data/inputs/df_nwfva_v2026.rds"))
 
 ## tuzvo ----
 # Data providers: Stanislav Kucbel and Peter Jalovia
@@ -1449,7 +1450,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_tuzvo, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_tuzvo, file = here::here("data/inputs/df_tuzvo.rds"))
+saveRDS(df_tuzvo, file = here::here("data/inputs/df_tuzvo_v2026.rds"))
 
 ## ul ----
 # Thomas Nagel
@@ -1507,7 +1508,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_ul, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_ul, file = here::here("data/inputs/df_ul.rds"))
+saveRDS(df_ul, file = here::here("data/inputs/df_ul_v2026.rds"))
 
 ## unito ----
 # Renzo Motta
@@ -1689,7 +1690,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_unito, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_unito, file = here::here("data/inputs/df_unito.rds"))
+saveRDS(df_unito, file = here::here("data/inputs/df_unito_v2026.rds"))
 
 ## urk ----
 # Data providers: Srdjan Keren and Zbigniew Maciejewski
@@ -1727,7 +1728,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_urk, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_urk, file = here::here("data/inputs/df_urk.rds"))
+saveRDS(df_urk, file = here::here("data/inputs/df_urk_v2026.rds"))
 
 ## wuls ----
 # Data providers: Bogdan Brzeziecki
@@ -1797,7 +1798,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_wuls, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_wuls, file = here::here("data/inputs/df_wuls.rds"))
+saveRDS(df_wuls, file = here::here("data/inputs/df_wuls_v2026.rds"))
 
 # ForestGeo plots -----
 ## Luquillo ----
@@ -1869,7 +1870,7 @@ rgeco::plot_map_simpl() +
 # Save stand-level data
 saveRDS(
   df_luquillo,
-  file = here::here("data/inputs/df_luquillo.rds")
+  file = here::here("data/inputs/df_luquillo_v2026.rds")
 )
 
 ## BCI ----
@@ -1948,7 +1949,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_bci, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_bci, file = here::here("data/inputs/df_bci.rds"))
+saveRDS(df_bci, file = here::here("data/inputs/df_bci_v2026.rds"))
 
 ## SCBI ----
 # Contact: Kristina J. Anderson-Teixeira, William J. McShea, Norman A. Bourg
@@ -2016,7 +2017,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_scbi, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_scbi, file = here::here("data/inputs/df_scbi.rds"))
+saveRDS(df_scbi, file = here::here("data/inputs/df_scbi_v2026.rds"))
 
 ## Palanam ----
 # Contact: Perry S. Ong
@@ -2077,7 +2078,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_palanam, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_palanam, file = here::here("data/inputs/df_palanam.rds"))
+saveRDS(df_palanam, file = here::here("data/inputs/df_palanam_v2026.rds"))
 
 ## SERC ----
 # Contact: Sean McMahon
@@ -2162,7 +2163,7 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_serc, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_serc, file = here::here("data/inputs/df_serc.rds"))
+saveRDS(df_serc, file = here::here("data/inputs/df_serc_v2026.rds"))
 
 ## Wytham ----
 # Data from Yadvinder Malhi
@@ -2222,14 +2223,14 @@ rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_wytham, size = 0.5, alpha = 0.5)
 
 # Save stand-level data
-saveRDS(df_wytham, file = here::here("data/inputs/df_wytham.rds"))
+saveRDS(df_wytham, file = here::here("data/inputs/df_wytham_v2026.rds"))
 
 ## Pasho ----
 # Contact: Musalmah Nasardin, Yao Tze Leong
 # https://forestgeo.si.edu/sites/asia/pasoh
 
 # tree-level data
-pasoh_sp <- readRDS(file.path(raw_data_dir, "forestgeo/pasoh/pasoh_sp.rds"))
+pasoh_sp <- readRDS(file.path(raw_data_dir, "forestgeo/pasoh/pasoh_sp_v2026.rds"))
 
 pasoh_sp <- pasoh_sp |>
   separate(Latin, c("first", "second"), " ") |>
