@@ -76,6 +76,7 @@ Remaining revisions of `00_raw_data.R`.
 - For US FIA, check if plot size is available. If so, use provided information, rather than overwriting all plots with 0.4 ha.
   - Done. Commit 5f7bd6b..e82b7a0.
 - Add column in table providing information of data provider name. Name should be part of the author list.
+  - Done. Commit e82b7a0..3d9a9e4.
 - Add information about how management information was provided. For some datasets (mostly national forest inventories), we obtained only a subset of plots that the data providers identified as unmanaged (`management = 0`). Describe whether this was the case (may have to be confirmed again with authors explicitly) in the description of the constituent datasets in the SI. Alternatively, there are cases, where management information was accessed from the original data by interpreting particular variables. Docoument how this was done. For yet others, all plots in the network are unmanaged. Describe if this was known (or assumed) to be the case.
 - Separate forestplots data into separate dataset by country and take this separation forward in the documentation of constituent datasets in the supplementary information
 - Add to constituent dataset tables information as additional columns:
