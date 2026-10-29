@@ -756,9 +756,11 @@ saveRDS(df_uholka, file = here::here("data/inputs/df_uholka_v2026.rds"))
 # Greece
 # Data providers: Gavriil Spyroglou and Nikolaos Fyllas
 # Management:
-# The dataset provides year_last_intervention and year of first measurement (plot establishment)
-# Calculated: management_since_census1_yrs = first_measurement - year_last_intervention.
-# Note: Data also includes years_since_management. We did not use this variable.
+# Control-plot labels (including the source typo "Contol") and numeric
+# info_management values indicate no management; thinning labels indicate treatment.
+# A plot qualifies as unmanaged only if all its records indicate no management.
+# management_since_census1_yrs uses years_since_management at the earliest census,
+# held constant across the plot's records, including a missing baseline value.
 
 # tree-level data to estimate dominant species
 fep_gre_tree <- read.csv(file.path(raw_data_dir, "fp_gre/fp_gre_tree.csv"), sep = ",")
@@ -793,20 +795,36 @@ fep_gre_stand <- fep_gre_stand |>
     dbh = dbh_m,
     plotsize = plot_size
   ) |>
-  mutate(biomass = biomass.t.ha.1 * 10^3) |>
+  mutate(
+    biomass = biomass.t.ha.1 * 10^3,
+    management = {
+      info <- trimws(as.character(info_management))
+      case_when(
+        info %in% c("Control plot (no thinning)", "Contol plot (no thinning)") ~ 0L,
+        is.finite(suppressWarnings(as.numeric(info))) ~ 0L,
+        grepl("thinning", info, ignore.case = TRUE) ~ 1L,
+        TRUE ~ NA_integer_
+      )
+    }
+  ) |>
   left_join(dom_species) |>
-  # create census
+  # Use the first available census as the reference for prior management history.
+  arrange(plotID, year) |>
   group_by(plotID) |>
-  mutate(census = match(year, unique(year))) |>
+  mutate(
+    census = match(year, unique(year)),
+    management = if (any(management == 1L, na.rm = TRUE)) 1L
+                 else if (any(is.na(management))) NA_integer_ else 0L,
+    management_since_census1_yrs = if (any(is.na(year))) NA_real_
+      else suppressWarnings(as.numeric(as.character(first(years_since_management))))
+  ) |>
   ungroup() |>
   relocate(census, .after = year)
 
 # aggregate data from stand
 df_fep_gre <- from_stand_data(fep_gre_stand) |>
   mutate(
-    management = 0,
     management_cat = 1,
-    management_since_census1_yrs = first_measurement - year_last_intervention,
     country = "Greece"
   )
 
