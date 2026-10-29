@@ -240,7 +240,11 @@ if (!file.exists(filn)) {
   # Aggregate from tree to forest plot level
   # Note: R session crushes due to the big size of the files. So, we read the files and save only the summaries at plot level.
 
-  # plot size = 1 acre = 0.4 ha
+  # Sampling area is already encoded in each tree's TPA_UNADJ. FIA uses nested
+  # microplots/subplots/macroplots and legacy designs, so there is no single
+  # sampled area applicable to all trees. Do not divide these totals by plotsize.
+  # FIA database guide, section 1.2.5 (tree expansion factors):
+  # https://research.fs.usda.gov/sites/default/files/2025-08/wo-v9-4_Aug2025_UG_FIADB_database_description_NFI.pdf
   # DRYBIO_AG - aboveground biomass (DRYBIO_AG) contained in each tree (in pounds, libs)
   # TPA_UNADJ - trees per acre each tree represents
   # DIA - DBH (inches)
@@ -250,7 +254,7 @@ if (!file.exists(filn)) {
   # 1 sq inch = 0.00064516 sq meter
   # abg_biomass: from pounds per acre to kg per ha = *0.453/0.405
   # density: from indiv per acre to indiv per ha = */0.405
-  # dbh: from inches per acre to cm per ha = *2.54/0.405
+  # dbh: from inches to cm = *2.54 (no area conversion)
   # BA: from sq. inches per acre to sq. m per ha = *0.00064516/0.405
   species <- read.csv(file.path(raw_data_dir, "fia_us/obs/species_code.csv"))
   states <- read.csv(file.path(raw_data_dir, "fia_us/obs/states.csv"))
@@ -361,7 +365,10 @@ df_fia_us <- data_stand |>
   ) |>
   # Management classification is assigned from COND history below.
   mutate(
-    plotsize = 0.4,
+    # PLOT has design codes and COND has area proportions, not a single area
+    # in hectares for all sampled diameter classes. Keep this metadata missing;
+    # density and ba already use the supplied tree-specific expansion factors.
+    plotsize = NA_real_,
     country = "USA"
   ) |>
 
