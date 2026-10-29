@@ -71,10 +71,14 @@ Remaining revisions of `00_raw_data.R`.
   - Done.
 - The Swedish NFI appears to provide all the management information we need. Subset only to those plots that did not experience management during the censi. Set the management history to known (`management_cat = 3`) and determine `management_since_census1_yrs` based on the provided stand age column, determined with respect to the first available census.
   - Done.
-- For US FIA revise management information: Remove plots that were not classified as forest reserve. Identify old-growth. Retained old-growth should receive `management_cat = 2` and missing `management_since_census1_yrs`. Plots that do not classify as old-growth but have a known stand age or management history prior to first census should receive `management_cat = 1 ` and a specified `management_since_census1_yrs`. Remaining plots should receive `management_cat = 3`  and missing `management_since_census1_yrs`.
+- For US FIA revise management information: Remove plots that were not classified as forest reserve. Identify old-growth. Retained old-growth should receive `management_cat = 2` and missing `management_since_census1_yrs`. Plots that do not classify as old-growth but have a known stand age or management history prior to first census should receive `management_cat = 1` and a specified `management_since_census1_yrs`. Remaining plots should receive `management_cat = 3`  and missing `management_since_census1_yrs`.
   - Done. Commit 97f2a68..5f7bd6b.
 - For US FIA, check if plot size is available. If so, use provided information, rather than overwriting all plots with 0.4 ha.
   - Done. Commit 5f7bd6b..e82b7a0.
+- Swiss NFI: Revised interpretation of management information. All are known history (`management_cat = 1`) with  a specified `management_since_census1_yrs`.
+  - Done. Commit c2169ae..b837059.
+- Norway NFI: set to unknown management history (`management_cat = 3`), overriding the previously set `1` and `management_since_census1_yrs = 64` for all 25k stands -- which seemed implausible (@lauramarques). Retaining QMD values provided by original source, not overwriting them with own calculated values. 
+  - Commit c2169ae..b837059.
 - Add column in table providing information of data provider name. Name should be part of the author list.
   - Done. Commit e82b7a0..3d9a9e4.
 - Add information in the table S1 in the SI:
@@ -112,3 +116,4 @@ Remaining revisions of `00_raw_data.R`.
 - EuFoRia Unito: comment in script `00_raw_data.R`: "In Table S1, assign to 50 years. Need to confirm with data providers." Now set to `management_cat = 2` (primary/old growth).
 - EuFoRia urk: Comment in script: "In Table S1, assign to NA years. It can be considered a primary/old-growth forests.". Therefore, I changed this to `management_cat = 2` (primary/old growth). Ok?
 - Treatment of `management_since_census1_yrs` in `aus_plots` was revised. Now interpreting `year_last_management`: if *after* the first available census per plot, then set `management = 1`, otherwise `management = 0` and set `management_since_census1_yrs = min(year, na.rm = TRUE) - year_last_management`. Please confirm. It was unclear why all plots for which `year_last_management` was *not* NA were set as `management_cat = 3` (unknown).
+- Norway NFI: set to unknown management history (`management_cat = 3`), overriding the previously set `1` and `management_since_census1_yrs = 64` for all 25k stands -- which seemed implausible.

@@ -290,7 +290,7 @@ from_stand_tree_data <- function(data_tree, data_stand) {
 }
 
 # prepare_stand_data
-from_stand_data <- function(data) {
+from_stand_data <- function(data, qmd_col = NULL) {
   # get name of dataset
   datanm <- harmonise_dataset_names(deparse(substitute(data)))
 
@@ -298,9 +298,10 @@ from_stand_data <- function(data) {
   data_agg <- data |>
     select(-any_of(c("logQMD", "logDensity"))) |>
 
-    # calculate QMD
+    # Calculate QMD unless a source column (already in cm) is explicitly supplied.
+    # Preserve missing source values as well; do not fill them from BA/density.
     mutate(
-      QMD = ba_to_qmd(ba, density),
+      QMD = if (is.null(qmd_col)) ba_to_qmd(ba, density) else .data[[qmd_col]],
       dataset = datanm
     ) |>
     

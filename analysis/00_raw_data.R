@@ -512,11 +512,11 @@ df_nfi_switzerland <- from_stand_data(nfi_switzerland)
 df_nfi_switzerland <- standardise_stand_data(df_nfi_switzerland)
 
 df_nfi_switzerland |>
-  filter(management == 0) |>
+  filter(management == 0 & management_since_census1_yrs == 999) |>
   ggplot() +
   geom_hex(
     aes(x = log(QMD), y = log(density)),
-    bins = 60
+    bins = 30
   )
 
   geom_point(
@@ -550,6 +550,7 @@ nfi_norway <- read.csv(file.path(raw_data_dir, "nfi_nor/nfi_nor.csv"), sep = ","
 # rename variable
 nfi_norway <- nfi_norway |>
   filter(class == "F_Forest") |>
+
   mutate( # convert to cm
     dbh = dbh / 10,
     qmd = qmd / 10
@@ -558,6 +559,7 @@ nfi_norway <- nfi_norway |>
     ba = basal_area,
     plotsize = area
   ) |>
+
   # create census
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
@@ -565,22 +567,26 @@ nfi_norway <- nfi_norway |>
   relocate(census, .after = year) |>
   mutate(
     management = 0,
-    management_cat = 1,
-    management_since_census1_yrs = 64,
+    management_cat = 3,
+    management_since_census1_yrs = NA, # Beni: revised this. Was previously set to 64 for all plots, which seems implausible.
     country = "Norway"
   )
 
-# aggregate data from stand
-df_nfi_norway <- from_stand_data(nfi_norway)
+# Preserve the provider's QMD, converted from mm to cm above.
+df_nfi_norway <- from_stand_data(nfi_norway, qmd_col = "qmd") # beni: retaining dataset's own QMD values, not overwriting from own calculation
 
 # Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
 df_nfi_norway <- standardise_stand_data(df_nfi_norway)
 
 ggplot() +
-  geom_point(data = df_nfi_norway, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
-
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_nfi_norway, size = 0.5, alpha = 0.5)
+  geom_line(
+    data = df_nfi_norway,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.2,
+    # size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
 # Save stand-level data
 saveRDS(

@@ -27,14 +27,11 @@ stopifnot(
 species <- trees |>
   mutate(ba = ba_tree / plotsize, density = 1 / plotsize)
 
-# Norway must use the same conversion even if supplied QMD differs.
-nfi_norway <- stand |> mutate(qmd = -999, logQMD = -999, logDensity = -999)
 results <- list(
   from_tree_data(trees),
   from_species_data(species),
   from_stand_tree_data(trees, stand),
-  from_stand_data(stand),
-  from_stand_data(nfi_norway)
+  from_stand_data(stand)
 )
 for (result in results) {
   stopifnot(
@@ -44,6 +41,24 @@ for (result in results) {
     identical(result$period, c(NA_real_, 5))
   )
 }
+
+# Norway preserves source QMD in cm, including missing values, after sorting
+# and standardisation; other datasets continue to use the BA/density conversion.
+source("R/extract_plot_environment.R")
+nfi_norway <- stand |>
+  mutate(qmd = c(18, NA_real_), QMD = -999, logQMD = -999, logDensity = -999) |>
+  arrange(desc(year))
+norway <- from_stand_data(nfi_norway, qmd_col = "qmd") |>
+  standardise_stand_data()
+stopifnot(
+  identical(norway$QMD, c(18, NA_real_)),
+  identical(norway$dataset, rep("nfi_norway", 2)),
+  identical(norway$year, c(2000, 2005)),
+  identical(norway$period, c(NA_real_, 5)),
+  !any(c("logQMD", "logDensity") %in% names(norway)),
+  isTRUE(all.equal(from_stand_data(nfi_norway)$QMD, expected)),
+  inherits(try(from_stand_data(stand, qmd_col = "absent"), silent = TRUE), "try-error")
+)
 
 invisible(parse(file = "analysis/00_raw_data.R"))
 cat("BA-to-QMD checks passed for all aggregation routes.\n")
