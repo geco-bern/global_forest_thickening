@@ -607,7 +607,8 @@ efm_metadata <- efm_metadata |>
   select(-BA)
 
 # Plot area
-efm_area <- read.csv(file.path(raw_data_dir, "efm/raw/EFM_plot_area.csv"))
+# efm_area <- read.csv(file.path(raw_data_dir, "efm/raw/EFM_plot_area.csv"))
+efm_area <- read.csv(file.path(raw_data_dir, "efm/raw/PlotAreas.csv"))
 efm_area <- efm_area |>
   mutate(FNUM = as.character(FNUM))
 
@@ -716,8 +717,8 @@ uholka <- uholka |>
     )),
     plotsize = 0.25, # ha
     biomass = NA,
-    country = "Ukraine"
-    # management_since_census1_yrs = 999 (beni: changed to management_cat = 2)
+    country = "Ukraine",
+    management_since_census1_yrs = 999
   )
 
 # aggregate data from stand to stand data
@@ -736,7 +737,14 @@ df_uholka <- from_tree_data(uholka) |>
 df_uholka <- standardise_stand_data(df_uholka)
 
 ggplot() +
-  geom_point(data = df_uholka, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_uholka,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.5,
+    # size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_uholka, size = 0.5, alpha = 0.5)

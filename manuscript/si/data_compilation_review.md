@@ -77,8 +77,10 @@ Remaining revisions of `00_raw_data.R`.
   - Done. Commit 5f7bd6b..e82b7a0.
 - Swiss NFI: Revised interpretation of management information. All are known history (`management_cat = 1`) with  a specified `management_since_census1_yrs`.
   - Done. Commit c2169ae..b837059.
-- Norway NFI: set to unknown management history (`management_cat = 3`), overriding the previously set `1` and `management_since_census1_yrs = 64` for all 25k stands -- which seemed implausible (@lauramarques). Retaining QMD values provided by original source, not overwriting them with own calculated values. 
+- Norway NFI: set to unknown management history (`management_cat = 3`), overriding the previously set `1` and `management_since_census1_yrs = 64` for all 25k stands -- which seemed implausible (@lauramarques).
   - Commit c2169ae..b837059.
+- Norway NFI: Retaining QMD values provided by original source, not overwriting them with own calculated values. 
+  - Commit b837059..866fe38.
 - Add column in table providing information of data provider name. Name should be part of the author list.
   - Done. Commit e82b7a0..3d9a9e4.
 - Add information in the table S1 in the SI:
