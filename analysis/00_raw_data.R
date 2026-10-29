@@ -424,10 +424,18 @@ saveRDS(df_fia_us, file = here::here("data/inputs/df_fia_us_v2026.rds"))
 # LETZTENU: Number of years since the last silvicultural intervention according to the oral survey at the Forest Service (derivation LETZTENU in the Swiss NFI database).
 # If it is known that no intervention has been carried out on this sample area for a very long time or
 # that it is almost certain that no intervention has ever been carried out, LETZTENU=999.
+# MANAGEMENT_INDICATOR describes treatment since the preceding inventory; 1 = no treatment.
+# Check every census after the first available census, excluding the baseline
+# indicator because it concerns history before the observation period (LFI1 uses -1).
 # Calculated variables:
-# - management_since_census1_yrs, sum of LETZTENU years, only when value increase over censuses. If values are not strictly increasing → NA.
-# - management = 1 if management_since_census1_yrs=NA, and management = 0 otherwise.
+# - management = 0 only if all follow-up indicators are known and equal to 1;
+#   1 if any follow-up reports treatment; NA if there is no follow-up or status is unknown.
+# - management_since_census1_yrs = LETZTENU at the earliest dated census, held
+#   constant across censuses. Missing baseline values remain missing; 999 remains
+#   a special marker, not a measured interval. Later reports do not fill the baseline.
 # - management_cat = 1 for all plots. (Recorded history)
+# LETZTENU is relative to the field-measurement year (LFI4 results report, p. 154):
+# https://www.lfi.ch/media/documents/publikationen/ergebnisberichte/LFI4_Ergebnisbericht.pdf
 
 # Plot characteristics
 lfi_plot_constant <- read.csv(file.path(raw_data_dir, "nfi_swi/lfi_plot_constant.csv"), sep = ";")
@@ -460,7 +468,10 @@ lfi_plot_census <- read.csv(file.path(raw_data_dir, "nfi_swi/lfi_plot_census.csv
 nfi_switzerland <- lfi_plot_census |>
   left_join(lfi_plot_constant[, c(1:3)]) |>
   # create Year variable from CENSUS_DATE
-  mutate(year = year(as.Date(CENSUS_DATE, format="%d.%m.%Y"))) |>
+  mutate(
+    census_date = as.Date(CENSUS_DATE, format = "%d.%m.%Y"),
+    year = year(census_date)
+  ) |>
   left_join(dom_species) |>
   # rename variable
   rename(
@@ -473,17 +484,22 @@ nfi_switzerland <- lfi_plot_census |>
     dbh = MEAN_DBH_HA,
     biomass = BIOMASS_VPPS_ABOVEGROUND
   ) |>
+  arrange(plotID, census_date) |>
   group_by(plotID) |>
   mutate(
+    management = {
+      followup <- MANAGEMENT_INDICATOR[row_number() > 1L]
+      if (any(is.na(census_date)) || length(followup) == 0L) NA_integer_
+      else if (any(followup > 1L, na.rm = TRUE)) 1L
+      else if (all(!is.na(followup) & followup == 1L)) 0L
+      else NA_integer_
+    },
     management_since_census1_yrs =
-      if (any(LETZTENU == 999, na.rm = TRUE)) 999        # unmanaged
-    else if (any(is.na(LETZTENU))) NA_real_              # missing data
-    else if (all(diff(LETZTENU) > 0)) sum(LETZTENU)      # strictly increasing
-    else NA_real_                                        # management occurred
+      if (any(is.na(census_date))) NA_real_ else as.numeric(first(LETZTENU))
   ) |>
   ungroup() |>
+  select(-census_date) |>
   mutate(
-    management = ifelse(is.na(management_since_census1_yrs), 1, 0),
     management_cat = 1,
     plotsize = PLOT_AREA_LARGE * 10^-4,
     country = "Switzerland"
@@ -495,11 +511,20 @@ df_nfi_switzerland <- from_stand_data(nfi_switzerland)
 # Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
 df_nfi_switzerland <- standardise_stand_data(df_nfi_switzerland)
 
-ggplot() +
-  geom_point(
-    data = df_nfi_switzerland,
+df_nfi_switzerland |>
+  filter(management == 0) |>
+  ggplot() +
+  geom_hex(
     aes(x = log(QMD), y = log(density)),
-    alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE
+    bins = 60
+  )
+
+  geom_point(
+    aes(x = log(QMD), y = log(density)),
+    alpha = 0.3,
+    size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
   )
 
 rgeco::plot_map_simpl() +

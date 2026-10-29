@@ -77,11 +77,13 @@ Remaining revisions of `00_raw_data.R`.
   - Done. Commit 5f7bd6b..e82b7a0.
 - Add column in table providing information of data provider name. Name should be part of the author list.
   - Done. Commit e82b7a0..3d9a9e4.
+- Add information in the table S1 in the SI:
+  - Whether data was provided and processed, starting at stand-level, at species-level, or at tree-level.
+    - Done. Commit 3d9a9e4..c2169ae.
+  - Revise information provided in the column 'Filter'. Rename it to management history. Clarify in caption and in main text that only plots for which no management was done during censi are retained for all analyses. Then, describe in the table aspects that are *different* across datasets. Specify for example, whether known history (`management_since_census1_yrs`) was specified for all plots based on data provider information, or whether this was specified from the available data and may be different by plot. Similar, describe whether `management_cat = 2` was based on information by the providers or interpreted. Specify also whether unknown history prior to the first census hence `management_cat = 3` was allocated.
 - Add information about how management information was provided. For some datasets (mostly national forest inventories), we obtained only a subset of plots that the data providers identified as unmanaged (`management = 0`). Describe whether this was the case (may have to be confirmed again with authors explicitly) in the description of the constituent datasets in the SI. Alternatively, there are cases, where management information was accessed from the original data by interpreting particular variables. Docoument how this was done. For yet others, all plots in the network are unmanaged. Describe if this was known (or assumed) to be the case.
 - Separate forestplots data into separate dataset by country and take this separation forward in the documentation of constituent datasets in the supplementary information
-- Add to constituent dataset tables information as additional columns:
-  - Names of data providers or reference if taken from published sources  
-<!-- - Harmonise names, also in table and plot labels: 
+- Harmonise names, also in table and plot labels: 
   - `fep_gre_stand` instead of `greece_stand`
   - `inrae_lessem` instead of `france`
   - `fvabw` instead of `forst`
@@ -93,9 +95,12 @@ Remaining revisions of `00_raw_data.R`.
   - `ul` instead of `ul_tree`
   - `bci` instead of `scbi`
   - `palanan` instead of `palanam`
-  - `forestplots` instead of `df_forestplots` -->
-<!-- - Make the BA-QMD conversion into a function, using the exact value of $\pi$ (`100 * sqrt((4 * ba)/(pi * density))` instead of `QMD = sqrt(ba / (0.0000785 * density))`), and apply it to each constituent dataset. -->
-<!-- - Avoid creating new variables for `logQMD` and `logDensity`. These are now calculated with each model fit later in the workflow and specified as a "recipe". -->
+  - `forestplots` instead of `df_forestplots`
+    - Done.
+- Make the BA-QMD conversion into a function, using the exact value of $\pi$ (`100 * sqrt((4 * ba)/(pi * density))` instead of `QMD = sqrt(ba / (0.0000785 * density))`), and apply it to each constituent dataset.
+  - Done.
+- Avoid creating new variables for `logQMD` and `logDensity`. These are now calculated with each model fit later in the workflow and specified as a "recipe".
+  - Done.
 
 ## To check Laura
 
