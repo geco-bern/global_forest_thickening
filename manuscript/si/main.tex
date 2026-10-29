@@ -107,6 +107,9 @@ Constituent datasets refer to data from individual forest plot networks, obtaine
 The figures accompanying each dataset describe the saved harmonised compilation before the common analysis filters. Record length is the difference between the last and first dated census of each plot; a plot observed only once has a record length of zero. Subtitles report the number of plots and the total number of distinct dated plot--year observations (plots $\times$ census). Where numeric management intervals are available, a second panel shows \texttt{management\_since\_census1\_yrs} once per plot. Missing intervals and the special marker 999 are excluded from these histograms and reported in the captions. These intervals retain the source-specific calculations and fixed assignments described below.
 
 % One table with automatic page breaks and repeated column headings.
+% Provider names follow analysis/00_raw_data.R, standardised to the supplied
+% author list; only contacts present in that author list are included.
+% RAINFOR data DOI follows the paper's Data availability statement.
 % Recalculate the numerical dataset sizes and regenerate figures after rerunning
 % the revised raw-data, compilation, environmental-extraction, and filtering stages.
 \begingroup
@@ -115,63 +118,64 @@ The figures accompanying each dataset describe the saved harmonised compilation 
 \setlength{\LTcapwidth}{\textwidth}
 \urlstyle{same}
 \hypersetup{hidelinks}
-% Column widths plus the eight internal paddings sum to \textwidth.
+% Column widths plus the ten internal paddings sum to \textwidth.
 \newlength{\datasetcolumnwidth}
-\setlength{\datasetcolumnwidth}{\dimexpr\textwidth-8\tabcolsep\relax}
+\setlength{\datasetcolumnwidth}{\dimexpr\textwidth-10\tabcolsep\relax}
 \begin{longtable}{@{}
-  >{\raggedright\arraybackslash}p{0.17\datasetcolumnwidth}
-  >{\raggedleft\arraybackslash}p{0.08\datasetcolumnwidth}
-  >{\raggedright\arraybackslash}p{0.25\datasetcolumnwidth}
-  >{\raggedright\arraybackslash}p{0.25\datasetcolumnwidth}
-  >{\raggedright\arraybackslash}p{0.25\datasetcolumnwidth}@{}}
-\caption[]{Constituent forest dataset sizes and descriptions. '\textit{N}' refers to the number of individual inventories (plots by separate years). 'Filter' summarises reported management criteria or source-selection descriptions. Their translation into harmonised indicators, and exceptions to a literal interpretation, are described in Sec.~\ref{sec:managementharmonisation} and the dataset-specific text. Common management and additional analysis filters were applied subsequently.}\label{tab:datasets}\\
+  >{\raggedright\arraybackslash}p{0.14\datasetcolumnwidth}
+  >{\raggedleft\arraybackslash}p{0.06\datasetcolumnwidth}
+  >{\raggedright\arraybackslash}p{0.21\datasetcolumnwidth}
+  >{\raggedright\arraybackslash}p{0.21\datasetcolumnwidth}
+  >{\raggedright\arraybackslash}p{0.19\datasetcolumnwidth}
+  >{\raggedright\arraybackslash}p{0.19\datasetcolumnwidth}@{}}
+\caption[]{Constituent forest dataset sizes and descriptions. '\textit{N}' refers to the number of individual inventories (plots by separate years). 'Data provider' lists contributing authors or the dataset/package DOI for published sources. 'Filter' summarises reported management criteria or source-selection descriptions. Their translation into harmonised indicators, and exceptions to a literal interpretation, are described in Sec.~\ref{sec:managementharmonisation} and the dataset-specific text. Common management and additional analysis filters were applied subsequently.}\label{tab:datasets}\\
 \toprule
-Abbrevation & \textit{N} & Long name & Filter & Reference \\
+Abbreviation & \textit{N} & Long name & Data provider & Filter & Reference \\
 \midrule
 \endfirsthead
 \caption[]{Constituent forest dataset sizes and descriptions (continued).}\\
 \toprule
-Abbrevation & \textit{N} & Long name & Filter & Reference \\
+Abbreviation & \textit{N} & Long name & Data provider & Filter & Reference \\
 \midrule
 \endhead
 \midrule
-\multicolumn{5}{r@{}}{\footnotesize Continued on next page}\\
+\multicolumn{6}{r@{}}{\footnotesize Continued on next page}\\
 \endfoot
 \bottomrule
 \endlastfoot
-  nfi\_spain & 27642 & Spanish National Forest Inventory & No management intervention observed during monitoring & Restricted data (not publicly available) \\
-  nfi\_norway & 25156 & Norwegian National Forest Inventory & No management intervention observed during monitoring & Restricted data (not publicly available) \\
-  nfi\_sweeden & 15954 & Swedish National Forest Inventory & No management intervention at any available census & Restricted data (not publicly available) \\
-  bnp & 9423 & Berchtesgaden National Park & Forest reserves & Restricted data (not publicly available) \\
-  fia\_us & 7022 & Forest Inventory and Analysis, US & Forest reserves; no management between censuses & Doser JW, Stanke H, Finley AO (2025). rFIA: Estimation of Forest Variables using the FIA Database. R package version 1.1.0, \url{https://CRAN.R-project.org/package=rFIA} \\
-  aus\_plots & 6259 & Sustainable Timber Tasmania, Forestry Corporation of NSW, Queensland, Victoria and Australia's Terrestrial Ecosystem Research Network & No management intervention observed during monitoring & Restricted data (not publicly available) \\
-  luquillo & 1993 & Luquillo & No management intervention observed during monitoring & \url{https://forestgeo.si.edu} \\
-  nfi\_switzerland & 1972 & Swiss National Forest Inventory & No management intervention observed during the last 70 years & Restricted data (not publicly available) \\
-  scbi & 1572 & Smithsonian Conservation Biology Institute & No management intervention observed during monitoring & \url{https://forestgeo.si.edu} \\
-  wuls & 1416 & Białowieża National Park & Forest reserves & Restricted data (not publicly available) \\
-  wytham & 1200 & Wytham Woods & No management intervention observed during monitoring & \url{https://forestgeo.si.edu} \\
-  serc & 1026 & Smithsonian Environmental Research Center & No management intervention observed during monitoring & \url{https://forestgeo.si.edu} \\
-  pasoh & 1007 & Pasoh & No management intervention observed during monitoring & \url{https://forestgeo.si.edu} \\
-  rainfor & 988 & Amazon Forest Inventory Network (RAINFOR) & No management intervention ocurred & Esquivel-Muelbert, A., Banbury Morgan, R., Brienen, R. et al. Increasing tree size across Amazonia. Nat. Plants 11, 2016–2025 (2025). \url{https://doi.org/10.1038/s41477-025-02097-4} \\
-  nfr\_swi & 729 & Swiss Natural Forest Reserves & Forest reserves & Restricted data (not publicly available) \\
-  fvabw & 537 & Forest Research Institute Baden-Württemberg & Forest reserves & Restricted data (not publicly available) \\
-  palanan & 484 & & No management intervention observed during monitoring & \url{https://forestgeo.si.edu} \\
-  unito & 311 & University of Turin  & Forest reserves & Restricted data (not publicly available) \\
-  uholka & 200 & Uholka-Shyrokyi Luh & Forest reserves & Restricted data (not publicly available) \\
-  forestplots & 149 & Forest Inventory Network & No management intervention ocurred & Restricted data (not publicly available) \\
-  mudumalai & 126 & Mudumalai & No management intervention observed during monitoring & Restricted data (not publicly available) \\
-  lwf & 114 & Bavarian Institute of Forestry & Forest reserves & Restricted data (not publicly available) \\
-  nwfva & 84 &  Northwest German Forest Research Institute (NW-FVA) & Forest reserves & Restricted data (not publicly available) \\
-  unitbv &  75 & National Institute for Research-Development in Forestry ‘‘Marin Drăcea’’ Department of Forest & Forest reserves & Restricted data (not publicly available) \\
-  tuzvo &  63 & Technical University in Zvolen & Forest reserves & Restricted data (not publicly available) \\
-  iberbas &  57 & Institute of Biodiversity and Ecosystem Research, Bulgarian Academy of Sciences & Forest reserves & Restricted data (not publicly available) \\
-  efm\_swi &  51 & Experiemental Forest Management plots & No management intervention observed during monitoring & Restricted data (not publicly available) \\
-  inrae\_lessem & 47 & French plots & No management intervention observed during monitoring & Restricted data (not publicly available) \\
-  fep\_gre\_stand &  40 & Greek plots & No management intervention observed during monitoring & Restricted data (not publicly available) \\
-  czu &  24 & Czech University of Life Sciences Prague & Forest reserves & Restricted data (not publicly available) \\
-  ul &  23 & University of Ljubljana, Slovenia & Forest reserves & Restricted data (not publicly available) \\
-  urk &  12 & Roztocze National Park, Poland & Forest reserves & Restricted data (not publicly available) \\
-  nbw & 7 & NPV-BW & Forest reserves & Restricted data (not publicly available) \\
+  nfi\_spain & 27642 & Spanish National Forest Inventory & Paloma Ruiz-Benito; Veronica Cruz-Alonso & No management intervention observed during monitoring & Restricted data (not publicly available) \\
+  nfi\_norway & 25156 & Norwegian National Forest Inventory & Oliver Moen-Snoksrud; Johannes Breidenbach & No management intervention observed during monitoring & Restricted data (not publicly available) \\
+  nfi\_sweeden & 15954 & Swedish National Forest Inventory & Julian Tijerin-Triviño & No management intervention at any available census & Restricted data (not publicly available) \\
+  bnp & 9423 & Berchtesgaden National Park & Michael Maroschek; Rupert Seidl & Forest reserves & Restricted data (not publicly available) \\
+  fia\_us & 7022 & Forest Inventory and Analysis, US & rFIA package: \href{https://doi.org/10.32614/CRAN.package.rFIA}{\nolinkurl{10.32614/CRAN.package.rFIA}} & Forest reserves; no management between censuses & Doser JW, Stanke H, Finley AO (2025). rFIA: Estimation of Forest Variables using the FIA Database. R package version 1.1.0, \url{https://CRAN.R-project.org/package=rFIA} \\
+  aus\_plots & 6259 & Sustainable Timber Tasmania, Forestry Corporation of NSW, Queensland, Victoria and Australia's Terrestrial Ecosystem Research Network & David Forrester; Shaun Suitor; Mike Sutton; Michael Ngugi; John Neldner; Andrew Clark & No management intervention observed during monitoring & Restricted data (not publicly available) \\
+  luquillo & 1993 & Luquillo & Jess Zimmerman & No management intervention observed during monitoring & \url{https://forestgeo.si.edu} \\
+  nfi\_switzerland & 1972 & Swiss National Forest Inventory & Brigitte Rohner & No management intervention observed during the last 70 years & Restricted data (not publicly available) \\
+  scbi & 1572 & Smithsonian Conservation Biology Institute & Kristina J. Anderson-Teixeira; William J. McShea; Norman A. Bourg & No management intervention observed during monitoring & \url{https://forestgeo.si.edu} \\
+  wuls & 1416 & Białowieża National Park & Bogdan Brzeziecki & Forest reserves & Restricted data (not publicly available) \\
+  wytham & 1200 & Wytham Woods & Yadvinder Malhi & No management intervention observed during monitoring & \url{https://forestgeo.si.edu} \\
+  serc & 1026 & Smithsonian Environmental Research Center & Sean McMahon & No management intervention observed during monitoring & \url{https://forestgeo.si.edu} \\
+  pasoh & 1007 & Pasoh & Musalmah Nasardin & No management intervention observed during monitoring & \url{https://forestgeo.si.edu} \\
+  rainfor & 988 & Amazon Forest Inventory Network (RAINFOR) & Data and code: \href{https://doi.org/10.24433/CO.0443999.v2}{\nolinkurl{10.24433/CO.0443999.v2}} & No management intervention ocurred & Esquivel-Muelbert, A., Banbury Morgan, R., Brienen, R. et al. Increasing tree size across Amazonia. Nat. Plants 11, 2016–2025 (2025). \url{https://doi.org/10.1038/s41477-025-02097-4} \\
+  nfr\_swi & 729 & Swiss Natural Forest Reserves & Martina Hobi; Harald Bugmann & Forest reserves & Restricted data (not publicly available) \\
+  fvabw & 537 & Forest Research Institute Baden-Württemberg & Yannek Käber; Lucia Seebach & Forest reserves & Restricted data (not publicly available) \\
+  palanan & 484 &  & Perry S. Ong & No management intervention observed during monitoring & \url{https://forestgeo.si.edu} \\
+  unito & 311 & University of Turin & Renzo Motta & Forest reserves & Restricted data (not publicly available) \\
+  uholka & 200 & Uholka-Shyrokyi Luh & Jonas Stillhard & Forest reserves & Restricted data (not publicly available) \\
+  forestplots & 149 & Forest Inventory Network & Yadvinder Malhi; Huanyuan Zhang-Zheng & No management intervention ocurred & Restricted data (not publicly available) \\
+  mudumalai & 126 & Mudumalai & Raman Sukumar & No management intervention observed during monitoring & Restricted data (not publicly available) \\
+  lwf & 114 & Bavarian Institute of Forestry & Markus Blaschke & Forest reserves & Restricted data (not publicly available) \\
+  nwfva & 84 & Northwest German Forest Research Institute (NW-FVA) & Peter Meyer & Forest reserves & Restricted data (not publicly available) \\
+  unitbv & 75 & National Institute for Research-Development in Forestry ‘‘Marin Drăcea’’ Department of Forest & Any Mary Petritan; Ion Cătălin Petritan & Forest reserves & Restricted data (not publicly available) \\
+  tuzvo & 63 & Technical University in Zvolen & Stanislav Kucbel; Peter Jaloviar & Forest reserves & Restricted data (not publicly available) \\
+  iberbas & 57 & Institute of Biodiversity and Ecosystem Research, Bulgarian Academy of Sciences & Tzvetan Zlatanov & Forest reserves & Restricted data (not publicly available) \\
+  efm\_swi & 51 & Experiemental Forest Management plots & David Forrester; Jonas Glattorn & No management intervention observed during monitoring & Restricted data (not publicly available) \\
+  inrae\_lessem & 47 & French plots & Georges Kunstler & No management intervention observed during monitoring & Restricted data (not publicly available) \\
+  fep\_gre\_stand & 40 & Greek plots & Gavriil Spyroglou; Nikolaos Fyllas & No management intervention observed during monitoring & Restricted data (not publicly available) \\
+  czu & 24 & Czech University of Life Sciences Prague & Miroslav Svoboda & Forest reserves & Restricted data (not publicly available) \\
+  ul & 23 & University of Ljubljana, Slovenia & Thomas A. Nagel & Forest reserves & Restricted data (not publicly available) \\
+  urk & 12 & Roztocze National Park, Poland & Srdjan Keren & Forest reserves & Restricted data (not publicly available) \\
+  nbw & 7 & NPV-BW & Marco Heurich; Isabelle Klein & Forest reserves & Restricted data (not publicly available) \\
 \end{longtable}
 \endgroup
 
