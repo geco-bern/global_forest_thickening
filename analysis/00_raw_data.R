@@ -1295,11 +1295,34 @@ saveRDS(df_lwf, file = here::here("data/inputs/df_lwf_v2026.rds"))
 ## npvbw ----
 # Data from Marco Heurich and Isabelle Klein
 # Management:
-# Original dataset does not include info on management.
-# In Table S1, management_since_census1_yrs = 42
+# Use the recorded last-management year for each plot. An intervention within
+# the first-to-last census years (inclusive) flags every census as managed.
+# The baseline interval is only known when last management predates census 1.
 
 # tree-level data
 npvbw <- read.csv(file.path(raw_data_dir, "nbw/euf_nbw_tree.csv"), sep = ",")
+
+# Derive plot history before removing dead trees or aggregating tree records.
+npvbw_management <- npvbw |>
+  group_by(plotID) |>
+  summarise(
+    first_year = min(census, na.rm = TRUE),
+    last_year = max(census, na.rm = TRUE),
+    last_management = if (all(is.na(year_last_management))) NA_real_ else
+      max(year_last_management, na.rm = TRUE),
+    management = case_when(
+      any(year_last_management >= first_year &
+            year_last_management <= last_year, na.rm = TRUE) ~ 1L,
+      is.na(last_management) ~ NA_integer_,
+      TRUE ~ 0L
+    ),
+    management_since_census1_yrs = if_else(
+      management == 0L & last_management < first_year,
+      first_year - last_management, NA_real_
+    ),
+    .groups = "drop"
+  ) |>
+  select(plotID, management, management_since_census1_yrs)
 
 # prepare data
 npvbw <- npvbw |>
@@ -1308,8 +1331,7 @@ npvbw <- npvbw |>
   mutate(
     ba_tree = pi * (dbh * 0.01 / 2)^2,
     biomass = NA,
-    country = "Germany",
-    #management_since_census1_yrs = 42  # calculated below from data
+    country = "Germany"
   ) |>
   rename(
     plotsize = plot_size,
@@ -1318,30 +1340,36 @@ npvbw <- npvbw |>
   group_by(plotID) |>
   mutate(
     lat = mean(latitude),
-    lon = mean(longitude),
-    management_since_census1_yrs = min(year, na.rm = TRUE) - year_last_management
+    lon = mean(longitude)
   ) |>
-  ungroup()
+  ungroup() |>
+  left_join(npvbw_management, by = "plotID")
 
 # aggregate data from stand to stand data
 df_npvbw <- from_tree_data(npvbw) |>
+  # The generic tree aggregator drops management and averages the interval;
+  # restore the plot-level fields, including explicit NA rather than NaN.
+  select(-management_since_census1_yrs) |>
+  left_join(npvbw_management, by = "plotID") |>
   # create census
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
   ungroup() |>
-  mutate(
-    management_cat = 1,
-    management = 0
-  )
+  mutate(management_cat = 1)
 
 # Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
 df_npvbw <- standardise_stand_data(df_npvbw)
 
 ggplot() +
-  geom_point(data = df_npvbw, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_npvbw,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_npvbw, size = 0.5, alpha = 0.5)
+plot_point_map(df_npvbw)
 
 # Save stand-level data
 saveRDS(df_npvbw, file = here::here("data/inputs/df_npvbw_v2026.rds"))
@@ -1448,10 +1476,10 @@ saveRDS(df_nfr_swi, file = here::here("data/inputs/df_nfr_swi_v2026.rds"))
 # In Table S1, management_since_census1_yrs = 52. Need to contact data providers.
 
 # Stand-level data
-nwfva_stand <- read.csv(file.path(raw_data_dir, "euforia/nwfva/euf_nwfva_stand.csv"), sep = ",")
+nwfva_stand <- read.csv(file.path(raw_data_dir, "nwfva/euf_nwfva_stand.csv"), sep = ",")
 
 # Tree-level data
-nwfva_tree <- read.csv(file.path(raw_data_dir, "euforia/nwfva/euf_nwfva_tree.csv"), sep = ",")
+nwfva_tree <- read.csv(file.path(raw_data_dir, "nwfva/euf_nwfva_tree.csv"), sep = ",")
 
 # prepare data
 nwfva_stand <- nwfva_stand |>
@@ -1498,10 +1526,15 @@ df_nwfva <- coords_to_lonlat(df_nwfva, crs = 31467) |>
   standardise_stand_data()
 
 ggplot() +
-  geom_point(data = df_nwfva, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_nwfva,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_nwfva, size = 0.5, alpha = 0.5)
+plot_point_map(df_nwfva)
 
 # Save stand-level data
 saveRDS(df_nwfva, file = here::here("data/inputs/df_nwfva_v2026.rds"))
@@ -1512,7 +1545,7 @@ saveRDS(df_nwfva, file = here::here("data/inputs/df_nwfva_v2026.rds"))
 # In Table S1, management_since_census1_yrs = NA, management_cat = 2
 
 # Stand-level data
-tuzvo_stand <- read.csv(file.path(raw_data_dir, "euforia/tuzvo/euf_tuzvo_stand.csv"), sep = ",")
+tuzvo_stand <- read.csv(file.path(raw_data_dir, "tuzvo/euf_tuzvo_stand.csv"), sep = ",")
 
 tuzvo_stand <- tuzvo_stand |>
   rename(
@@ -1525,11 +1558,11 @@ tuzvo_stand <- tuzvo_stand |>
   distinct()
 
 # Tree-level data
-tuzvo_tree <- read.csv(file.path(raw_data_dir, "euforia/tuzvo/euf_tuzvo_tree.csv"), sep = ",")
+tuzvo_tree <- read.csv(file.path(raw_data_dir, "tuzvo/euf_tuzvo_tree.csv"), sep = ",")
 
 # prepare data
 # we use wood density from the BIOMASS pkg to estimate biomass given volume (m3)
-WD <- getWoodDensity(
+WD <- BIOMASS::getWoodDensity(
   genus = word(tuzvo_tree$Species, 1),
   species = word(tuzvo_tree$Species, 2)
 )
@@ -1566,10 +1599,15 @@ df_tuzvo <- from_tree_data(tuzvo_tree) |>
 df_tuzvo <- standardise_stand_data(df_tuzvo)
 
 ggplot() +
-  geom_point(data = df_tuzvo, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_tuzvo,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_tuzvo, size = 0.5, alpha = 0.5)
+plot_point_map(df_tuzvo)
 
 # Save stand-level data
 saveRDS(df_tuzvo, file = here::here("data/inputs/df_tuzvo_v2026.rds"))
@@ -1581,25 +1619,25 @@ saveRDS(df_tuzvo, file = here::here("data/inputs/df_tuzvo_v2026.rds"))
 # Derived info: We assign management_cat = 2 and management_since_census1_yrs = NA
 
 # tree-level data
-ul_tree <- read.csv(file.path(raw_data_dir, "euforia/ul/euf_ul_tree.csv"), sep = ",")
+ul_tree <- read.csv(file.path(raw_data_dir, "ul/euf_ul_tree.csv"), sep = ",")
 
 # metadata
-ul_metadata <- read.csv(file.path(raw_data_dir, "euforia/ul/euf_ul_meta.csv"), sep = ",")
+ul_metadata <- read.csv(file.path(raw_data_dir, "ul/euf_ul_meta.csv"), sep = ",")
 
 ul_metadata <- ul_metadata |>
   select(plotid, plot_size) |>
   distinct() |>
   rename(plotsize = plot_size)
 
-ul_coords <- read.csv(file.path(raw_data_dir, "euforia/ul/euf_ul_coor.csv"), sep = ",")
+ul_coords <- read.csv(file.path(raw_data_dir, "ul/euf_ul_coor.csv"), sep = ",")
 
 ul_coords <- ul_coords |>
   select(plotid, lat, lon)
 
 # prepare data
 ul_tree <- ul_tree |>
-  left_join(ul_metadata) |>
-  left_join(ul_coords) |>
+  left_join(ul_metadata, by = "plotid") |>
+  left_join(ul_coords, by = "plotid") |>
   rename(plotID = plotid) |>
   mutate(
     ba_tree = pi * (dbh * 0.01 / 2)^2,
@@ -1624,10 +1662,15 @@ df_ul <- from_tree_data(ul_tree) |>
 df_ul <- standardise_stand_data(df_ul)
 
 ggplot() +
-  geom_point(data = df_ul, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_ul,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_ul, size = 0.5, alpha = 0.5)
+plot_point_map(df_ul)
 
 # Save stand-level data
 saveRDS(df_ul, file = here::here("data/inputs/df_ul_v2026.rds"))
@@ -1640,31 +1683,31 @@ saveRDS(df_ul, file = here::here("data/inputs/df_ul_v2026.rds"))
 # Derived info: In Table S1, assign to 50 years. Need to confirm with data providers.
 
 # Tree-level data
-unito <- read.csv(file.path(raw_data_dir, "euforia/unito/euf_unito_tree.csv"), sep = ",")
+unito <- read.csv(file.path(raw_data_dir, "unito/euf_unito_tree.csv"), sep = ",")
 
 # Divide plot into grids of different size given the coordinates
 # plotsize = 100 * 100 = 1 ha
-# New plots = 20x20 = 0.04
+# New plots = 50 x 50 = 0.25 ha
 unito <- unito |>
   filter(lat != 0) |>
   unite(plotID, plotID, LPI_ID, sep = "_")
 
-# ggplot(unito) +
-#   geom_point(aes(lon, lat, col = plotID))
+ggplot(unito) +
+  geom_point(aes(lon, lat, col = plotID))
 
 unito_1 <- unito |>
   filter(plotID == "9_1")
 
-# ggplot(unito_1) +
-#   geom_point(aes(lon, lat, col = plotID))
+ggplot(unito_1) +
+  geom_point(aes(lon, lat, col = plotID))
 
-unito_1$grid20 <- interaction(
+unito_1$grid50 <- interaction(
   cut(unito_1$lon,
-    breaks = seq(min(unito_1$lon), max(unito_1$lon), by = 20),
+    breaks = seq(min(unito_1$lon), max(unito_1$lon), by = 50),
     include.lowest = TRUE
   ),
   cut(unito_1$lat,
-    breaks = seq(min(unito_1$lat), max(unito_1$lat), by = 20),
+    breaks = seq(min(unito_1$lat), max(unito_1$lat), by = 50),
     include.lowest = TRUE
   ),
   sep = "X"
@@ -1672,13 +1715,17 @@ unito_1$grid20 <- interaction(
 
 unito_1 <- unito_1 |>
   rename(plotIDD = plotID) |>
-  group_by(grid20) |>
+  group_by(grid50) |>
   mutate(plotID = cur_group_id()) |>
   ungroup() |>
   unite(plotID, plotID, plotIDD, sep = "_")
 
-# ggplot(unito_1) +
-#   geom_point(aes(lon, lat, col = plotID))
+ggplot(unito_1) +
+  geom_point(aes(lon, lat, col = plotID))
+
+# drop ID 5_9_1 since it's at the margins
+unito_1 <- unito_1 |>
+  filter(plotID != "5_9_1")
 
 # rewrite lat and lon to have info at plot level not tree level
 unito_1 <- unito_1 |>
@@ -1693,16 +1740,16 @@ unito_1 <- unito_1 |>
 unito_2 <- unito |>
   filter(plotID == "9_2")
 
-# ggplot(unito_2) +
-#   geom_point(aes(lon, lat, col = plotID))
+ggplot(unito_2) +
+  geom_point(aes(lon, lat, col = plotID))
 
-unito_2$grid20 <- interaction(
+unito_2$grid50 <- interaction(
   cut(unito_2$lon,
-    breaks = seq(min(unito_2$lon), max(unito_2$lon), by = 20),
+    breaks = seq(min(unito_2$lon), max(unito_2$lon), by = 50),
     include.lowest = TRUE
   ),
   cut(unito_2$lat,
-    breaks = seq(min(unito_2$lat), max(unito_2$lat), by = 20),
+    breaks = seq(min(unito_2$lat), max(unito_2$lat), by = 50),
     include.lowest = TRUE
   ),
   sep = "X"
@@ -1710,13 +1757,17 @@ unito_2$grid20 <- interaction(
 
 unito_2 <- unito_2 |>
   rename(plotIDD = plotID) |>
-  group_by(grid20) |>
+  group_by(grid50) |>
   mutate(plotID = cur_group_id()) |>
   ungroup() |>
   unite(plotID, plotID, plotIDD, sep = "_")
 
-# ggplot(unito_2) +
-#   geom_point(aes(lon, lat, col = plotID))
+ggplot(unito_2) +
+  geom_point(aes(lon, lat, col = plotID))
+
+# drop ID 5_9_2 since it's at the margins
+unito_2 <- unito_2 |>
+  filter(plotID != "5_9_2")
 
 # rewrite lat and lon to have info at plot level not tree level
 unito_2 <- unito_2 |>
@@ -1724,22 +1775,20 @@ unito_2 <- unito_2 |>
     lon = lon_plot,
     lat = lat_plot
   )
-ggplot(unito_2) +
-  geom_point(aes(lon, lat))
 
 unito_3 <- unito |>
   filter(plotID == "9_3")
 
-# ggplot(unito_3) +
-#   geom_point(aes(lon, lat, col = plotID))
+ggplot(unito_3) +
+  geom_point(aes(lon, lat, col = plotID))
 
-unito_3$grid20 <- interaction(
+unito_3$grid50 <- interaction(
   cut(unito_3$lon,
-    breaks = seq(min(unito_3$lon), max(unito_3$lon), by = 20),
+    breaks = seq(min(unito_3$lon), max(unito_3$lon), by = 50),
     include.lowest = TRUE
   ),
   cut(unito_3$lat,
-    breaks = seq(min(unito_3$lat), max(unito_3$lat), by = 20),
+    breaks = seq(min(unito_3$lat), max(unito_3$lat), by = 50),
     include.lowest = TRUE
   ),
   sep = "X"
@@ -1747,13 +1796,17 @@ unito_3$grid20 <- interaction(
 
 unito_3 <- unito_3 |>
   rename(plotIDD = plotID) |>
-  group_by(grid20) |>
+  group_by(grid50) |>
   mutate(plotID = cur_group_id()) |>
   ungroup() |>
   unite(plotID, plotID, plotIDD, sep = "_")
 
-# ggplot(unito_3) +
-#   geom_point(aes(lon, lat, col = plotID))
+ggplot(unito_3) +
+  geom_point(aes(lon, lat, col = plotID))
+
+# drop ID 5_9_2 since it's at the margins
+unito_3 <- unito_3 |>
+  filter(plotID != "5_9_3")
 
 # rewrite lat and lon to have info at plot level not tree level
 unito_3 <- unito_3 |>
@@ -1761,8 +1814,9 @@ unito_3 <- unito_3 |>
     lon = lon_plot,
     lat = lat_plot
   )
-# ggplot(unito_3) +
-#   geom_point(aes(lon, lat))
+
+ggplot(unito_3) +
+  geom_point(aes(lon, lat))
 
 unito <- unito_1 |>
   bind_rows(unito_2) |>
@@ -1773,7 +1827,7 @@ unito |> distinct(plotID)
 
 # prepare data
 # we use wood density from the BIOMASS pck to estimate biomass given volume (m3)
-WD <- getWoodDensity(
+WD <- BIOMASS::getWoodDensity(
   genus = word(unito$species, 1),
   species = word(unito$species, 2)
 )
@@ -1806,10 +1860,15 @@ df_unito <- coords_to_lonlat(df_unito, crs = 32632) |>
   standardise_stand_data()
 
 ggplot() +
-  geom_point(data = df_unito, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_unito,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_unito, size = 0.5, alpha = 0.5)
+plot_point_map(df_unito)
 
 # Save stand-level data
 saveRDS(df_unito, file = here::here("data/inputs/df_unito_v2026.rds"))
@@ -1821,7 +1880,7 @@ saveRDS(df_unito, file = here::here("data/inputs/df_unito_v2026.rds"))
 # Derived info: In Table S1, assign to NA years. It can be considered a primary/old-growth forests.
 
 # Stand-level data
-urk <- read.csv(file.path(raw_data_dir, "euforia/urk/euf_urk_stand.csv"), sep = ",")
+urk <- read.csv(file.path(raw_data_dir, "urk/euf_urk_stand.csv"), sep = ",")
 
 # aggregate data from stand
 df_urk <- from_stand_data(urk) |>
@@ -1833,21 +1892,19 @@ df_urk <- from_stand_data(urk) |>
   ) |>
   rename(plotsize = area_ha)
 
-  # beni: removed this as I set management_cat = 2, following comment above.
-  # group_by(plotID) %>%
-  # mutate(
-  #   management_since_census1_yrs = min(year, na.rm = TRUE) - year_last_management
-  # ) |>
-  # ungroup()
-
 # Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
 df_urk <- standardise_stand_data(df_urk)
 
 ggplot() +
-  geom_point(data = df_urk, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_urk,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_urk, size = 0.5, alpha = 0.5)
+plot_point_map(df_urk)
 
 # Save stand-level data
 saveRDS(df_urk, file = here::here("data/inputs/df_urk_v2026.rds"))
@@ -1860,12 +1917,11 @@ saveRDS(df_urk, file = here::here("data/inputs/df_urk_v2026.rds"))
 # Derived info: In Table S1, assign management_since_census1_yrs = ca. 20 years. It can be considered a primary/old-growth forests.
 
 # Tree-level data
-wuls_tree <- read.csv(file.path(raw_data_dir, "euforia/wuls/euf_wuls_tree.csv"), sep = ",")
-wuls_census <- read.csv(file.path(raw_data_dir, "euforia/wuls/euf_wuls_census.csv"), sep = ",")
-wuls_areas <- read.csv(file.path(raw_data_dir, "euforia/wuls/euf_wuls_area.csv"), sep = ",")
-wuls_coords <- read.csv(file.path(raw_data_dir, "euforia/wuls/euf_wuls_coor.csv"), sep = ",")
-wuls_species <- read.csv(file.path(raw_data_dir, "euforia/wuls/euf_wuls_sp.csv"), sep = ",")
-
+wuls_tree <- read.csv(file.path(raw_data_dir, "wuls/euf_wuls_tree.csv"), sep = ",")
+wuls_census <- read.csv(file.path(raw_data_dir, "wuls/euf_wuls_census.csv"), sep = ",")
+wuls_areas <- read.csv(file.path(raw_data_dir, "wuls/euf_wuls_area.csv"), sep = ",")
+wuls_coords <- read.csv(file.path(raw_data_dir, "wuls/euf_wuls_coor.csv"), sep = ",")
+wuls_species <- read.csv(file.path(raw_data_dir, "wuls/euf_wuls_sp.csv"), sep = ",")
 
 wuls <- wuls_tree |>
   select(-c(H1, H2, H3, H4, H5, H6, H7, H8, V1, V2, V3, V4, V5, V6, V7, V8)) |>
@@ -1914,10 +1970,15 @@ df_wuls <- from_tree_data(wuls) |>
 df_wuls <- standardise_stand_data(df_wuls)
 
 ggplot() +
-  geom_point(data = df_wuls, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_wuls,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.2,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_wuls, size = 0.5, alpha = 0.5)
+plot_point_map(df_wuls)
 
 # Save stand-level data
 saveRDS(df_wuls, file = here::here("data/inputs/df_wuls_v2026.rds"))

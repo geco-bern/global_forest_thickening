@@ -125,3 +125,4 @@ Remaining revisions of `00_raw_data.R`.
 - INRAE LESSEM: Changed to `management_cat = 3` (from 1) and `management_since_census1_yrs = NA`. Comments state: "New information about management included in fp_fra_stand [`"fp_fra/fp_fra_stand.csv"`]: year_last_intervention and year of first measurement (plot establishment). Includes management info: management_since_census1_yrs = first_measurement - date_last_harvest". However, this information was not in the file I read. Perhaps a local file on Laura's machine?
 - fvabw: changed management_cat 2 to 3 in view of very mixed pattern in logN-logQMD plot. It's not convincing that these are all mature stands with density-driven mortality.
 - lwf: Judging from the logN-logQMD plot, this looks like purely self-thinning, therefore `management_cat = 2` justified?
+- unito: replaced own-created subplots from 20 x 20 m to 50 x 50 m. This retains a clearer pattern in logN-logQMD. Replaced subplots at margins for their odd shape.
