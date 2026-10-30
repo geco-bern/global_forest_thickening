@@ -81,6 +81,8 @@ Remaining revisions of `00_raw_data.R`.
   - Commit c2169ae..b837059.
 - Norway NFI: Retaining QMD values provided by original source, not overwriting them with own calculated values. 
   - Commit b837059..866fe38.
+- Greek forest plots: revised interpretation of management information, now making use of information provided as "Control plot (no thinning)" and using years since last management.
+  - Commit 860f32e..a6543de.
 - Add column in table providing information of data provider name. Name should be part of the author list.
   - Done. Commit e82b7a0..3d9a9e4.
 - Add information in the table S1 in the SI:
@@ -112,10 +114,14 @@ Remaining revisions of `00_raw_data.R`.
 
 (@lauramarques)
 
+- EFM Switzerland: We have `management_cat = 1` and `management_since_census1_yrs = 1` for all but one plot (which has 11 years). Please confirm that these plots all were managed but established (more or less "mature") up to the first census and that they are not newly planted right before first census.
 - Confirm processing of Norwegian National Forest Inventory: All plots were assumed unmanaged and were given `management_cat = 1` and a fixed elapsed-time value of 64 years to every plot.
 - Confirm: Uholka is changed from `management_cat = 1` and `management_since_census1_yrs = 999` to `management_cat = 2` (primary forest).
 - Should EuFoRia plots all categorised as `management_cat = 2`? Now, at least some are `management_cat = 1` and time since last management is specified (inlcuding `bnp`, `iberbas`, `lwf`).
 - EuFoRia Unito: comment in script `00_raw_data.R`: "In Table S1, assign to 50 years. Need to confirm with data providers." Now set to `management_cat = 2` (primary/old growth).
 - EuFoRia urk: Comment in script: "In Table S1, assign to NA years. It can be considered a primary/old-growth forests.". Therefore, I changed this to `management_cat = 2` (primary/old growth). Ok?
 - Treatment of `management_since_census1_yrs` in `aus_plots` was revised. Now interpreting `year_last_management`: if *after* the first available census per plot, then set `management = 1`, otherwise `management = 0` and set `management_since_census1_yrs = min(year, na.rm = TRUE) - year_last_management`. Please confirm. It was unclear why all plots for which `year_last_management` was *not* NA were set as `management_cat = 3` (unknown).
-- Norway NFI: set to unknown management history (`management_cat = 3`), overriding the previously set `1` and `management_since_census1_yrs = 64` for all 25k stands -- which seemed implausible.
+- Norway NFI: set to unknown management history (`management_cat = 3`), overriding the previously set `1` and `management_since_census1_yrs = 64` for all 25k stands -- which seemed implausible. To confirm: all unmanaged.
+- INRAE LESSEM: Changed to `management_cat = 3` (from 1) and `management_since_census1_yrs = NA`. Comments state: "New information about management included in fp_fra_stand [`"fp_fra/fp_fra_stand.csv"`]: year_last_intervention and year of first measurement (plot establishment). Includes management info: management_since_census1_yrs = first_measurement - date_last_harvest". However, this information was not in the file I read. Perhaps a local file on Laura's machine?
+- fvabw: changed management_cat 2 to 3 in view of very mixed pattern in logN-logQMD plot. It's not convincing that these are all mature stands with density-driven mortality.
+- lwf: Judging from the logN-logQMD plot, this looks like purely self-thinning, therefore `management_cat = 2` justified?

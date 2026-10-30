@@ -1,6 +1,7 @@
 # This script runs the functions to process and plot the data used in the analyses
 
 source(here::here("R/harmonise_dataset_names.R"))
+source(here::here("R/plot_point_map.R"))
 
 # plot self-thinning line
 plot_stl <- function(data) {
@@ -351,27 +352,32 @@ from_tree_data <- function(data) {
       density = n() / plotsize,
       ba = sum(ba_tree, na.rm = FALSE) / plotsize,
       dbh = mean(dbh, na.rm = T),
-      management_since_census1_yrs = mean(management_since_census1_yrs, na.rm = T),
+      management_since_census1_yrs = mean(management_since_census1_yrs, na.rm = TRUE),
       biomass = sum(biomass, na.rm = FALSE) / plotsize) |>
     ungroup() |>
     distinct() |>
+
     # calculate QMD
     mutate(
       QMD = ba_to_qmd(ba, density),
       dataset = datanm
     ) |>
+    
     # calculate period lengths
     arrange(plotID, year) |>
     group_by(plotID) |>
     mutate(period = year - lag(year)) |>
     relocate(period, .after = year) |>
+
     # calculate basal area increment
     mutate(ba_inc = (ba - lag(ba)) / period) |>
     relocate(ba_inc, .after = ba) |>
+
     # calculate number of censuses
     mutate(n_census = n()) |>
     ungroup() |>
     filter(density > 0) |>
+
     # join dominant species to data
     left_join(dom_species) |>
     ungroup()

@@ -86,32 +86,22 @@ df_nfi_spain <- from_species_data(nfi_spain) |>
     country = "Spain"
   )
 
-# # test: ba_tot is repeated for each species within plot and census, the following give identical results
-# nfi_spain |>
-#   filter(
-#     census == 3,
-#     plotID == "100008A1"
-#   ) |>
-#   pull(batot)
-# nfi_spain |>
-#   filter(
-#     census == 3,
-#     plotID == "100008A1"
-#   ) |>
-#   group_by(plotID, census) |>
-#   summarise(ba_tot_test = sum(ba)) |>
-#   pull(ba_tot_test)
-
 # Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
 df_nfi_spain <- coords_to_lonlat(df_nfi_spain, crs = 25830) |>
   standardise_stand_data() |>
   as_tibble()
 
 ggplot() +
-  geom_point(data = df_nfi_spain, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(
+    data = df_nfi_spain,
+    aes(x = log(QMD), y = log(density)),
+    alpha = 0.5,
+    size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_nfi_spain, size = 0.5, alpha = 0.5)
+plot_point_map(df_nfi_spain)
 
 # Save stand-level data
 saveRDS(
@@ -195,10 +185,15 @@ df_nfi_sweeden <- from_stand_tree_data(nfi_sweeden_tree, nfi_sweeden)
 df_nfi_sweeden <- standardise_stand_data(df_nfi_sweeden)
 
 ggplot() +
-  geom_point(data = df_nfi_sweeden, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_nfi_sweeden,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.1,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_nfi_sweeden, size = 0.5, alpha = 0.5)
+plot_point_map(df_nfi_sweeden)
 
 # Save stand-level data
 saveRDS(
@@ -347,7 +342,6 @@ data_plot <- list.files(path = file.path(raw_data_dir, "fia_us/obs"), pattern = 
   # Make a unique ID for each plot, irrespective of time
   mutate(plotID = paste(UNITCD, STATECD, COUNTYCD, PLOT, sep = "_"))
 
-
 data_plot_sel <- data_plot |>
   select(plotID, LAT, LON, ELEV) |>
   distinct(plotID, .keep_all = T)
@@ -363,6 +357,7 @@ df_fia_us <- data_stand |>
     lon = LON,
     biomass = abg_biomass_kg_ha
   ) |>
+  
   # Management classification is assigned from COND history below.
   mutate(
     # PLOT has design codes and COND has area proportions, not a single area
@@ -408,10 +403,16 @@ df_fia_us |>
 df_fia_us <- standardise_stand_data(df_fia_us)
 
 ggplot() +
-  geom_point(data = df_fia_us, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_fia_us |> 
+      filter(management_cat == 2 | (management_cat == 1 & management_since_census1_yrs > 30)),
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.1,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_fia_us, size = 0.5, alpha = 0.5)
+plot_point_map(df_fia_us)
 
 # Save stand-level data
 saveRDS(df_fia_us, file = here::here("data/inputs/df_fia_us_v2026.rds"))
@@ -467,12 +468,14 @@ lfi_plot_census <- read.csv(file.path(raw_data_dir, "nfi_swi/lfi_plot_census.csv
 # prepare data
 nfi_switzerland <- lfi_plot_census |>
   left_join(lfi_plot_constant[, c(1:3)]) |>
+
   # create Year variable from CENSUS_DATE
   mutate(
     census_date = as.Date(CENSUS_DATE, format = "%d.%m.%Y"),
     year = year(census_date)
   ) |>
   left_join(dom_species) |>
+
   # rename variable
   rename(
     plotID = PLOTID,
@@ -499,6 +502,7 @@ nfi_switzerland <- lfi_plot_census |>
   ) |>
   ungroup() |>
   select(-census_date) |>
+  filter(management == 0) |> 
   mutate(
     management_cat = 1,
     plotsize = PLOT_AREA_LARGE * 10^-4,
@@ -519,17 +523,7 @@ df_nfi_switzerland |>
     bins = 30
   )
 
-  geom_point(
-    aes(x = log(QMD), y = log(density)),
-    alpha = 0.3,
-    size = 1.5,
-    col = "black",
-    inherit.aes = FALSE
-  )
-
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_nfi_switzerland, size = 0.5, alpha = 0.5) +
-  theme(legend.position = "bottom")
+plot_point_map(df_nfi_switzerland)
 
 # Save stand-level data
 saveRDS(
@@ -588,6 +582,8 @@ ggplot() +
     inherit.aes = FALSE
   )
 
+plot_point_map(df_nfi_norway)
+
 # Save stand-level data
 saveRDS(
   df_nfi_norway,
@@ -607,8 +603,8 @@ efm_metadata <- efm_metadata |>
   select(-BA)
 
 # Plot area
-# efm_area <- read.csv(file.path(raw_data_dir, "efm/raw/EFM_plot_area.csv"))
-efm_area <- read.csv(file.path(raw_data_dir, "efm/raw/PlotAreas.csv"))
+efm_area <- read.csv(file.path(raw_data_dir, "efm/raw/EFM_plot_area.csv"))
+# efm_area <- read.csv(file.path(raw_data_dir, "efm/raw/PlotAreas.csv"))
 efm_area <- efm_area |>
   mutate(FNUM = as.character(FNUM))
 
@@ -657,11 +653,13 @@ efm_swi <- efm_stand |>
   ) |>
   filter(density != 0) |>
   filter(is.na(density) == FALSE) |>
+
   # create census
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
   ungroup() |>
   relocate(census, .after = year) |>
+
   # create management variable
   mutate(
     management = 0,
@@ -676,10 +674,16 @@ df_efm_swi <- from_stand_data(efm_swi)
 df_efm_swi <- standardise_stand_data(df_efm_swi)
 
 ggplot() +
-  geom_point(data = df_efm_swi, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_efm_swi,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.5,
+    # size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_efm_swi, size = 0.5, alpha = 0.5)
+plot_point_map(df_efm_swi)
 
 # Save stand-level data
 saveRDS(df_efm_swi, file = here::here("data/inputs/df_efm_swi_v2026.rds"))
@@ -693,7 +697,7 @@ saveRDS(df_efm_swi, file = here::here("data/inputs/df_efm_swi_v2026.rds"))
 
 # Management:
 # Original info: Plots are considered to be primary in the sense that hey have not been managed in the past.
-# Derived info: Since history is known, we assign management_cat = 1 and management_since_census1_yrs = 999.
+# Derived info: Since history is known, we assign management_cat = 2 and management_since_census1_yrs = 999.
 
 # Tree-level data
 uholka <- read.csv(file.path(raw_data_dir, "uholka/uholka_tree.csv"), sep = ",")
@@ -717,8 +721,7 @@ uholka <- uholka |>
     )),
     plotsize = 0.25, # ha
     biomass = NA,
-    country = "Ukraine",
-    management_since_census1_yrs = 999
+    country = "Ukraine"
   )
 
 # aggregate data from stand to stand data
@@ -730,7 +733,8 @@ df_uholka <- from_tree_data(uholka) |>
   relocate(census, .after = year) |>
   mutate(
     management = 0,
-    management_cat = 2
+    management_cat = 2,
+    management_since_census1_yrs = 999
   )
 
 # Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
@@ -746,8 +750,7 @@ ggplot() +
     inherit.aes = FALSE
   )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_uholka, size = 0.5, alpha = 0.5)
+plot_point_map(df_uholka)
 
 # Save stand-level data
 saveRDS(df_uholka, file = here::here("data/inputs/df_uholka_v2026.rds"))
@@ -800,7 +803,8 @@ fep_gre_stand <- fep_gre_stand |>
     management = {
       info <- trimws(as.character(info_management))
       case_when(
-        info %in% c("Control plot (no thinning)", "Contol plot (no thinning)") ~ 0L,
+        info %in%
+          c("Control plot (no thinning)", "Contol plot (no thinning)") ~ 0L,
         is.finite(suppressWarnings(as.numeric(info))) ~ 0L,
         grepl("thinning", info, ignore.case = TRUE) ~ 1L,
         TRUE ~ NA_integer_
@@ -808,18 +812,30 @@ fep_gre_stand <- fep_gre_stand |>
     }
   ) |>
   left_join(dom_species) |>
+
   # Use the first available census as the reference for prior management history.
   arrange(plotID, year) |>
   group_by(plotID) |>
   mutate(
     census = match(year, unique(year)),
-    management = if (any(management == 1L, na.rm = TRUE)) 1L
-                 else if (any(is.na(management))) NA_integer_ else 0L,
-    management_since_census1_yrs = if (any(is.na(year))) NA_real_
-      else suppressWarnings(as.numeric(as.character(first(years_since_management))))
+    management = if (any(management == 1L, na.rm = TRUE)) {
+      1L
+    } else if (any(is.na(management))) {
+      NA_integer_
+    } else {
+      0L
+    },
+    management_since_census1_yrs = if (any(is.na(year))) {
+      NA_real_
+    } else {
+      suppressWarnings(as.numeric(as.character(first(years_since_management))))
+    }
   ) |>
   ungroup() |>
-  relocate(census, .after = year)
+  relocate(census, .after = year) |> 
+
+  # retain only unmanaged
+  filter(management == 0)
 
 # aggregate data from stand
 df_fep_gre <- from_stand_data(fep_gre_stand) |>
@@ -832,10 +848,16 @@ df_fep_gre <- from_stand_data(fep_gre_stand) |>
 df_fep_gre <- standardise_stand_data(df_fep_gre)
 
 ggplot() +
-  geom_point(data = df_fep_gre, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_fep_gre,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.5,
+    # size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_fep_gre, size = 0.5, alpha = 0.5)
+plot_point_map(df_fep_gre)
 
 # Save stand-level data
 saveRDS(df_fep_gre, file = here::here("data/inputs/df_fep_gre_v2026.rds"))
@@ -854,7 +876,6 @@ inrae_lessem_tree <- read.csv(file.path(raw_data_dir, "fp_fra/fp_fra_tree.csv"),
 inrae_lessem_species <- read.csv(file.path(raw_data_dir, "fp_fra/fra_sp_code.csv"), sep = ",") |> as_tibble()
 inrae_lessem_status <- read.csv(file.path(raw_data_dir, "fp_fra/fra_sta_code.csv"), sep = ",") |> as_tibble()
 
-
 # prepare data
 inrae_lessem <- inrae_lessem_tree |>
   left_join(inrae_lessem_plot, by = "plot_id") |>
@@ -866,7 +887,8 @@ inrae_lessem <- inrae_lessem_tree |>
   mutate(
     ba_tree = pi * (dbh * 0.01 / 2)^2,
     biomass = NA,
-    country = "France"
+    country = "France",
+    management_since_census1_yrs = NA
   ) |>
   rename(
     plotsize = area_ha,
@@ -882,18 +904,25 @@ df_inrae_lessem <- from_tree_data(inrae_lessem) |>
   mutate(census = match(year, unique(year))) |>
   ungroup() |>
   mutate(
-  management = 0,
-  management_cat = 1
-)
+    management_since_census1_yrs = NA,
+    management = 0,
+    management_cat = 3
+  )
 
 # Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
 df_inrae_lessem <- standardise_stand_data(df_inrae_lessem)
 
 ggplot() +
-  geom_point(data = df_inrae_lessem, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_inrae_lessem,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.5,
+    # size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_inrae_lessem, size = 0.5, alpha = 0.5)
+plot_point_map(df_inrae_lessem)
 
 # Save stand-level data
 saveRDS(
@@ -909,7 +938,7 @@ saveRDS(
 # Original: In dataset, year_last_management. In Table S1, last management intervention prior census 1 = 6
 
 # Stand-level data by species
-bnp <- read.csv(file.path(raw_data_dir, "euforia/bnp/euf_bnp.csv"), sep = ",")
+bnp <- read.csv(file.path(raw_data_dir, "bnp/euf_bnp.csv"), sep = ",")
 
 # prepare data
 bnp <- bnp |>
@@ -941,10 +970,15 @@ df_bnp <- from_stand_data(bnp) |>
 df_bnp <- standardise_stand_data(df_bnp)
 
 ggplot() +
-  geom_point(data = df_bnp, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_bnp,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.1,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_bnp, size = 0.5, alpha = 0.5)
+plot_point_map(df_bnp)
 
 # Save stand-level data
 saveRDS(df_bnp, file = here::here("data/inputs/df_bnp_v2026.rds"))
@@ -957,9 +991,8 @@ saveRDS(df_bnp, file = here::here("data/inputs/df_bnp_v2026.rds"))
 # In Table S1. indicated management_since_census1_yrs = 69. Need to clarify with author.
 
 # Tree- and stand-level data by species
-czu_tree <- read.csv(file.path(raw_data_dir, "euforia/czu/euf_czu_tree.csv"), sep = ",")
-# czu_stand <- read.csv(file.path(raw_data_dir, "euforia/czu/euf_czu_stand.csv"), sep = ",")
-
+czu_tree <- read.csv(file.path(raw_data_dir, "czu/euf_czu_tree.csv"), sep = ",")
+# czu_stand <- read.csv(file.path(raw_data_dir, "czu/euf_czu_stand.csv"), sep = ",")
 
 # prepare data
 czu <- czu_stand |>
@@ -989,10 +1022,15 @@ df_czu <- from_stand_data(czu) |>
 df_czu <- standardise_stand_data(df_czu)
 
 ggplot() +
-  geom_point(data = df_czu, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_czu,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_czu, size = 0.5, alpha = 0.5)
+plot_point_map(df_czu)
 
 # Save stand-level data
 saveRDS(df_czu, file = here::here("data/inputs/df_czu_v2026.rds"))
@@ -1003,10 +1041,10 @@ saveRDS(df_czu, file = here::here("data/inputs/df_czu_v2026.rds"))
 # Management:
 # Original: In Table S1 indicated that last management was before the time of designation
 # Confirm what is tsc variable?
-# Assigned management_cat = 2
+# Assigned management_cat = 3; beni: changed from 2 to 3 in view of very mixed pattern in logN-logQMD plot. It's not convincing that these are all mature stands with density-driven mortality.
 
 # Stand-level data by species
-fvabw <- read.csv(file.path(raw_data_dir, "euforia/forst/euf_forst.csv"), sep = ",")
+fvabw <- read.csv(file.path(raw_data_dir, "forst/euf_forst.csv"), sep = ",")
 
 # prepare data
 fvabw <- fvabw |>
@@ -1022,27 +1060,33 @@ fvabw <- fvabw |>
   mutate(biomass = NA)
 
 # aggregate data from stand to stand data
-df_fvabw <- from_species_data(fvabw) |>
+df_fvabw_utm <- from_species_data(fvabw) |>
   # create census
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
   ungroup() |>
   mutate(
     management = 0,
-    management_cat = 2,
+    management_cat = 3,
     management_since_census1_yrs = NA,
     country = "Germany",
   )
 
 # Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
-df_fvabw <- coords_to_lonlat(df_fvabw, crs = 25832) |>
+df_fvabw <- coords_to_lonlat(df_fvabw_utm, crs = 25832) |>
   standardise_stand_data()
 
 ggplot() +
-  geom_point(data = df_fvabw, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(
+    data = df_fvabw,
+    aes(x = log(QMD), y = log(density)),
+    alpha = 0.5,
+    size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_fvabw, size = 0.5, alpha = 0.5)
+plot_point_map(df_fvabw)
 
 # Save stand-level data
 saveRDS(df_fvabw, file = here::here("data/inputs/df_fvabw_v2026.rds"))
@@ -1054,7 +1098,7 @@ saveRDS(df_fvabw, file = here::here("data/inputs/df_fvabw_v2026.rds"))
 # In Table S1, management_since_census1_yrs = 70
 
 # Tree-level data
-iberbas <- read.csv(file.path(raw_data_dir, "euforia/iberbas/euf_iberbas.csv"), sep = ",")
+iberbas <- read.csv(file.path(raw_data_dir, "iberbas/euf_iberbas.csv"), sep = ",")
 
 # prepare data
 iberbas <- iberbas |>
@@ -1083,10 +1127,15 @@ df_iberbas <- from_tree_data(iberbas) |>
 df_iberbas <- standardise_stand_data(df_iberbas)
 
 ggplot() +
-  geom_point(data = df_iberbas, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_iberbas,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_iberbas, size = 0.5, alpha = 0.5)
+plot_point_map(df_iberbas)
 
 # Save stand-level data
 saveRDS(df_iberbas, file = here::here("data/inputs/df_iberbas_v2026.rds"))
@@ -1099,7 +1148,7 @@ saveRDS(df_iberbas, file = here::here("data/inputs/df_iberbas_v2026.rds"))
 # In Table S1, management_since_census1_yrs = NA
 
 # Tree-level data
-unitbv <- read.csv(file.path(raw_data_dir, "euforia/incds/euf_incds.csv"), sep = ",")
+unitbv <- read.csv(file.path(raw_data_dir, "incds/euf_incds.csv"), sep = ",")
 
 unitbv <- unitbv |>
   select(-c(Height2003, Height2013, Height2023)) |>
@@ -1113,7 +1162,6 @@ unitbv <- unitbv |>
 # Divide plot into grids of different size given the coordinates
 # plotsize = 100 * 100 = 1 ha
 # New plots = 20x20 = 0.04
-
 unitbv$grid20 <- interaction(
   cut(unitbv$X,
     breaks = seq(0, 100, by = 20),
@@ -1125,19 +1173,18 @@ unitbv$grid20 <- interaction(
   ),
   sep = "X"
 )
+
 # prepare data
 unitbv <- unitbv |>
   rename(plotIDD = plotID) |>
   group_by(grid20) |>
   mutate(plotID = cur_group_id()) |>
   ungroup()
-ggplot(unitbv) +
-  geom_point(aes(X, Y, col = plotID))
-length(unique(unitbv$plotID))
 
 # prepare data
 unitbv <- unitbv |>
   filter(status == "alive") |>
+
   # calculate basal area
   mutate(
     ba_tree = pi * (dbh * 0.01 / 2)^2,
@@ -1162,10 +1209,16 @@ df_unitbv <- from_tree_data(unitbv) |>
 df_unitbv <- standardise_stand_data(df_unitbv)
 
 ggplot() +
-  geom_point(data = df_unitbv, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_unitbv,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.5,
+    size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_unitbv, size = 0.5, alpha = 0.5)
+plot_point_map(df_unitbv)
 
 # Save stand-level data
 saveRDS(df_unitbv, file = here::here("data/inputs/df_unitbv_v2026.rds"))
@@ -1177,7 +1230,7 @@ saveRDS(df_unitbv, file = here::here("data/inputs/df_unitbv_v2026.rds"))
 # In Table S1, management_since_census1_yrs = NA
 
 # Stand-level data
-lwf_stand <- read.csv(file.path(raw_data_dir, "euforia/lwf/euf_lwf_stand.csv"), sep = ";")
+lwf_stand <- read.csv(file.path(raw_data_dir, "lwf/euf_lwf_stand.csv"), sep = ";")
 
 lwf_stand <- lwf_stand |>
   rename(
@@ -1190,7 +1243,7 @@ lwf_stand <- lwf_stand |>
   distinct()
 
 # Tree-level data
-lwf_tree <- read.csv(file.path(raw_data_dir, "euforia/lwf/euf_lwf_tree.csv"), sep = ",")
+lwf_tree <- read.csv(file.path(raw_data_dir, "lwf/euf_lwf_tree.csv"), sep = ",")
 
 # prepare data
 lwf_tree <- lwf_tree |>
@@ -1226,10 +1279,15 @@ df_lwf <- coords_to_lonlat(df_lwf, crs = 25832) |>
   standardise_stand_data()
 
 ggplot() +
-  geom_point(data = df_lwf, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_lwf,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_lwf, size = 0.5, alpha = 0.5)
+plot_point_map(df_lwf)
 
 # Save stand-level data
 saveRDS(df_lwf, file = here::here("data/inputs/df_lwf_v2026.rds"))
@@ -1241,7 +1299,7 @@ saveRDS(df_lwf, file = here::here("data/inputs/df_lwf_v2026.rds"))
 # In Table S1, management_since_census1_yrs = 42
 
 # tree-level data
-npvbw <- read.csv(file.path(raw_data_dir, "euforia/nbw/euf_nbw_tree.csv"), sep = ",")
+npvbw <- read.csv(file.path(raw_data_dir, "nbw/euf_nbw_tree.csv"), sep = ",")
 
 # prepare data
 npvbw <- npvbw |>
