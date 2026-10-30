@@ -1991,10 +1991,9 @@ saveRDS(df_wuls, file = here::here("data/inputs/df_wuls_v2026.rds"))
 # See https://forestgeo.si.edu/sites/north-america/luquillo
 
 # Tree-level data
-luquillo <- list.files(path = file.path(raw_data_dir, "forestgeo/luquillo"), full.names = TRUE, pattern = "\\.csv$") |>
+luquillo <- list.files(path = file.path(raw_data_dir, "luquillo"), full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   bind_rows()
-
 
 ## Prepare data
 luquillo <- luquillo |>
@@ -2045,10 +2044,22 @@ df_luquillo <- from_tree_data(luquillo) |>
 df_luquillo <- standardise_stand_data(df_luquillo)
 
 ggplot() +
-  geom_point(data = df_luquillo, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_luquillo,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.1,
+    col = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_point(
+    data = df_luquillo,
+    aes(x = log(QMD), y = log(density)),
+    alpha = 0.1,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_luquillo, size = 0.5, alpha = 0.5)
+plot_point_map(df_luquillo)
 
 # Save stand-level data
 saveRDS(
@@ -2061,10 +2072,9 @@ saveRDS(
 # finally not added to the global dataset due to difficulty to exclude management (communication with  Salomón Aguilar, Research Technician)
 # https://forestgeo.si.edu/sites/neotropics/barro-colorado-island
 
-bci <- list.files(path = file.path(raw_data_dir, "forestgeo/bci"), full.names = TRUE, pattern = "\\.csv$") |>
+bci <- list.files(path = file.path(raw_data_dir, "bci"), full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   bind_rows()
-
 
 ## Prepare data
 bci <- bci |>
@@ -2117,7 +2127,7 @@ df_bci <- from_tree_data(bci) |>
   )
 
 # check that lianas are excluded
-sp_lianas <- read.csv(file.path(raw_data_dir, "forestgeo/bci/sp_lianas.csv"))
+sp_lianas <- read.csv(file.path(raw_data_dir, "bci/sp_lianas.csv"))
 
 df_bci <- df_bci %>%
   filter(!df_bci$species %in% sp_lianas$species)
@@ -2126,10 +2136,16 @@ df_bci <- df_bci %>%
 df_bci <- standardise_stand_data(df_bci)
 
 ggplot() +
-  geom_point(data = df_bci, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(
+    data = df_bci,
+    aes(x = log(QMD), y = log(density)),
+    alpha = 0.5,
+    size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_bci, size = 0.5, alpha = 0.5)
+plot_point_map(df_bci)
 
 # Save stand-level data
 saveRDS(df_bci, file = here::here("data/inputs/df_bci_v2026.rds"))
@@ -2141,12 +2157,11 @@ saveRDS(df_bci, file = here::here("data/inputs/df_bci_v2026.rds"))
 # No info in dataset
 # In Table S1, management_since_census1_yrs = 53, category = 1
 
-scbi <- list.files(path = file.path(raw_data_dir, "forestgeo/scbi"), full.names = TRUE, pattern = "\\.csv$") |>
+scbi <- list.files(path = file.path(raw_data_dir, "scbi"), full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   lapply(\(x) mutate(x, across(Tag, as.double))) |>
   lapply(\(x) mutate(x, across(StemTag, as.double))) |>
   bind_rows()
-
 
 ## Prepare data
 scbi <- scbi |>
@@ -2194,10 +2209,24 @@ df_scbi <- from_tree_data(scbi) |>
 df_scbi <- standardise_stand_data(df_scbi)
 
 ggplot() +
-  geom_point(data = df_scbi, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(
+    data = df_scbi,
+    aes(x = log(QMD), y = log(density)),
+    alpha = 0.1,
+    size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_line(
+    data = df_scbi,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.1,
+    col = "black",
+    inherit.aes = FALSE
+  ) +
+  theme_classic()
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_scbi, size = 0.5, alpha = 0.5)
+plot_point_map(df_scbi)
 
 # Save stand-level data
 saveRDS(df_scbi, file = here::here("data/inputs/df_scbi_v2026.rds"))
@@ -2205,12 +2234,11 @@ saveRDS(df_scbi, file = here::here("data/inputs/df_scbi_v2026.rds"))
 ## Palanam ----
 # Contact: Perry S. Ong
 
-palanam <- list.files(path = file.path(raw_data_dir, "forestgeo/palanam"), full.names = TRUE, pattern = "\\.csv$") |>
+palanam <- list.files(path = file.path(raw_data_dir, "palanam"), full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   lapply(\(x) mutate(x, across(Tag, as.double))) |>
   lapply(\(x) mutate(x, across(StemTag, as.double))) |>
   bind_rows()
-
 
 ## Prepare data
 palanam <- palanam |>
@@ -2255,7 +2283,14 @@ df_palanam <- from_tree_data(palanam) |>
 df_palanam <- standardise_stand_data(df_palanam)
 
 ggplot() +
-  geom_point(data = df_palanam, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(
+    data = df_palanam,
+    aes(x = log(QMD), y = log(density)),
+    alpha = 0.5,
+    size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
 rgeco::plot_map_simpl() +
   geom_point(aes(lon, lat), data = df_palanam, size = 0.5, alpha = 0.5)
@@ -2267,15 +2302,15 @@ saveRDS(df_palanam, file = here::here("data/inputs/df_palanam_v2026.rds"))
 # Contact: Sean McMahon
 # https://forestgeo.si.edu/sites/north-america/smithsonian-environmental-research-center
 
-serc <- list.files(path = file.path(raw_data_dir, "forestgeo/serc"), full.names = TRUE, pattern = "\\.csv$") |>
+serc <- list.files(path = file.path(raw_data_dir, "serc"), full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   bind_rows()
+
 unique(serc$Census)
 length(unique(serc$Quadrat))
 
-
 # Divide plot into grids of different size given the coordinates
-# 20x20m = 0.04 ha
+# 20 x 20 m = 0.04 ha
 serc$grid20 <- interaction(
   cut(serc$PX,
     breaks = seq(0, 400, by = 20),
@@ -2287,11 +2322,14 @@ serc$grid20 <- interaction(
   ),
   sep = "X"
 )
+
 serc <- serc |>
   group_by(grid20) |>
   mutate(plotID = cur_group_id()) |>
   ungroup()
+
 length(unique(serc$plotID))
+
 ggplot(serc) +
   geom_point(aes(PX, PY, col = plotID))
 
@@ -2321,6 +2359,7 @@ serc <- serc |>
   drop_na(PX) |>
   drop_na(PY) |>
   drop_na(year)
+
 unique(serc$year)
 unique(serc$census)
 
@@ -2340,10 +2379,23 @@ df_serc <- from_tree_data(serc) |>
 df_serc <- standardise_stand_data(df_serc)
 
 ggplot() +
-  geom_point(data = df_serc, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_serc,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.2,
+    col = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_point(
+    data = df_serc,
+    aes(x = log(QMD), y = log(density)),
+    alpha = 0.2,
+    size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_serc, size = 0.5, alpha = 0.5)
+plot_point_map(df_serc)
 
 # Save stand-level data
 saveRDS(df_serc, file = here::here("data/inputs/df_serc_v2026.rds"))
@@ -2356,7 +2408,6 @@ saveRDS(df_serc, file = here::here("data/inputs/df_serc_v2026.rds"))
 # tree-level data
 wytham <- read.csv(file.path(raw_data_dir, "forestgeo/wytham/wytham.csv"))
 wytham_sp <- read.csv(file.path(raw_data_dir, "forestgeo/wytham/wytham_sp.csv"))
-
 
 # prepare data
 wytham <- wytham |>

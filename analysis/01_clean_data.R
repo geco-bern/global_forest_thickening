@@ -143,7 +143,7 @@ data_all <- bind_rows(
   df_luquillo,
   # df_bci,  # not included. Comment in `00_raw_data.R`: finally not added to the global dataset due to difficulty to exclude management (communication with  Salomón Aguilar, Research Technician)
   df_scbi,
-  df_palanam,
+  # df_palanam,  # not included. The forest data doesn't exhibit a self-thinning pattern, potentially due to recent disturbances (Typhoons in 2003 and 2010, see https://forestgeo.si.edu/sites/philippines/palanan)
   df_serc,
   df_wytham,
   df_pasoh,
