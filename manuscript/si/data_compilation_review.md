@@ -126,3 +126,4 @@ Remaining revisions of `00_raw_data.R`.
 - fvabw: changed management_cat 2 to 3 in view of very mixed pattern in logN-logQMD plot. It's not convincing that these are all mature stands with density-driven mortality.
 - lwf: Judging from the logN-logQMD plot, this looks like purely self-thinning, therefore `management_cat = 2` justified?
 - unito: replaced own-created subplots from 20 x 20 m to 50 x 50 m. This retains a clearer pattern in logN-logQMD. Replaced subplots at margins for their odd shape.
+- Mudumalai: Missing data on server.

@@ -2486,21 +2486,20 @@ saveRDS(df_wytham, file = here::here("data/inputs/df_wytham_v2026.rds"))
 # https://forestgeo.si.edu/sites/asia/pasoh
 
 # tree-level data
-pasoh_sp <- readRDS(file.path(raw_data_dir, "forestgeo/pasoh/pasoh_sp_v2026.rds"))
+pasoh_sp <- readRDS(file.path(raw_data_dir, "pasoh/pasoh_sp.rds"))
 
 pasoh_sp <- pasoh_sp |>
   separate(Latin, c("first", "second"), " ") |>
   mutate(second = tolower(second)) |>
   unite(Latin, first, second, sep = " ")
 
-pasoh1 <- readRDS(file.path(raw_data_dir, "forestgeo/pasoh/pasoh1.rds"))
-pasoh2 <- readRDS(file.path(raw_data_dir, "forestgeo/pasoh/pasoh2.rds"))
-pasoh3 <- readRDS(file.path(raw_data_dir, "forestgeo/pasoh/pasoh3.rds"))
-pasoh4 <- readRDS(file.path(raw_data_dir, "forestgeo/pasoh/pasoh4.rds"))
-pasoh5 <- readRDS(file.path(raw_data_dir, "forestgeo/pasoh/pasoh5.rds"))
-pasoh6 <- readRDS(file.path(raw_data_dir, "forestgeo/pasoh/pasoh6.rds"))
-pasoh7 <- readRDS(file.path(raw_data_dir, "forestgeo/pasoh/pasoh7.rds"))
-
+pasoh1 <- readRDS(file.path(raw_data_dir, "pasoh/pasoh1.rds"))
+pasoh2 <- readRDS(file.path(raw_data_dir, "pasoh/pasoh2.rds"))
+pasoh3 <- readRDS(file.path(raw_data_dir, "pasoh/pasoh3.rds"))
+pasoh4 <- readRDS(file.path(raw_data_dir, "pasoh/pasoh4.rds"))
+pasoh5 <- readRDS(file.path(raw_data_dir, "pasoh/pasoh5.rds"))
+pasoh6 <- readRDS(file.path(raw_data_dir, "pasoh/pasoh6.rds"))
+pasoh7 <- readRDS(file.path(raw_data_dir, "pasoh/pasoh7.rds"))
 
 pasoh <- pasoh1 |>
   bind_rows(pasoh2) |>
@@ -2509,7 +2508,7 @@ pasoh <- pasoh1 |>
   bind_rows(pasoh5) |>
   bind_rows(pasoh6) |>
   bind_rows(pasoh7) |>
-  left_join(pasoh_sp)
+  left_join(pasoh_sp, by = "sp")
 
 pasoh <- pasoh |>
   rename(
@@ -2556,10 +2555,23 @@ df_pasoh <- from_tree_data(pasoh) |>
 df_pasoh <- standardise_stand_data(df_pasoh)
 
 ggplot() +
-  geom_point(data = df_pasoh, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_pasoh,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.1,
+    col = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_point(
+    data = df_pasoh,
+    aes(x = log(QMD), y = log(density)),
+    alpha = 0.1,
+    size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_pasoh, size = 0.5, alpha = 0.5)
+plot_point_map(df_pasoh)
 
 # Save stand-level data
 saveRDS(df_pasoh, file = here::here("data/inputs/df_pasoh.rds"))
@@ -2569,8 +2581,7 @@ saveRDS(df_pasoh, file = here::here("data/inputs/df_pasoh.rds"))
 # https://forestgeo.si.edu/sites/asia/mudumalai
 
 # Stand-level data
-mudumalai <- read.csv(file.path(raw_data_dir, "forestgeo/mudumalai/mudumalai_stand.csv"), sep = ",")
-
+mudumalai <- read.csv(file.path(raw_data_dir, "mudumalai/mudumalai_stand.csv"), sep = ",")
 
 mudumalai <- mudumalai |>
   mutate(density = nindiv / plotsize) |>
@@ -2611,7 +2622,6 @@ saveRDS(
 # 0) Metadata
 meta_fp <- read.csv(file.path(raw_data_dir, "forestplots/mahli_zhang/fp_mz_metadata.csv"))
 
-
 meta_fp <- meta_fp |>
   select(Plot_code, Country, Longitude, Latitude, Elevation..m., Plot.Size..ha.) |>
   rename(
@@ -2624,29 +2634,36 @@ meta_fp <- meta_fp |>
   )
 
 # 1) A selection of countries and plots together
+# Contains 28 plots
 multiplots <- read.csv(file.path(raw_data_dir, "forestplots/mahli_zhang/fp_mz_multiplots.csv"))
 
+# # Use recorded subplot membership, which remains stable across censuses.
+# # Blank labels cannot be assigned spatially; "out" denotes outside the plot.
+# multiplots_missing_subplot <- with(multiplots,
+#   is.na(Sub.Plot.T1) | trimws(Sub.Plot.T1) == "" |
+#     tolower(trimws(Sub.Plot.T1)) == "out"
+# )
+# if (any(multiplots_missing_subplot)) {
+#   warning(sum(multiplots_missing_subplot),
+#           " multiplots tree-census rows omitted: missing or outside subplot.",
+#           call. = FALSE)
+# }
 
 # select and rename variables
 multiplots <- multiplots |>
+  filter(!multiplots_missing_subplot) |>
   select(
-    Country,
-    Plot.Code,
-    TreeID,
-    Species,
-    Census.Date,
+    country = Country,
+    plotID = Plot.Code,
+    subplotID = Sub.Plot.T1,
+    treeID = TreeID,
+    species = Species,
+    year = Census.Date,
     D0,
     D1,
     D2,
     D3,
     D4
-  ) |>
-  rename(
-    plotID = Plot.Code,
-    treeID = TreeID,
-    year = Census.Date,
-    country = Country,
-    species = Species
   ) |>
   mutate(year = as.integer(year)) |>
   mutate(
@@ -2655,15 +2672,64 @@ multiplots <- multiplots |>
   ) |>
   filter(is.na(dbh) | dbh != 0) |>
   select(-c(D0, D1, D2, D3, D4)) |>
+
+  # Join metadata using the parent ID before constructing the subplot ID.
   left_join(meta_fp |> select(-country), by = "plotID") |>
+
+  # calculate basal area
+  mutate(
+    ba_tree = pi * (dbh * 0.01 / 2)^2, # ba in m2, dbh in cm
+    biomass = NA,
+    management_since_census1_yrs = NA
+  ) |>
+
+  # # ideally using subplots as 'plotID', but missing plot size prevents calculations for aggregation
+  # mutate(
+  #   parent_plotID = plotID,
+  #   subplotID = trimws(as.character(subplotID)),
+  #   plotID = paste(parent_plotID, subplotID, sep = "_"),
+  #   # Requested 20 x 20 m area; preserve labels such as "1.r" verbatim.
+  #   plotsize = 20 * 20 / 10000
+  # ) |>
+
   as_tibble()
+
 unique(multiplots$country)
+
+# aggregate data from stand to stand data
+df_multiplots <- from_tree_data(multiplots) |>
+  group_by(plotID) |>
+  mutate(census = match(year, unique(year))) |>
+  ungroup() |>
+  mutate(
+    management = 0,
+    management_cat = 2
+  ) |>
+  filter(is.na(QMD) | log(QMD) < 4.5) # remove outliers
+
+ggplot() +
+  geom_line(
+    data = df_multiplots,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.2,
+    col = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_point(
+    data = df_multiplots,
+    aes(x = log(QMD), y = log(density)),
+    alpha = 0.2,
+    size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
+
+plot_point_map(df_multiplots)
 
 # 2) Gabon
 gabon <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/gabon"), full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   bind_rows()
-
 
 # select and rename variables
 gabon <- gabon |>
@@ -2683,7 +2749,6 @@ ghana <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/ghan
   lapply(read_csv) |>
   bind_rows()
 
-
 # select and rename variables
 ghana <- ghana |>
   select(country, plotID, treeID, species, year, dbh) |>
@@ -2701,7 +2766,6 @@ malaysia <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/m
   lapply(read_csv) |>
   bind_rows()
 
-
 # select and rename variables
 malaysia <- malaysia |>
   select(country, plotID, treeID, species, year, dbh) |>
@@ -2716,6 +2780,7 @@ forestplots <- multiplots |>
   bind_rows(gabon) |>
   bind_rows(ghana) |>
   bind_rows(malaysia) |>
+
   # calculate basal area
   mutate(
     ba_tree = pi * (dbh * 0.01 / 2)^2,  # ba in m2, dbh in cm
@@ -2732,8 +2797,7 @@ df_forestplots <- from_tree_data(forestplots) |>
   mutate(
     management = 0,
     management_cat = 2
-    ) |>
-  filter(is.na(QMD) | log(QMD) < 4.5) # remove outliers
+    )
 
 # Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
 df_forestplots <- standardise_stand_data(df_forestplots)
