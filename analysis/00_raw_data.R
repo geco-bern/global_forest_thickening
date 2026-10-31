@@ -2406,18 +2406,26 @@ saveRDS(df_serc, file = here::here("data/inputs/df_serc_v2026.rds"))
 # Management: no information
 
 # tree-level data
-wytham <- read.csv(file.path(raw_data_dir, "forestgeo/wytham/wytham.csv"))
-wytham_sp <- read.csv(file.path(raw_data_dir, "forestgeo/wytham/wytham_sp.csv"))
+wytham <- read.csv(file.path(raw_data_dir, "wytham/wytham.csv"))
+wytham_sp <- read.csv(file.path(raw_data_dir, "wytham/wytham_sp.csv"))
 
 # prepare data
 wytham <- wytham |>
   pivot_longer(
-    cols = c(dbh_2008, dbh_2010, dbh_2016, dbh_2021, codes_2010, codes_2016, codes_2021),
+    cols = c(
+      dbh_2008,
+      dbh_2010,
+      dbh_2016,
+      dbh_2021,
+      codes_2010,
+      codes_2016,
+      codes_2021
+    ),
     names_to = c(".value", "year"),
     names_sep = "_",
     values_drop_na = FALSE
   ) |>
-  left_join(wytham_sp) |>
+  left_join(wytham_sp, by = "spID") |>
   rename(status = codes) |>
   mutate(
     lon = -1.3379,
@@ -2451,10 +2459,24 @@ df_wytham <- from_tree_data(wytham) |>
 df_wytham <- standardise_stand_data(df_wytham)
 
 ggplot() +
-  geom_point(data = df_wytham, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_wytham,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.2,
+    col = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_point(
+    data = df_wytham,
+    aes(x = log(QMD), y = log(density)),
+    alpha = 0.2,
+    size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  ) +
+  theme_classic()
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_wytham, size = 0.5, alpha = 0.5)
+plot_point_map(df_wytham)
 
 # Save stand-level data
 saveRDS(df_wytham, file = here::here("data/inputs/df_wytham_v2026.rds"))

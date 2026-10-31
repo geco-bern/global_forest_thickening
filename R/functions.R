@@ -379,7 +379,7 @@ from_tree_data <- function(data) {
     filter(density > 0) |>
 
     # join dominant species to data
-    left_join(dom_species) |>
+    left_join(dom_species, by = c("plotID", "year")) |>
     ungroup()
 
   return(data_agg)
