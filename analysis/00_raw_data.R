@@ -2633,7 +2633,7 @@ meta_fp <- meta_fp |>
     plotsize = Plot.Size..ha.
   )
 
-# 1) A selection of countries and plots together
+## Multiple plots ------
 # Contains 28 plots
 multiplots <- read.csv(file.path(raw_data_dir, "forestplots/mahli_zhang/fp_mz_multiplots.csv"))
 
@@ -2651,7 +2651,7 @@ multiplots <- read.csv(file.path(raw_data_dir, "forestplots/mahli_zhang/fp_mz_mu
 
 # select and rename variables
 multiplots <- multiplots |>
-  filter(!multiplots_missing_subplot) |>
+  # filter(!multiplots_missing_subplot) |>
   select(
     country = Country,
     plotID = Plot.Code,
@@ -2726,7 +2726,7 @@ ggplot() +
 
 plot_point_map(df_multiplots)
 
-# 2) Gabon
+## Gabon -------------
 gabon <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/gabon"), full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   bind_rows()
@@ -2736,15 +2736,65 @@ gabon <- gabon |>
   select(country, plot_code, treeID, species, year, dbh) |>
   rename(plotID = plot_code) |>
   mutate(year = as.integer(year)) |>
-  mutate(dbh = dbh / 10) |>  # must be in cm
+  mutate(dbh = dbh / 10) |> # must be in cm
   filter(is.na(dbh) | dbh != 0) |>
   left_join(
     meta_fp |>
       select(-country),
     by = "plotID"
+  ) |>
+
+  # calculate basal area
+  mutate(
+    ba_tree = pi * (dbh * 0.01 / 2)^2, # ba in m2, dbh in cm
+    biomass = NA,
+    management_since_census1_yrs = NA
+  )
+  
+# 3% missing DBH - impute with mean to avoid losing all data
+gabon <- gabon |>
+  group_by(plotID, year) |>
+  mutate(
+    ba_tree_imputed = is.na(ba_tree),
+    ba_tree = if_else(
+      ba_tree_imputed,
+      if (all(is.na(ba_tree))) NA_real_ else mean(ba_tree, na.rm = TRUE),
+      ba_tree
+    )
+  ) |>
+  ungroup()
+
+# aggregate data from stand to stand data
+df_gabon <- from_tree_data(gabon) |>
+  group_by(plotID) |>
+  mutate(census = match(year, unique(year))) |>
+  ungroup() |>
+  mutate(
+    management = 0,
+    management_cat = 2
+  )
+  # filter(is.na(QMD) | log(QMD) < 4.5) # remove outliers
+
+ggplot() +
+  geom_line(
+    data = df_gabon,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.5,
+    col = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_point(
+    data = df_gabon,
+    aes(x = log(QMD), y = log(density)),
+    alpha = 0.5,
+    size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
   )
 
-# 3) Ghana
+plot_point_map(gabon)
+
+## Ghana ---------
 ghana <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/ghana"), full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   bind_rows()
@@ -2759,9 +2809,46 @@ ghana <- ghana |>
     meta_fp |>
       select(-country),
     by = "plotID"
+  ) |>
+
+  # calculate basal area
+  mutate(
+    ba_tree = pi * (dbh * 0.01 / 2)^2, # ba in m2, dbh in cm
+    biomass = NA,
+    management_since_census1_yrs = NA
   )
 
-# 4) Malaysia
+# aggregate data from stand to stand data
+df_ghana <- from_tree_data(ghana) |>
+  group_by(plotID) |>
+  mutate(census = match(year, unique(year))) |>
+  ungroup() |>
+  mutate(
+    management = 0,
+    management_cat = 2
+  )
+# filter(is.na(QMD) | log(QMD) < 4.5) # remove outliers
+
+ggplot() +
+  geom_line(
+    data = df_ghana,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.5,
+    col = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_point(
+    data = df_ghana,
+    aes(x = log(QMD), y = log(density)),
+    alpha = 0.5,
+    size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
+
+plot_point_map(ghana)
+
+## Malaysia ---------
 malaysia <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/malaysia"), full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
   bind_rows()
@@ -2770,43 +2857,96 @@ malaysia <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/m
 malaysia <- malaysia |>
   select(country, plotID, treeID, species, year, dbh) |>
   mutate(year = as.integer(year)) |>
-  mutate(dbh = dbh / 10) |>  # must be in cm
+  mutate(dbh = dbh / 10) |> # must be in cm
   filter(is.na(dbh) | dbh != 0) |>
-  left_join(meta_fp |> 
-  select(-country), by = "plotID")
-
-# Join all plots
-forestplots <- multiplots |>
-  bind_rows(gabon) |>
-  bind_rows(ghana) |>
-  bind_rows(malaysia) |>
+  left_join(
+    meta_fp |>
+      select(-country),
+    by = "plotID"
+  ) |>
 
   # calculate basal area
   mutate(
-    ba_tree = pi * (dbh * 0.01 / 2)^2,  # ba in m2, dbh in cm
+    ba_tree = pi * (dbh * 0.01 / 2)^2, # ba in m2, dbh in cm
     biomass = NA,
     management_since_census1_yrs = NA
   )
 
+# 1% missing DBH - impute with mean to avoid losing all data
+malaysia <- malaysia |>
+  group_by(plotID, year) |>
+  mutate(
+    ba_tree_imputed = is.na(ba_tree),
+    ba_tree = if_else(
+      ba_tree_imputed,
+      if (all(is.na(ba_tree))) NA_real_ else mean(ba_tree, na.rm = TRUE),
+      ba_tree
+    )
+  ) |>
+  ungroup()
+
 # aggregate data from stand to stand data
-df_forestplots <- from_tree_data(forestplots) |>
-  # create census
+df_malaysia <- from_tree_data(malaysia) |>
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
   ungroup() |>
   mutate(
     management = 0,
     management_cat = 2
-    )
+  )
+# filter(is.na(QMD) | log(QMD) < 4.5) # remove outliers
+
+ggplot() +
+  geom_line(
+    data = df_malaysia,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.5,
+    col = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_point(
+    data = df_malaysia,
+    aes(x = log(QMD), y = log(density)),
+    alpha = 0.5,
+    size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
+
+plot_point_map(df_malaysia)
+
+# Join all plots
+# df_forestplots <- df_multiplots |>
+#   bind_rows(df_gabon) |>
+#   bind_rows(df_ghana) |>
+#   bind_rows(df_malaysia)
+
+# join all except multiplots
+df_forestplots <- df_gabon |>
+  bind_rows(df_ghana) |>
+  bind_rows(df_malaysia)
 
 # Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
 df_forestplots <- standardise_stand_data(df_forestplots)
 
 ggplot() +
-  geom_point(data = df_forestplots, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_forestplots,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.5,
+    col = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_point(
+    data = df_forestplots,
+    aes(x = log(QMD), y = log(density)),
+    alpha = 0.5,
+    size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_forestplots, size = 0.5, alpha = 0.5)
+plot_point_map(df_forestplots)
 
 # Save stand-level data
 saveRDS(
@@ -2821,15 +2961,44 @@ saveRDS(
 # Queensland data: Michael Ngug or John Neldner
 # Victoria: Andrew Clark
 # TERN: Open
-# Includes management info.
+# Includes management info. Set to management_cat = 1 (known history) for all plots even if last_management_year was missing.
+# Indentified few plots where management happened during censi. 
+# No plot is identified as management_cat = 1 (primary/old-growth).
 # Data has last management intervention. This shows the last year when some of the trees were labelled as thinned.
 # Many plots did not have any trees labelled as being thinned.
-# If year_last_management = NA, no management among censuses, management_cat = 2
-# If year_last_management is numeric, thinning among censuses, management_cat = 3
+# Missing management dates indicate no recorded thinning, not primary forest.
 
 # Stand-level data
-aus_plots <- readRDS(file.path(raw_data_dir, "fp_aus/fp_aus_stand.RDS"))
+aus_plots <- readRDS(file.path(raw_data_dir, "fp_aus/fp_aus_stand.RDS")) |> 
+  mutate(plotID = as.character(plotID))
 
+# Classify once per plot using calendar years: management dates have only
+# annual precision, so a decimal census date cannot establish that management
+# in the same year preceded census 1. Where dates differ between records,
+# the latest known intervention determines the status.
+aus_management <- aus_plots |>
+  group_by(plotID) |>
+  summarise(
+    first_census_year = if (all(is.na(year))) NA_real_ else floor(min(year, na.rm = TRUE)),
+    last_management_year = if (all(is.na(year_last_management))) NA_real_ else
+      max(year_last_management, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  mutate(
+    management = case_when(
+      is.na(last_management_year) ~ 0L,
+      is.na(first_census_year) ~ NA_integer_,
+      last_management_year < first_census_year ~ 0L,
+      TRUE ~ 1L
+    ),
+    management_since_census1_yrs = if_else(
+      management == 0L,
+      first_census_year - last_management_year,
+      NA_real_
+    ),
+    management_cat = 1L  # if_else(!is.na(management_since_census1_yrs), 1L, 3L)
+  ) |>
+  select(plotID, management, management_since_census1_yrs, management_cat)
 
 # prepare data
 aus_plots <- aus_plots |>
@@ -2845,16 +3014,15 @@ aus_plots <- aus_plots |>
   mutate(
     biomass = AbovegroundAHC1_2_Mgperha * 10^3,
     country = "Australia",
-    year = as.integer(year),
-    management = ifelse(year_last_management < min(year, na.rm = TRUE), 0, 1), # beni: added this to be sure
-    management_since_census1_yrs = ifelse(
-      management == 0,
-      min(year, na.rm = TRUE) - year_last_management,
-      NA
-    ), # beni: added this instead of considering it NA
-    # management_cat = ifelse(is.na(year_last_management), 2, 3)  # beni: changed this to cat = 1: known history
-    management_cat = ifelse(is.na(year_last_management), 2, 1)
-  )
+    year = as.integer(year)
+  ) |>
+  left_join(aus_management, by = "plotID")
+
+aus_plots |> 
+  filter(!is.na(year_last_management) & !is.na(year) & management == 0) |> 
+  group_by(plotID) |> 
+  slice(1) |> 
+  View()
 
 # aggregate data from stand to stand data
 df_aus <- from_stand_data(aus_plots) |>
@@ -2867,11 +3035,25 @@ df_aus <- from_stand_data(aus_plots) |>
 df_aus <- standardise_stand_data(df_aus)
 
 ggplot() +
-  geom_point(data = df_aus, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_aus |>
+      filter(management == 0),
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.1,
+    col = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_point(
+    data = df_aus |>
+      filter(management == 0),
+    aes(x = log(QMD), y = log(density)),
+    alpha = 0.1,
+    size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_aus, size = 0.5, alpha = 0.5) +
-  theme(legend.position = "bottom")
+plot_point_map(df_aus)
 
 # save stand-level data
 saveRDS(df_aus, file = here::here("data/inputs/df_aus.rds"))
@@ -2880,29 +3062,44 @@ saveRDS(df_aus, file = here::here("data/inputs/df_aus.rds"))
 # Data from Esquivel-Muelbert, et al. 2025 data published
 # Coordinates of the sites from Bennett et al. 2023
 # no management info
+# From interpreting code at https://codeocean.com/capsule/1595948/tree/v2, variables and units in 
+# full_final_dataset.csv:
+# number_stems: Stem density/ha
+# total_BA: Total stand basal area standardized by surveyed area. m^2 ha^-1
+# mean_BA: mean basal area (m2)
+# 
+# Bennett et al 2023 Data package citation:
+# Data and R-code from Bennett et al. (2023) Sensitivity of South American tropical forests to an extreme climate anomaly. Nat. Clim. Chang. 13, 967–974. https://doi.org/10.1038/s41558-023-01776-4
+# ForestPlots.NET DOI: 10.5521/forestplots.net/2023_2
+# 
+# Brienen et al. 2015 Data package citation:
+# R.J.W. Brienen*, O.L. Phillips*, T.R. Feldpausch, E. Gloor, T.R. Baker, J. Lloyd, G. Lopez-Gonzalez, A. Monteagudo-Mendoza, Y. Malhi, S.L. Lewis, R. Vásquez Martinez, M. Alexiades, E. Álvarez Dávila, P. Alvarez-Loayza, A. Andrade, L.E.O.C. Aragão, A. Araujo-Murakami, E.J.M.M. Arets, L. Arroyo, G.A. Aymard C., C. Baraloto, J. Barroso, D. Bonal, R.G.A. Boot, J.L. Camargo, C.V. Castilho, V. Chama, K.J. Chao, J. Chave, J.A. Comiskey, F. Cornejo Valverde, L. da Costa, E.A. Oliveira, A. Di Fiore, T.L. Erwin, S. Fauset, M. Forsthofer, E.S. Grahame, N. Groot, B. Hérault, N. Higuchi, E. Honorio C., H. Keeling, T.J. Killeen, W.F. Laurance, S. Laurance, J. Licona, W.E. Magnusson, B.S. Marimon, B.H. Marimon-Junior, C. Mendoza, D.A. Neill, E.M. Nogueira, P. Núñez, N.C. Pallaqui Camacho, A. Parada, G. Pardo, J. Peacock, M. Peña-Claros, G.C. Pickavance, N.C.A. Pitman, L. Poorter, A. Prieto, C.A. Quesada, F. Ramírez, H. Ramírez-Angulo, Z. Restrepo, A. Roopsind, A. Rudas, R.P. Salomão, M. Schwarz, N. Silva, J.E. Silva-Espejo, M. Silveira, J. Stropp, J Talbot, H. ter Steege, J. Teran-Aguilar, J. Terborgh, R. Thomas-Caesar, M. Toledo, M. Torello-Raventos, R.K. Umetsu, G.M.F. van der Heijden, P. van der Hout, I.C. Guimarães Vieira, S.A.Vieira, E. Vilanova, V. Vos, R.J. Zagt. Plot Data from: Long-term decline of the Amazon carbon sink. 2014.
+# ForestPlots.NET DOI: 10.5521/ForestPlots.net/2014_4
 
-# Stand-level data
+# Stand-level data of plotID, N, BA, and year (but no plot location)
 rainfor_plots <- read.csv(file.path(raw_data_dir, "rainfor/esquivel_etal/full_final_dataset.csv"), sep = ",")
-rainfor_bennet <- read.csv(file.path(raw_data_dir, "rainfor/bennett_etal/table_s3.csv"), sep = ",")
-rainfor_brienen <- read.csv(file.path(raw_data_dir, "rainfor/brienen_etal/table_s1.csv"), sep = ",")
 
+# Exact plot-code coordinate lookup from five local data packages.
+# Prefer 0.01-degree releases over 0.1-degree releases. Average distinct
+# coordinate pairs only at the finest available resolution for each plot.
+source(here::here("R/rainfor_coordinates.R"))
+rainfor_coordinate_candidates <- read_rainfor_coordinate_sources(raw_data_dir)
+rainfor_coords <- combine_rainfor_coordinates(rainfor_coordinate_candidates)
 
-# select variables from coordinates data
-rainfor_bennet <- rainfor_bennet |>
-  select(plot_code, country, lon, lat)
+# Retain provenance and disagreements for inspection; averaging does not
+# increase the source's stated resolution or establish positional accuracy.
+rainfor_coordinate_conflicts <- rainfor_coords |>
+  filter(coord_n_pairs > 1L)
 
-rainfor_brienen <- rainfor_brienen |>
-  select(plot_code, country, lon, lat)
-
-rainfor_coords <- rainfor_bennet |>
-  bind_rows(rainfor_brienen) |>
-  arrange(plot_code) |>
-  distinct(plot_code, .keep_all = TRUE)
+# NOU-59s (5 ha; PlotID 1631.6) has no verified coordinate match.
+# Exclude this plot explicitly; do not substitute another Nouragues plot.
+rainfor_plots <- rainfor_plots |>
+  filter(Plot.Code != "NOU-59s")
 
 # rename variables
 rainfor_plots <- rainfor_plots |>
   rename(
-    plot_code = Plot.Code,
+    plotID = Plot.Code,
     ba = total_BA,
     mean_ba = mean_BA,
     plotsize = PlotArea,
@@ -2913,38 +3110,22 @@ rainfor_plots <- rainfor_plots |>
     year = round(census_date),
     management_since_census1_yrs = NA,
     management = 0,
-    management_cat = 2,  # beni: changed from 3 to 2
+    management_cat = 2, # beni: changed from 3 to 2
     species = NA,
     biomass = NA,
-    dbh = ba_to_qmd(mean_ba, density = 1) # mean basal area per stem
-  ) |> # DBH in centimetres
-  left_join(rainfor_coords, by = "plot_code") |>
-  rename(plotID = plot_code)
-
-# check how many plots are missing coordinates
-rainfor_plots %>%
-  filter(is.na(lat) | is.na(lon)) %>%
-  distinct(plotID)
-
-# keep only the alphabetic part of the plotID to join the rest of coordinates
-# since not all plot numbers are included in the coordinates info, we exclude the numeric part of the plotID
-rainfor_prefix <- rainfor_coords |>
-  mutate(plot_prefix = str_extract(plot_code, "^[^-]+")) |>
-  distinct(plot_prefix, .keep_all = TRUE)
-
-rainfor_plots <- rainfor_plots |>
-  mutate(plot_prefix = str_extract(plotID, "^[^-]+")) |>
-  left_join(rainfor_prefix |> select(plot_prefix, lon, lat), by = "plot_prefix") |>
-  mutate(
-    lon = if_else(is.na(lon.x), lon.y, lon.x),
-    lat = if_else(is.na(lat.x), lat.y, lat.x)
+    qmd = ba_to_qmd(mean_ba, density = 1) # cm
   ) |>
-  select(-lon.x, -lon.y, -lat.x, -lat.y)
+  left_join(rainfor_coords, by = "plotID")
 
-# check again how many plots are missing coordinates
-rainfor_plots %>%
-  filter(is.na(lat) | is.na(lon)) %>%
+# Every retained source plot must have a verified exact-code location.
+rainfor_missingcoords <- rainfor_plots |>
+  filter(is.na(lat) | is.na(lon)) |>
   distinct(plotID)
+
+if (nrow(rainfor_missingcoords) > 0L) {
+  stop("RAINFOR plots lack verified coordinates: ",
+       paste(rainfor_missingcoords$plotID, collapse = ", "))
+}
 
 # aggregate data from stand
 df_rainfor <- from_stand_data(rainfor_plots)
@@ -2953,10 +3134,24 @@ df_rainfor <- from_stand_data(rainfor_plots)
 df_rainfor <- standardise_stand_data(df_rainfor)
 
 ggplot() +
-  geom_point(data = df_rainfor, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_line(
+    data = df_rainfor,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.1,
+    col = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_point(
+    data = df_rainfor,
+    aes(x = log(QMD), y = log(density)),
+    alpha = 0.1,
+    size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  ) +
+  theme_classic()
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_rainfor, size = 0.5, alpha = 0.5)
+plot_point_map(df_rainfor)
 
 # Save stand-level data
 saveRDS(df_rainfor, file = here::here("data/inputs/df_rainfor.rds"))

@@ -5,6 +5,7 @@ The draft, now integrated into `main.tex`, describes executable transformations 
 ## Checks affecting density, QMD, or observation years
 
 1. **RAINFOR area units** — `analysis/00_raw_data.R:3173–3191` renames `number_stems` to `density` and `total_BA` to `ba`, without dividing either by `PlotArea`. Confirm from the input documentation whether both are already per hectare. If both are plot totals, their ratio still gives the same QMD, but density needs division by plot area; if their area bases differ, QMD also changes. The draft describes the assignments explicitly and does not claim a conversion that is absent from the code.
+  - Confirmed.
 
 2. **Palanam and SERC diameter units** — The basal-area calculations at `analysis/00_raw_data.R:2491` and `analysis/00_raw_data.R:2594` treat the source `DBH` values as centimetres. Unlike Luquillo, SCBI, and Pasoh, there is no preceding multiplication by 0.1. Verify the units in these particular input files. The draft says that the code treats the values as centimetres, rather than claiming that the raw metadata confirm this.
 
@@ -127,3 +128,4 @@ Remaining revisions of `00_raw_data.R`.
 - lwf: Judging from the logN-logQMD plot, this looks like purely self-thinning, therefore `management_cat = 2` justified?
 - unito: replaced own-created subplots from 20 x 20 m to 50 x 50 m. This retains a clearer pattern in logN-logQMD. Replaced subplots at margins for their odd shape.
 - Mudumalai: Missing data on server.
+- Forestplots from Malhi/Zhang: The data in `multiplots` doesn't exhibit a clear logN-logQMD pattern. The size of all plots is 1 ha and the subdivision into smaller subplots is not possible due to missing information of subplot size. For now, these data are discarded. If possible, get subplot sizes and try again with aggregation to (a larger number of smaller) subplots. Own disaggregation to subplots not possible due to missing tree coordinates.
