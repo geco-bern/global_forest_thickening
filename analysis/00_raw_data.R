@@ -109,7 +109,7 @@ plot_point_map(df_nfi_spain)
 # Save stand-level data
 saveRDS(
   df_nfi_spain,
-  file = here::here("data/inputs/df_nfi_spa.rds")
+  file = here::here("data/inputs/df_nfi_spa_v2026.rds")
 )
 
 # NFI Sweeden ----
@@ -201,7 +201,7 @@ plot_point_map(df_nfi_sweeden)
 # Save stand-level data
 saveRDS(
   df_nfi_sweeden,
-  file = here::here("data/inputs/df_nfi_swe.rds")
+  file = here::here("data/inputs/df_nfi_swe_v2026.rds")
 )
 
 # FIA US ----
@@ -740,7 +740,8 @@ uholka <- uholka |>
     )),
     plotsize = 0.25, # ha
     biomass = NA,
-    country = "Ukraine"
+    country = "Ukraine",
+    management_since_census1_yrs = NA
   )
 
 # aggregate data from stand to stand data
@@ -752,8 +753,7 @@ df_uholka <- from_tree_data(uholka) |>
   relocate(census, .after = year) |>
   mutate(
     management = 0,
-    management_cat = 2,
-    management_since_census1_yrs = NA
+    management_cat = 2
   )
 
 # Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
@@ -2608,7 +2608,7 @@ ggplot() +
 plot_point_map(df_pasoh)
 
 # Save stand-level data
-saveRDS(df_pasoh, file = here::here("data/inputs/df_pasoh.rds"))
+saveRDS(df_pasoh, file = here::here("data/inputs/df_pasoh_v2026.rds"))
 
 ## Mudumalai ----
 # Contact: Raman Sukumar
@@ -2660,7 +2660,7 @@ plot_point_map(df_mudumalai)
 # Save stand-level data
 saveRDS(
   df_mudumalai,
-  file = here::here("data/inputs/df_mudumalai.rds")
+  file = here::here("data/inputs/df_mudumalai_v2026.rds")
 )
 
 # Forests plots MZ ----
@@ -2996,7 +2996,7 @@ if (nrow(df_forestplots) > 0) plot_point_map(df_forestplots)
 # Save stand-level data
 saveRDS(
   df_forestplots,
-  file = here::here("data/inputs/df_forestplots.rds")
+  file = here::here("data/inputs/df_forestplots_v2026.rds")
 )
 
 # Australian plots ----
@@ -3103,7 +3103,7 @@ ggplot() +
 plot_point_map(df_aus)
 
 # save stand-level data
-saveRDS(df_aus, file = here::here("data/inputs/df_aus.rds"))
+saveRDS(df_aus, file = here::here("data/inputs/df_aus_v2026.rds"))
 
 # RAINFOR Amazon Forest Inventory Network ----
 # Data from Esquivel-Muelbert, et al. 2025 data published
@@ -3200,7 +3200,7 @@ ggplot() +
 plot_point_map(df_rainfor)
 
 # Save stand-level data
-saveRDS(df_rainfor, file = here::here("data/inputs/df_rainfor.rds"))
+saveRDS(df_rainfor, file = here::here("data/inputs/df_rainfor_v2026.rds"))
 
 
 # Checks -----------
