@@ -1,6 +1,26 @@
 # Author checks for the data-compilation methods
 
-The draft, now integrated into `main.tex`, describes executable transformations in `analysis/00_raw_data.R` and the helpers in `R/functions.R`. It covers the 33 datasets included by `analysis/01_clean_data.R`, rather than every dataset ever processed. It does not establish that the present script produced the existing analysis objects: the raw files at the configured paths were unavailable here, so the raw workflow was not rerun. No analysis code was changed. These notes are not included in the compiled Supplementary Information.
+The SI in `main.tex` has been checked against the current `analysis/01_process_data_orig.R`, `analysis/02_combine_data_unm.R`, `R/functions.R`, `R/prepare_fia_management.R` and `R/analyse_biome.R`. It describes the 31 constituent datasets included in the combined analysis; BCI, Palanan and the separate Malhi/Zhang ForestPlots contribution are documented as exclusions. Source-data processing was not rerun for this prose revision. The existing stand summaries were combined with the current common filters to check Table S1 counts; these match `data/inputs/df_unm_v2026.rds` (147,903 distinct plot–year inventories). No analysis code was changed. These notes are not included in the compiled SI.
+
+## Current SI revision
+
+- Updated the management overview and dataset entries: Norway and FVA-BW use category 3 with missing baseline intervals; Uholka uses category 2; NW-FVA uses category 1 or 3 according to interval availability. BNP's category 2 follows contributor information even where a prior-management interval is also supplied.
+- Documented the plot-history checks for Sweden, Switzerland, FIA, Greece and NBW. For NBW, intervention dates within the first-to-last census years disqualify the whole plot; wholly missing dates leave management status unknown. This history is established before the live-tree filter.
+- Corrected Australia: all plots receive category 1, each plot has its own first-census reference year, and missing management dates imply no recorded management during monitoring but a missing baseline interval. A recorded date in or after the first census year disqualifies the plot.
+- Corrected UNITO to 50 × 50 m / 0.25 ha cells with marginal groups excluded, and SERC to 40 × 40 m / 0.16 ha cells with the modal year per subplot/census. Wytham now retains 2008 and has no status-code filter. RAINFOR density and basal area are treated as per-hectare source quantities.
+- Updated the initial combined-data selection (management = 0; at least three plot–years; log-density range > 0.01; no initial QMD >= 10 cm filter) and the current management sensitivity definitions. The strictest history subset now also admits category 1 with `management_since_census1_yrs >= 900`, including the Swiss 999 marker.
+- Updated Table S1 history descriptions and counts; Palanan and ForestPlots no longer appear as contributing datasets. Environmental extraction is now described in its current location, after the common selection in `02_combine_data_unm.R`.
+
+### Discrepancies and remaining checks
+
+- **SERC cutoff:** an earlier note below says the numerical QMD exclusion was removed. The current `df_serc` block still executes `filter(is.na(QMD) | log(QMD) > 1)`. The SI describes that implemented rule. Removing it would require a separate code change.
+- **French management interval:** the local `fp_fra_stand.csv` already contains `management_since_census1_yrs`, alongside `first_year` and `date_last_harvest` (including values such as "1971 or before"). The current script retains this supplied interval; it does not calculate a new interval from those date fields. The SI now states this directly.
+- **ForestPlots exclusion:** some provisional coordinate-grid summaries do exist, so the older statement that no records can be produced is too broad. However, `df_forestplots` is explicitly omitted from the current combined dataset. The SI distinguishes provisional processing from actual analysis inclusion.
+- **CZU standalone execution:** `czu_stand` is used, but its `read.csv()` assignment remains commented out. A fresh session therefore requires that object to be loaded first. The SI describes the stand-summary approach; the file-loading issue is not a scientific-methods statement.
+- Provider confirmation is still needed where the existing notes identify assumptions about absence of management, including Norway, the EFM monitoring period and several reserve networks. The revised prose labels those as assumptions or dataset-level assignments rather than independently verified intervention histories. The fixed CZU interval of 69 years also remains a compilation assignment requiring provenance confirmation.
+- Table counts describe the saved input summaries and common selection, not a full regeneration of the raw-data workflow or later sensitivity subsets. Existing figure artifacts were not regenerated in this text revision.
+
+The entries below preserve the earlier review history and contributor questions. Where they conflict with the current-revision summary above, the current code and revised SI take precedence.
 
 ## Checks affecting density, QMD, or observation years
 

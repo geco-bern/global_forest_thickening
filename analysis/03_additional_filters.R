@@ -48,10 +48,8 @@ source(here("R/plot_stl_longplots.R"))
 # 3. Unrecorded history
 #    The time since the last management before the first census is unknown. The forest may have a history of substantial past wood harvesting and/or visible signs of forest use before the first census.
 
-# Read data prepared with 01_clean_data.R, line 290
-df_all <- read_rds(here("data/inputs/df_all.rds")) |>
-  mutate(across(any_of(c("dataset", "dataset_major")), harmonise_dataset_names))
-
+# read data created by 02_combine_data_unm.R
+df_unm <- readRDS(here::here("data/inputs/df_unm_v2026.rds"))
  
 ## By forest plot --------------------------------------------------------------
 
