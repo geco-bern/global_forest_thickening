@@ -1,4 +1,10 @@
-filter_stl_slope2 <- function(df, fit_lqmm, group_name, multiplier_sd = 2){
+filter_stl_slope2 <- function(df, fit_lqmm, group_name, multiplier_sd = 2) {
+ 
+  df <- df |>
+    mutate(
+      logDensity = log(density), 
+      logQMD = log(QMD)
+    )
 
   df_byplot <- df |>
     group_by(plotID) |>
@@ -34,8 +40,8 @@ filter_stl_slope2 <- function(df, fit_lqmm, group_name, multiplier_sd = 2){
 
   # Retain only inner 90% of the data by slope from simple linear regression
   range_accepted <- quantile(df_byplot$slope_lin, c(0.10, 0.90), na.rm = TRUE)
-  
-  # # standard deviation of slopes by plot 
+
+  # # standard deviation of slopes by plot
   # sd_slopes <- sd(df_byplot$slope_lin)
   # # sd_slopes <- IQR(df_byplot$slope_lin)
 
@@ -79,8 +85,8 @@ filter_stl_slope2 <- function(df, fit_lqmm, group_name, multiplier_sd = 2){
       badslope = bad_lin | bad_seg
     ) %>%
     dplyr::select(plotID, data, slope_lin, badslope)
-    # unnest(data) |>
-    # ungroup()
+  # unnest(data) |>
+  # ungroup()
 
   return(
     list(

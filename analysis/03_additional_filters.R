@@ -138,9 +138,10 @@ tmp_slopefilter |>
 df_unm_withfilters <- tmp_slopefilter |> 
   dplyr::select(biome_major, data) |> 
   unnest(data) |> 
-  unnest(data)
+  unnest(data) |> 
+  dplyr::select(-logDensity, -logQMD)
 
-write_rds(df_unm_withfilters, here("data/inputs/df_unm_withfilters.rds"))
+write_rds(df_unm_withfilters, here("data/inputs/df_unm_withfilters_v2026.rds"))
 
 ## Figures for SI -----------------
 ### Length of repeated observations ----------------------------------

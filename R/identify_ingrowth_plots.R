@@ -15,14 +15,18 @@ get_sum_ingrowth <- function(df){
 }
 
 # counts intervals between inventories that look like disturbance was at play
-identify_ingrowth_byinventory <- function(df){
-  df |> 
+identify_ingrowth_byinventory <- function(df) {
+  df |>
+    mutate(
+      logQMD = log(QMD),
+      logDensity = log(density)
+    ) |>
     mutate(
       dlogQMD = logQMD - lag(logQMD),
       dlogDensity = logDensity - lag(logDensity)
-    ) |> 
+    ) |>
     mutate(
       ingrowth = ifelse(dlogQMD < 0 & dlogDensity > 0, TRUE, FALSE)
-      )
-    
+    ) |>
+    dplyr::select(-logQMD, -logDensity)
 }

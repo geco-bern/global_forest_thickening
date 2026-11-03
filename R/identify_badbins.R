@@ -2,8 +2,14 @@ identify_badbins <- function(df, dataset_name, binwidth = 10){
 
   message(unique(df$dataset))
 
+  df <- df |>
+    mutate(logQMD = log(QMD)) |>
+    filter(!is.na(logQMD))
+
   df_binned <- df |> 
-    mutate(yearbin = floor(year / binwidth) * binwidth) %>%
+    mutate(
+      yearbin = floor(year / binwidth) * binwidth,
+    ) %>%
     group_by(yearbin) %>%
     nest() |> 
     arrange(yearbin) |> 
@@ -120,7 +126,8 @@ identify_badbins <- function(df, dataset_name, binwidth = 10){
 
   return(
     list(
-      df = df,
+      df = df |> 
+        dplyr::select(-logQMD),
       gg = gg
     )
   )

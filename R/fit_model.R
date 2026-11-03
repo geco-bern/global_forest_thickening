@@ -2,6 +2,9 @@
 fit_model <- function(df, lqmm = TRUE, control = list()) {
   set.seed(123)
 
+  df <- df |> 
+    mutate(logDensity = log(density), logQMD = log(QMD))
+
   df <- as.data.frame(df)[, c("logDensity", "logQMD", "year", "plotID")]
   df <- df[stats::complete.cases(df), , drop = FALSE]
 
