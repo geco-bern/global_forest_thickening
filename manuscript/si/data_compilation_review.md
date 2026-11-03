@@ -59,7 +59,7 @@ The draft, now integrated into `main.tex`, describes executable transformations 
 - **Source criteria versus executable filters:** the table caption now distinguishes reported source selection from row removal in the raw-data script. Most datasets receive `management = 0` as an assignment. Sweden retains the source flag; FIA uses the first retained condition record per plot and `RESERVCD - 1`; Swiss NFI derives the flag from its interval calculation. Verify upstream selection where the input itself contains no intervention history.
   - This is correct as done. In most cases (@lauramarques please confirm), raw data contains only unmanaged for which we set `management = 0`. For a few cases (as mentioned), this variable is set dynamically based on information provided in the "raw data".
 - **French INRAE LESSEM:** comments describe subtracting a last-harvest date from first measurement, but the executable block does not calculate the interval. `from_tree_data()` requires the elapsed-time column to exist in the joined input. Verify that the supplied metadata contain it and document its derivation; otherwise this block cannot run as written.
-  - Data missing. Asked @lauramarques for new version of stand meta info data, hopefully with missing management data.
+  - Revised. Management information is now processed from supplied files and `management_cat = 1` .
 - **Fixed intervals and special codes:** Norway (64 years), CZU (69), IBERBAS (70), and SCBI (53) receive dataset-wide constants rather than intervals derived from plot-specific dates. Confirm their provenance and relevance to the first census; the CZU comment explicitly requests clarification. Uholka is category 1 with marker 999 and therefore passes the 30- and 100-year thresholds but not the category-2-only filter. The manuscript distinguishes 999 from a measured interval.
   - Beni: Changed Uholka to management category 2.
 - **Comments versus assignments:** UNITO and WULS are category 2 with missing intervals, rather than the possible 50- and 20-year intervals in comments. NPV-BW and BNP use date differences rather than the commented 42- and 6-year constants. NW-FVA also uses date differences; its comments flag disagreement with a 52-year interval in supplementary information. BNP is subsequently reclassified to category 2 in `analysis/02_create_filters.R:77–78`. LWF remains category 3 despite the table's reserve designation. Dataset paragraphs now describe these distinctions explicitly.
@@ -69,17 +69,9 @@ The draft, now integrated into `main.tex`, describes executable transformations 
   - NW-FVA  interprets `management_since_census1_yrs` from the data (`year_last_management` is provided for most but not all) and gets `management_cat = 1` or `3`, depending on whether `year_last_management` is available.
   - LWF now gets `management_cat = 3`. What has been communication about history of these plots? @lauramarques
 - **Two filtering routes:** `data_unm_fc()` in `R/functions.R`, called by `analysis/01_clean_data.R`, retains intervals of at least 30 years **or missing intervals**, alongside `management == 0`. The current `analysis/02_create_filters.R` instead reads `df_all.rds` and applies `management == 0` without a common age threshold. Its downstream sensitivity filters in `R/analyse_biome.R` retain `(category 1 AND interval >= 30 or 100 years) OR category 2`, or category 2 alone. The manuscript describes this latter route; confirm that the reported results use it.
-  - Revised workflow steps. 
-- The FIA download/read branch contains a malformed tree-file `read.csv()` call (`analysis/00_raw_data.R:302`), and its cache existence check uses a different filename from the one subsequently loaded. The combining script assigns `data_all` and then continues from `df_all` (`analysis/01_clean_data.R:221–260`). These existing execution issues were not changed by the writing task.
+  - Revised workflow steps. `data_unm_fc()` is no longer used.
 - The ForestPlots/RAINFOR deduplication comment in `analysis/01_clean_data.R` is not sufficient evidence of cross-source deduplication: `plotID` is prefixed with dataset before `distinct(country, plotID, year)`. The draft makes no claim that overlapping plots across sources were removed.
-
-## Changes to the previous methods text
-
-- Moved the common calculations into Data compilation and removed the separate, duplicative Data processing section.
-- Distinguished a count of retained records (`n`) from density per hectare (`N`), included plot area in the basal-area equation, and included the factor of 100 needed for QMD in centimetres.
-- Retained the equation labels `eq:ba`, `eq:qmd`, and `eq:qmd2`.
-- Described source-specific diameter filters without asserting a common individual-tree diameter threshold. The later QMD ≥ 10 cm requirement is a stand-level filter.
-- Used source-location comments before each dataset subsection for traceability. No new external references or unverified census counts were added.
+  - forestplots.net data is not used, therefore de-duplication not needed.
 
 # Remaining revisions
 
@@ -141,17 +133,15 @@ Remaining revisions of `00_raw_data.R`.
 
 (@lauramarques)
 
-- EFM Switzerland: We have `management_cat = 1` and `management_since_census1_yrs = 1` for all but one plot (which has 11 years). Please confirm that these plots all were managed but established (more or less "mature") up to the first census and that they are not newly planted right before first census.
+- EFM Switzerland: We have `management_cat = 1` and `management_since_census1_yrs = 1` for all but one plot (which has 11 years). Please confirm that these plots all were managed up to the first census.
 - Confirm processing of Norwegian National Forest Inventory: All plots were assumed unmanaged and were given `management_cat = 1` and a fixed elapsed-time value of 64 years to every plot.
 - Confirm: Uholka is changed from `management_cat = 1` and `management_since_census1_yrs = 999` to `management_cat = 2` (primary forest).
-- Should EuFoRia plots all categorised as `management_cat = 2`? Now, at least some are `management_cat = 1` and time since last management is specified (inlcuding `bnp`, `iberbas`, `lwf`).
+- Variable treatment of EuFoRia plots. Most with `management_cat = 2`, but somewith `management_cat = 1` and time since last management is specified (inlcuding `bnp`, `iberbas`, `lwf`). See also **Comments versus assignments:**.
 - EuFoRia Unito: comment in script `00_raw_data.R`: "In Table S1, assign to 50 years. Need to confirm with data providers." Now set to `management_cat = 2` (primary/old growth).
 - EuFoRia urk: Comment in script: "In Table S1, assign to NA years. It can be considered a primary/old-growth forests.". Therefore, I changed this to `management_cat = 2` (primary/old growth). Ok?
-- Treatment of `management_since_census1_yrs` in `aus_plots` was revised. Now interpreting `year_last_management`: if *after* the first available census per plot, then set `management = 1`, otherwise `management = 0` and set `management_since_census1_yrs = min(year, na.rm = TRUE) - year_last_management`. Please confirm. It was unclear why all plots for which `year_last_management` was *not* NA were set as `management_cat = 3` (unknown).
+- Treatment of `management_since_census1_yrs` in `aus_plots` was revised. Now interpreting `year_last_management`: if *after* the first available census per plot, then set `management = 1`, otherwise `management = 0` and set `management_since_census1_yrs = min(year, na.rm = TRUE) - year_last_management`. Please confirm. It was unclear why all plots for which `year_last_management` was *not* NA were set as `management_cat = 3` (unknown). Please confirm also that no plot has `management_cat = 2` (primary/old-growth).
 - Norway NFI: set to unknown management history (`management_cat = 3`), overriding the previously set `1` and `management_since_census1_yrs = 64` for all 25k stands -- which seemed implausible. To confirm: all unmanaged.
-- INRAE LESSEM: Changed to `management_cat = 3` (from 1) and `management_since_census1_yrs = NA`. Comments state: "New information about management included in fp_fra_stand [`"fp_fra/fp_fra_stand.csv"`]: year_last_intervention and year of first measurement (plot establishment). Includes management info: management_since_census1_yrs = first_measurement - date_last_harvest". However, this information was not in the file I read. Perhaps a local file on Laura's machine?
 - fvabw: changed management_cat 2 to 3 in view of very mixed pattern in logN-logQMD plot. It's not convincing that these are all mature stands with density-driven mortality.
-- lwf: Judging from the logN-logQMD plot, this looks like purely self-thinning, therefore `management_cat = 2` justified?
+- lwf: Judging from the logN-logQMD plot, this looks like purely self-thinning, therefore `management_cat = 2` justified? It's now 3.
 - unito: replaced own-created subplots from 20 x 20 m to 50 x 50 m. This retains a clearer pattern in logN-logQMD. Replaced subplots at margins for their odd shape.
-- Mudumalai: Missing data on server.
 - Forestplots from Malhi/Zhang: The data in `multiplots` doesn't exhibit a clear logN-logQMD pattern. The size of all plots is 1 ha and the subdivision into smaller subplots is not possible due to missing information of subplot size. For now, these data are entirely discarded. If possible, get subplot sizes and try again with aggregation to (a larger number of smaller) subplots. Own disaggregation to subplots not possible due to missing tree coordinates.

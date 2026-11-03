@@ -632,8 +632,10 @@ efm_locations <- efm_locations |>
 # Last management intervention
 efm_management <- read.csv(file.path(raw_data_dir, "efm/raw/EFM_last_intervention.csv"))
 efm_management <- efm_management |>
-  mutate(FNUM = as.character(FNUM),
-         management_since_census1_yrs = first_measurement - year_last_intervention) |>
+  mutate(
+    FNUM = as.character(FNUM),
+    management_since_census1_yrs = first_measurement - year_last_intervention
+  ) |>
   select(FNUM, management_since_census1_yrs)
 
 # Stand level data (per plot, year and species)
@@ -651,11 +653,11 @@ dom_species_efm <- efm_stand |>
 
 efm_swi <- efm_stand |>
   filter(Latin == "All species combined") |>
-  left_join(efm_metadata) |>
-  left_join(efm_area) |>
-  left_join(efm_locations) |>
-  left_join(efm_management) |>
-  left_join(dom_species_efm[, c(1:3)]) |>
+  left_join(efm_metadata, by = join_by(FNUM)) |>
+  left_join(efm_area, by = join_by(FNUM)) |>
+  left_join(efm_locations, by = join_by(FNUM)) |>
+  left_join(efm_management, by = join_by(FNUM)) |>
+  left_join(dom_species_efm[, c(1:3)], by = join_by(FNUM, AJ)) |>
   rename(
     plotID = FNUM,
     year = AJ,
@@ -896,8 +898,8 @@ inrae_lessem_status <- read.csv(file.path(raw_data_dir, "fp_fra/fra_sta_code.csv
 # prepare data
 inrae_lessem <- inrae_lessem_tree |>
   left_join(inrae_lessem_plot, by = "plot_id") |>
-  left_join(inrae_lessem_species) |>
-  left_join(inrae_lessem_status) |>
+  left_join(inrae_lessem_species, by = "code_species") |>
+  left_join(inrae_lessem_status, by = "code_status") |>
   # filter alive trees
   filter(status == "alive") |>
   # calculate basal area
@@ -905,7 +907,6 @@ inrae_lessem <- inrae_lessem_tree |>
     ba_tree = pi * (dbh * 0.01 / 2)^2,
     biomass = NA,
     country = "France",
-    management_since_census1_yrs = NA
   ) |>
   rename(
     plotsize = area_ha,
@@ -921,9 +922,8 @@ df_inrae_lessem <- from_tree_data(inrae_lessem) |>
   mutate(census = match(year, unique(year))) |>
   ungroup() |>
   mutate(
-    management_since_census1_yrs = NA,
     management = 0,
-    management_cat = 3
+    management_cat = 1
   )
 
 # Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
