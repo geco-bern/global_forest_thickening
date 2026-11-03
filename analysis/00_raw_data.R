@@ -47,6 +47,9 @@ library(here)
 # Retain missing tree DBH values through the eligibility filters: if individual
 # basal area cannot be recovered, the stand basal-area sum must remain NA.
 source(here::here("R/functions.R"))
+source(here::here("R/harmonise_census_year.R"))
+source(here::here("R/rainfor_coordinates.R"))
+source(here::here("R/forestplots_subplots.R"))
 
 # NFI Spain ----
 # Data providers: Paloma Ruiz-Benito and Veronica Cruz-Alonso
@@ -523,6 +526,20 @@ df_nfi_switzerland |>
     bins = 30
   )
 
+df_nfi_switzerland |>
+  filter(management == 0 & management_since_census1_yrs == 999) |>
+  ggplot() +
+  geom_line(
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.1
+  ) +
+  geom_point(
+    aes(x = log(QMD), y = log(density)),
+    size = 1.5,
+    alpha = 0.1
+  ) +
+  theme_classic()
+
 plot_point_map(df_nfi_switzerland)
 
 # Save stand-level data
@@ -697,7 +714,7 @@ saveRDS(df_efm_swi, file = here::here("data/inputs/df_efm_swi_v2026.rds"))
 
 # Management:
 # Original info: Plots are considered to be primary in the sense that hey have not been managed in the past.
-# Derived info: Since history is known, we assign management_cat = 2 and management_since_census1_yrs = 999.
+# Derived info: Since history is known, we assign management_cat = 2.
 
 # Tree-level data
 uholka <- read.csv(file.path(raw_data_dir, "uholka/uholka_tree.csv"), sep = ",")
@@ -734,7 +751,7 @@ df_uholka <- from_tree_data(uholka) |>
   mutate(
     management = 0,
     management_cat = 2,
-    management_since_census1_yrs = 999
+    management_since_census1_yrs = NA
   )
 
 # Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
@@ -937,7 +954,7 @@ saveRDS(
 # Management:
 # Original: In dataset, year_last_management. In Table S1, last management intervention prior census 1 = 6
 
-# Stand-level data by species
+# Stand-level data
 bnp <- read.csv(file.path(raw_data_dir, "bnp/euf_bnp.csv"), sep = ",")
 
 # prepare data
@@ -954,7 +971,7 @@ bnp <- bnp |>
 df_bnp <- from_stand_data(bnp) |>
   mutate(
     biomass = NA,
-    plotsize = 0.05,
+    plotsize = 0.05, # ha, ascribed for all plots
     management = 0,
     management_cat = 2, # Define all bnp plots as management_cat == 2 (primary), see email Rupert Seidl, 16.04.2026
     country = "Germany"
@@ -976,7 +993,8 @@ ggplot() +
     alpha = 0.1,
     col = "black",
     inherit.aes = FALSE
-  )
+  ) +
+  theme_classic()
 
 plot_point_map(df_bnp)
 
@@ -1161,7 +1179,7 @@ unitbv <- unitbv |>
 
 # Divide plot into grids of different size given the coordinates
 # plotsize = 100 * 100 = 1 ha
-# New plots = 20x20 = 0.04
+# New plots = 20 x 20 m = 0.04 ha
 unitbv$grid20 <- interaction(
   cut(unitbv$X,
     breaks = seq(0, 100, by = 20),
@@ -1189,7 +1207,7 @@ unitbv <- unitbv |>
   mutate(
     ba_tree = pi * (dbh * 0.01 / 2)^2,
     year = as.numeric(year),
-    plotsize = 0.04,
+    plotsize = 0.04, # ha
     country = "Rumania",
     management_since_census1_yrs = NA
   )
@@ -1209,11 +1227,18 @@ df_unitbv <- from_tree_data(unitbv) |>
 df_unitbv <- standardise_stand_data(df_unitbv)
 
 ggplot() +
-  geom_line(
+  geom_point(
     data = df_unitbv,
     aes(x = log(QMD), y = log(density), group = plotID),
     alpha = 0.5,
     size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_line(
+    data = df_unitbv,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.5,
     col = "black",
     inherit.aes = FALSE
   )
@@ -1285,7 +1310,16 @@ ggplot() +
     alpha = 0.5,
     col = "black",
     inherit.aes = FALSE
-  )
+  ) +
+  geom_point(
+    data = df_lwf,
+    aes(x = log(QMD), y = log(density)),
+    alpha = 0.5,
+    size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  ) +
+  theme_classic()
 
 plot_point_map(df_lwf)
 
@@ -1517,7 +1551,7 @@ df_nwfva <- from_tree_data(nwfva_tree) |>
   mutate(census = match(year, unique(year))) |>
   ungroup() |>
   mutate(
-    management_cat = 1,
+    management_cat = ifelse(is.na(management_since_census1_yrs), 3, 1),    # set this depending on whether info is available
     management = 0
   )
 
@@ -1840,7 +1874,7 @@ unito <- unito |>
     country = "Italy",
     management = 0,
     biomass = volume * WD$meanWD * 10^3,
-    plotsize = 0.04
+    plotsize = 0.25  # ha
   ) |>
   filter(status == "A") # alive trees
 
@@ -2012,12 +2046,6 @@ luquillo <- luquillo |>
     plotsize = 0.04,
     date = as.Date(Date, "%d.%m.%y"),
     year = year(date),
-    year = ifelse(census == 1, 1990, year),
-    year = ifelse(census == 2, 1994, year),
-    year = ifelse(census == 3, 2000, year),
-    year = ifelse(census == 4, 2005, year),
-    year = ifelse(census == 5, 2011, year),
-    year = ifelse(census == 6, 2016, year),
     biomass = NA,
     management_since_census1_yrs = NA,
     country = "Puerto Rico",
@@ -2025,9 +2053,23 @@ luquillo <- luquillo |>
   ) |>
   filter(status == "alive") |>
   filter(is.na(dbh) | dbh > 0) |>
-  drop_na(PX) |>
-  drop_na(PY) |>
   drop_na(year)
+
+# multiple years recorded per census and plotID.
+unique(luquillo$year)
+unique(luquillo$census)
+
+luquillo |>
+  group_by(plotID, census) |>
+  summarise(
+    n_years = n_distinct(year, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  filter(n_years > 1)
+
+# Override the year by taking the mode of years for that group.
+luquillo <- luquillo |>
+  harmonise_census_year()
 
 # aggregate data from stand to stand data
 df_luquillo <- from_tree_data(luquillo) |>
@@ -2094,14 +2136,14 @@ bci <- bci |>
     plotsize = 0.04,
     date = as.Date(Date, "%d.%m.%y"),
     year = year(date),
-    year = ifelse(census == 1, 1980, year),
-    year = ifelse(census == 2, 1985, year),
-    year = ifelse(census == 3, 1990, year),
-    year = ifelse(census == 4, 1995, year),
-    year = ifelse(census == 5, 2000, year),
-    year = ifelse(census == 6, 2005, year),
-    year = ifelse(census == 7, 2010, year),
-    year = ifelse(census == 8, 2015, year),
+    # year = ifelse(census == 1, 1980, year),
+    # year = ifelse(census == 2, 1985, year),
+    # year = ifelse(census == 3, 1990, year),
+    # year = ifelse(census == 4, 1995, year),
+    # year = ifelse(census == 5, 2000, year),
+    # year = ifelse(census == 6, 2005, year),
+    # year = ifelse(census == 7, 2010, year),
+    # year = ifelse(census == 8, 2015, year),
     biomass = NA,
     management_since_census1_yrs = NA,
     country = "Panama"
@@ -2190,8 +2232,6 @@ scbi <- scbi |>
   ) |>
   filter(is.na(dbh) | dbh > 0) |>
   filter(status == "alive") |>
-  drop_na(PX) |>
-  drop_na(PY) |>
   drop_na(year)
 
 # aggregate data from stand to stand data
@@ -2245,7 +2285,7 @@ palanam <- palanam |>
   rename(
     plotID = Quadrat,
     census = Census,
-    dbh = DBH,
+    dbh = DBH,  # provided in cm confirmed
     species = Latin,
     status = Status
   ) |>
@@ -2256,15 +2296,12 @@ palanam <- palanam |>
     plotsize = 0.04,
     date = as.Date(Date, "%d.%m.%y"),
     year = year(date),
-    year = ifelse(census == 1, 1994, year),
     biomass = NA,
     management_since_census1_yrs = NA,
     country = "Philippines"
   ) |>
   filter(is.na(dbh) | dbh > 0) |>
   filter(status == "alive") |>
-  drop_na(PX) |>
-  drop_na(PY) |>
   drop_na(year)
 
 # aggregate data from stand to stand data
@@ -2292,8 +2329,7 @@ ggplot() +
     inherit.aes = FALSE
   )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_palanam, size = 0.5, alpha = 0.5)
+plot_point_map(df_palanam)
 
 # Save stand-level data
 saveRDS(df_palanam, file = here::here("data/inputs/df_palanam_v2026.rds"))
@@ -2306,38 +2342,32 @@ serc <- list.files(path = file.path(raw_data_dir, "serc"), full.names = TRUE, pa
   lapply(read_csv) |>
   bind_rows()
 
-unique(serc$Census)
-length(unique(serc$Quadrat))
-
 # Divide plot into grids of different size given the coordinates
-# 20 x 20 m = 0.04 ha
-serc$grid20 <- interaction(
+# 40 x 40 m = 0.16 ha
+serc$grid40 <- interaction(
   cut(serc$PX,
-    breaks = seq(0, 400, by = 20),
+    breaks = seq(0, 400, by = 40),
     include.lowest = TRUE
   ),
   cut(serc$PY,
-    breaks = seq(0, 400, by = 20),
+    breaks = seq(0, 400, by = 40),
     include.lowest = TRUE
   ),
   sep = "X"
 )
 
 serc <- serc |>
-  group_by(grid20) |>
+  group_by(grid40) |>
   mutate(plotID = cur_group_id()) |>
   ungroup()
 
 length(unique(serc$plotID))
 
-ggplot(serc) +
-  geom_point(aes(PX, PY, col = plotID))
-
 ## Prepare data
 serc <- serc |>
   rename(
     census = Census,
-    dbh = DBH,
+    dbh = DBH, # provided in cm confirmed
     species = Latin,
     status = Status
   ) |>
@@ -2345,23 +2375,32 @@ serc <- serc |>
     lon = -76.5594,
     lat = 38.8891,
     ba_tree = pi * (dbh * 0.01 / 2)^2,
-    plotsize = 0.04,
+    plotsize = 0.16, # ha
     date = as.Date(Date, "%d.%m.%y"),
     year = year(date),
-    year = ifelse(census == 1, 2010, year),
-    year = ifelse(census == 3, 2019, year),
     biomass = NA,
     management_since_census1_yrs = NA,
     country = "USA"
   ) |>
   filter(is.na(dbh) | dbh > 0) |>
   filter(status == "alive") |>
-  drop_na(PX) |>
-  drop_na(PY) |>
   drop_na(year)
 
-unique(serc$year)
-unique(serc$census)
+# # multiple years recorded per census and plotID. 
+# unique(serc$year)
+# unique(serc$census)
+
+# serc |>
+#   group_by(plotID, census) |>
+#   summarise(
+#     n_years = n_distinct(year, na.rm = TRUE),
+#     .groups = "drop"
+#   ) |>
+#   filter(n_years > 1)
+
+# Override the year by taking the mode of years for that group. 
+serc <- serc |>
+  harmonise_census_year()
 
 # aggregate data from stand to stand data
 df_serc <- from_tree_data(serc) |>
@@ -2439,9 +2478,6 @@ wytham <- wytham |>
     country = "UK"
   ) |>
   filter(is.na(dbh) | dbh > 0) |>
-  filter(status != "D") |>
-  drop_na(PX) |>
-  drop_na(PY) |>
   drop_na(year)
 
 # aggregate data from stand to stand data
@@ -2532,8 +2568,6 @@ pasoh <- pasoh |>
   ) |>
   filter(DFstatus == "alive") |>
   filter(is.na(dbh) | dbh > 0) |>
-  drop_na(PX) |>
-  drop_na(PY) |>
   drop_na(year)
 
 # aggregate data from stand to stand data
@@ -2605,10 +2639,23 @@ df_mudumalai <- from_stand_data(mudumalai) |>
 df_mudumalai <- standardise_stand_data(df_mudumalai)
 
 ggplot() +
-  geom_point(data = df_mudumalai, aes(x = log(QMD), y = log(density)), alpha = 0.5, size = 1.5, col = "black", inherit.aes = FALSE)
+  geom_point(
+    data = df_mudumalai,
+    aes(x = log(QMD), y = log(density)),
+    alpha = 0.5,
+    size = 1.5,
+    col = "black",
+    inherit.aes = FALSE
+  ) +
+  geom_line(
+    data = df_mudumalai,
+    aes(x = log(QMD), y = log(density), group = plotID),
+    alpha = 0.5,
+    col = "black",
+    inherit.aes = FALSE
+  )
 
-rgeco::plot_map_simpl() +
-  geom_point(aes(lon, lat), data = df_mudumalai, size = 0.5, alpha = 0.5)
+plot_point_map(df_mudumalai)
 
 # Save stand-level data
 saveRDS(
@@ -2618,12 +2665,15 @@ saveRDS(
 
 # Forests plots MZ ----
 # Data provided by Yadvinder Mahli and Huanyuan Zhang
+# Allocate trees to 20 x 20 m cells only for resolved parent-coordinate grids.
+# Exclude affected subplots across censuses; retain unaffected cells and an audit.
+forestplots_grids <- list()
 
 # 0) Metadata
 meta_fp <- read.csv(file.path(raw_data_dir, "forestplots/mahli_zhang/fp_mz_metadata.csv"))
 
 meta_fp <- meta_fp |>
-  select(Plot_code, Country, Longitude, Latitude, Elevation..m., Plot.Size..ha.) |>
+  # select(Plot_code, Country, Longitude, Latitude, Elevation..m., Plot.Size..ha.) |>
   rename(
     plotID = Plot_code,
     country = Country,
@@ -2633,29 +2683,17 @@ meta_fp <- meta_fp |>
     plotsize = Plot.Size..ha.
   )
 
-## Multiple plots ------
+## forestplots.net: Multiple plots ------
 # Contains 28 plots
 multiplots <- read.csv(file.path(raw_data_dir, "forestplots/mahli_zhang/fp_mz_multiplots.csv"))
 
-# # Use recorded subplot membership, which remains stable across censuses.
-# # Blank labels cannot be assigned spatially; "out" denotes outside the plot.
-# multiplots_missing_subplot <- with(multiplots,
-#   is.na(Sub.Plot.T1) | trimws(Sub.Plot.T1) == "" |
-#     tolower(trimws(Sub.Plot.T1)) == "out"
-# )
-# if (any(multiplots_missing_subplot)) {
-#   warning(sum(multiplots_missing_subplot),
-#           " multiplots tree-census rows omitted: missing or outside subplot.",
-#           call. = FALSE)
-# }
-
 # select and rename variables
 multiplots <- multiplots |>
-  # filter(!multiplots_missing_subplot) |>
   select(
     country = Country,
     plotID = Plot.Code,
-    subplotID = Sub.Plot.T1,
+    X, Y,
+    source_subplot = Sub.Plot.T1,
     treeID = TreeID,
     species = Species,
     year = Census.Date,
@@ -2683,16 +2721,10 @@ multiplots <- multiplots |>
     management_since_census1_yrs = NA
   ) |>
 
-  # # ideally using subplots as 'plotID', but missing plot size prevents calculations for aggregation
-  # mutate(
-  #   parent_plotID = plotID,
-  #   subplotID = trimws(as.character(subplotID)),
-  #   plotID = paste(parent_plotID, subplotID, sep = "_"),
-  #   # Requested 20 x 20 m area; preserve labels such as "1.r" verbatim.
-  #   plotsize = 20 * 20 / 10000
-  # ) |>
-
   as_tibble()
+
+forestplots_grids$multiplots <- forestplots_subplots(multiplots)
+multiplots <- forestplots_grids$multiplots$data
 
 unique(multiplots$country)
 
@@ -2724,7 +2756,7 @@ ggplot() +
     inherit.aes = FALSE
   )
 
-plot_point_map(df_multiplots)
+if (nrow(df_multiplots) > 0) plot_point_map(df_multiplots)
 
 ## Gabon -------------
 gabon <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/gabon"), full.names = TRUE, pattern = "\\.csv$") |>
@@ -2733,7 +2765,8 @@ gabon <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/gabo
 
 # select and rename variables
 gabon <- gabon |>
-  select(country, plot_code, treeID, species, year, dbh) |>
+  select(country, plot_code, treeID, species, year, dbh, X, Y,
+         source_subplot = subplot_T1) |>
   rename(plotID = plot_code) |>
   mutate(year = as.integer(year)) |>
   mutate(dbh = dbh / 10) |> # must be in cm
@@ -2764,6 +2797,9 @@ gabon <- gabon |>
   ) |>
   ungroup()
 
+forestplots_grids$gabon <- forestplots_subplots(gabon)
+gabon <- forestplots_grids$gabon$data
+
 # aggregate data from stand to stand data
 df_gabon <- from_tree_data(gabon) |>
   group_by(plotID) |>
@@ -2792,7 +2828,7 @@ ggplot() +
     inherit.aes = FALSE
   )
 
-plot_point_map(gabon)
+if (nrow(gabon) > 0) plot_point_map(gabon)
 
 ## Ghana ---------
 ghana <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/ghana"), full.names = TRUE, pattern = "\\.csv$") |>
@@ -2801,7 +2837,8 @@ ghana <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/ghan
 
 # select and rename variables
 ghana <- ghana |>
-  select(country, plotID, treeID, species, year, dbh) |>
+  select(country, plotID, treeID, species, year, dbh, X, Y,
+         source_subplot = T1) |>
   mutate(year = as.integer(year)) |>
   mutate(dbh = dbh / 10) |> # must be in cm
   filter(is.na(dbh) | dbh != 0) |>
@@ -2817,6 +2854,9 @@ ghana <- ghana |>
     biomass = NA,
     management_since_census1_yrs = NA
   )
+
+forestplots_grids$ghana <- forestplots_subplots(ghana)
+ghana <- forestplots_grids$ghana$data
 
 # aggregate data from stand to stand data
 df_ghana <- from_tree_data(ghana) |>
@@ -2846,7 +2886,7 @@ ggplot() +
     inherit.aes = FALSE
   )
 
-plot_point_map(ghana)
+if (nrow(ghana) > 0) plot_point_map(ghana)
 
 ## Malaysia ---------
 malaysia <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/malaysia"), full.names = TRUE, pattern = "\\.csv$") |>
@@ -2855,7 +2895,8 @@ malaysia <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/m
 
 # select and rename variables
 malaysia <- malaysia |>
-  select(country, plotID, treeID, species, year, dbh) |>
+  select(country, plotID, treeID, species, year, dbh, X, Y,
+         source_subplot = T1) |>
   mutate(year = as.integer(year)) |>
   mutate(dbh = dbh / 10) |> # must be in cm
   filter(is.na(dbh) | dbh != 0) |>
@@ -2885,6 +2926,9 @@ malaysia <- malaysia |>
   ) |>
   ungroup()
 
+forestplots_grids$malaysia <- forestplots_subplots(malaysia)
+malaysia <- forestplots_grids$malaysia$data
+
 # aggregate data from stand to stand data
 df_malaysia <- from_tree_data(malaysia) |>
   group_by(plotID) |>
@@ -2913,18 +2957,19 @@ ggplot() +
     inherit.aes = FALSE
   )
 
-plot_point_map(df_malaysia)
+if (nrow(df_malaysia) > 0) plot_point_map(df_malaysia)
 
-# Join all plots
-# df_forestplots <- df_multiplots |>
-#   bind_rows(df_gabon) |>
-#   bind_rows(df_ghana) |>
-#   bind_rows(df_malaysia)
+# Combine eligible grid cells from all four contributions.
+forestplots_subplot_audit <- bind_rows(
+  lapply(forestplots_grids, function(x) x$audit), .id = "source"
+)
+forestplots_audit_dir <- here::here("analysis/diagnostics/forestplots_coordinates")
+dir.create(forestplots_audit_dir, recursive = TRUE, showWarnings = FALSE)
+write_csv(forestplots_subplot_audit,
+          file.path(forestplots_audit_dir, "subplot_exclusions.csv"))
 
-# join all except multiplots
-df_forestplots <- df_gabon |>
-  bind_rows(df_ghana) |>
-  bind_rows(df_malaysia)
+df_forestplots <- df_multiplots |>
+  bind_rows(df_gabon, df_ghana, df_malaysia)
 
 # Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
 df_forestplots <- standardise_stand_data(df_forestplots)
@@ -2946,7 +2991,7 @@ ggplot() +
     inherit.aes = FALSE
   )
 
-plot_point_map(df_forestplots)
+if (nrow(df_forestplots) > 0) plot_point_map(df_forestplots)
 
 # Save stand-level data
 saveRDS(
@@ -2961,12 +3006,14 @@ saveRDS(
 # Queensland data: Michael Ngug or John Neldner
 # Victoria: Andrew Clark
 # TERN: Open
-# Includes management info. Set to management_cat = 1 (known history) for all plots even if last_management_year was missing.
-# Indentified few plots where management happened during censi. 
-# No plot is identified as management_cat = 1 (primary/old-growth).
 # Data has last management intervention. This shows the last year when some of the trees were labelled as thinned.
-# Many plots did not have any trees labelled as being thinned.
 # Missing management dates indicate no recorded thinning, not primary forest.
+# Revised treatment of management: 
+# Set to management_cat = 1 (known history) for all plots even if last_management_year was missing.
+# Assigned management = 0 if `last_management_year` was missing or when last_management_year < first_census_year.
+# For management = 0, management_since_census1_yrs was defined as first_census_year - last_management_year.
+# Indentified few plots where management happened during censi. These were excluded.
+# No plot is identified as management_cat = 2 (primary/old-growth).
 
 # Stand-level data
 aus_plots <- readRDS(file.path(raw_data_dir, "fp_aus/fp_aus_stand.RDS")) |> 
@@ -3082,7 +3129,6 @@ rainfor_plots <- read.csv(file.path(raw_data_dir, "rainfor/esquivel_etal/full_fi
 # Exact plot-code coordinate lookup from five local data packages.
 # Prefer 0.01-degree releases over 0.1-degree releases. Average distinct
 # coordinate pairs only at the finest available resolution for each plot.
-source(here::here("R/rainfor_coordinates.R"))
 rainfor_coordinate_candidates <- read_rainfor_coordinate_sources(raw_data_dir)
 rainfor_coords <- combine_rainfor_coordinates(rainfor_coordinate_candidates)
 
@@ -3155,3 +3201,23 @@ plot_point_map(df_rainfor)
 
 # Save stand-level data
 saveRDS(df_rainfor, file = here::here("data/inputs/df_rainfor.rds"))
+
+
+# Checks -----------
+## Confirm units of SERC ---------------
+df_serc <- readRDS(here::here("data/inputs/df_serc_v2026.rds"))
+
+# comparison with DBH in Switzerland
+df_nfi_switzerland <- readRDS(here::here("data/inputs/df_nfi_swi_v2026.rds"))
+
+gg1 <- df_serc |>
+  ggplot(aes(dbh, ..density..)) +
+  geom_histogram() +
+  xlim(0, 80)
+
+gg2 <- df_nfi_switzerland |>
+  ggplot(aes(dbh, ..density..)) +
+  geom_histogram() +
+  xlim(0, 80)
+
+cowplot::plot_grid(gg1, gg2, ncol = 1)
