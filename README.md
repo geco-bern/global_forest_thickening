@@ -8,31 +8,49 @@ Global forest growth has increased in recent decades, but its role in sustaining
 
 ## Workflow
 
-### Prepare data
+All scripts are in `analysis/` and are to be executed in the following order. Functions are defined by files in `R/`. The supplementary information document is in `manuscript/si/`. Figures created by the different scripts are in `fig/`. Own generated data files and tables are in `data/`.
 
-`analysis/00_raw_data.R`
+1. `01_process_data_orig.R`
 
-`analysis/00_collect_global_drivers.R`
+- Read data from original obtained files.
+- Aggregate to stand-level.
+- Retain standardised variable names.
+- Save standard-formatted data as files per constituent dataset.
 
-### Process data
+2. `02_combine_data_filters.R`
 
-`analysis/01_clean_data.R`
+- Collects and combines data from standard-formatted files.
+- Applies basic filters for all analyses (no management, mimimum census, ...).
+- Adds (major) biome identity and environmental covariates per plot.
+- Constructs `major dataset` additionally grouping some of the constituent datasets. 
+- Adds additional filters for management-sensitivity analysis.
+- Writes combined dataset with filter levels.
 
-- Initial data selection, variable definition, and unit conversions.
+3. `03_additional_filters.R`
 
-`analysis/02_create_filters.R`
+4. `04_compile_global_drivers.R`
 
-- Create filters to reduce to self-thinning dominated stands.
+- Creates global maps (raster) at common resolution for global upscaling.
+- Adds environmental covariates and biome to data per forest plot.
 
-### Analyse data: negative size-density relationship (SDR)
+5. `05_stl_year.R`
 
-`analysis/03_analyse_filter_effects.R`
+- Fits LQMM models per biome and per constituent dataset.
+- Creates Fig. 1.
 
-- Analyses sensitivity of SDR to management-history by constituent dataset.
+6. `06_analyse_filter_effects.R`
 
-`analysis/04_stl_year.R`
+- Fits LQMM models at all filter levels for each (major) dataset.
 
-- Analyses SDR and sensitivity to management-history by biome.
+7. `07_env_drivers.R`
+
+- Fits global models for interaction of `year` with environmental factors.
+- Performs model selection.
+
+8. `08_globalcsink.R`
+
+- Uses the selected model from step 6 for global upscaling.
+- Estimates the global C sink from forest self-thinning changes.
 
 ### Model preprocessing
 
@@ -57,14 +75,3 @@ the input data and fitted results. Previously saved models do not contain the
 trained recipes. The model checks can be run with
 `Rscript tests/test_model_preprocessing.R`; they require `recipes`, `lqmm`,
 `rsample`, `lme4`, `testthat`, and the plotting packages used by the analysis.
-
-
-## Repository use
-
-This repository includes the R scripts to analyse the links between growth and biomass from global forest inventory data.
-
-The repository is organized as follows:
-- analysis - includes the scripts for data analysis.
-- data - includes model outputs.
-- manuscript - includes figures.
-- vignettes - contains dynamic notebooks, i.e. R markdown files.

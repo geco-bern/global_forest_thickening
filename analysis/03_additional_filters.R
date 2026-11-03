@@ -52,57 +52,7 @@ source(here("R/plot_stl_longplots.R"))
 df_all <- read_rds(here("data/inputs/df_all.rds")) |>
   mutate(across(any_of(c("dataset", "dataset_major")), harmonise_dataset_names))
 
-# Apply filters relevant for all analyses
-df_unm <- df_all |>
-
-  # filter for min qmd
-  filter(QMD >= 10) |>
-
-  # filter for forest type
-  filter(type == "Forest") |>
-
-  # filter for unmanaged plots (between censi)
-  filter(management == 0) |>
-
-  # Filter by minimum 3 censi
-  group_by(dataset, plotID) |>
-  mutate(n_census_unm = n()) |>
-  filter(n_census_unm >= 3) |>
-
-  # remove plots with no change in ln(N)
-  mutate(var_logdensity = diff(range(logDensity))) |>
-  filter(var_logdensity > 0.001) |> 
-
-  # clean up
-  ungroup() |>
-  relocate(n_census_unm, .after = n_census) |> 
-
-  # Re-group into "major biomes"
-  mutate(
-    biome_major = ifelse(
-      biomeID %in% c(1, 2),
-      "Tropical & Subtropical Broadleaf Forests",
-      # biomeID == 1,
-      # "Tropical & Subtropical Moist Broadleaf Forests",
-      # ifelse(
-      #   biomeID == 2,
-      #   "Tropical & Subtropical Dry Broadleaf Forests",
-      ifelse(
-        biomeID %in% c(4, 5),
-        "Temperate Forests",
-        ifelse(
-          biomeID == 6,
-          "Boreal Forests/Taiga",
-          ifelse(
-            biomeID == 12,
-            "Mediterranean Forests",
-            NA
-          )
-        )
-      )
-    )
-  )
-
+ 
 ## By forest plot --------------------------------------------------------------
 
 ### Identify disturbed plots ---------------------------------------------------
@@ -116,34 +66,6 @@ df_unm <- df_unm |>
   identify_ingrowth_plots()
 
 ## By (major) dataset ----------------------------------------------------------
-### Define major datasets ----------
-# grouping into major based on analysis/01_clean_data.R
-df_unm <- df_unm |> 
-  mutate(
-    dataset_major = ifelse(
-      dataset %in% c("bnp", "czu", "fvabw", "iberbas", "unitbv", "lwf", "nbw", "nfr", "nwfva", "tuzvo", "ul", "unito", "urk", "wuls", "uholka"),
-      "euforia",
-      ifelse(
-        dataset %in% c("luquillo", "bci", "scbi", "palanan", "serc", "pasoh", "mudumalai"),
-        "forestgeo",
-        ifelse(
-          dataset == "forestplots", 
-          "forestplots",
-          ifelse(
-            dataset == "rainfor",
-            "rainfor",
-            dataset
-          )
-        )
-      )
-    )
-  )
-
-tmp <- df_unm |> 
-  group_by(dataset_major) |> 
-  summarise(n = n())
-
-# View(tmp)
 
 ### Identify years (in 10-year bins) based on deviating QMD distribution ------------
 # adds column 'badqmdbin'

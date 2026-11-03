@@ -1,122 +1,123 @@
 # Compile stand records for all datasets, before environmental extraction.
 
-# load packages ----
+# Load packages ----
 # library(renv)
 library(tidyverse)
 
-# load functions ----
+# Load functions ----
 source(here::here("R/functions.R"))
+source(here::here("R/extract_plot_environment.R"))
 
-# NFI Spain ----
+# Collect data ----------------
+# Collect and combine data from standard-formatted files.
+## NFI Spain ----
 df_nfi_spain <- readRDS(here::here("data/inputs/df_nfi_spa_v2026.rds"))
 
-# NFI Sweeden ----
+## NFI Sweeden ----
 df_nfi_sweeden <- readRDS(here::here("data/inputs/df_nfi_swe_v2026.rds"))
 
-# FIA US ----
+## FIA US ----
 df_fia_us <- readRDS(here::here("data/inputs/df_fia_us_v2026.rds"))
 
-# NFI Switzerland ----
+## NFI Switzerland ----
 df_nfi_switzerland <- readRDS(here::here("data/inputs/df_nfi_swi_v2026.rds"))
 
-# NFI Norway ----
+## NFI Norway ----
 df_nfi_norway <- readRDS(here::here("data/inputs/df_nfi_nor_v2026.rds"))
 
-# EFM Switzerland ----
+## EFM Switzerland ----
 df_efm_swi <- readRDS(here::here("data/inputs/df_efm_swi_v2026.rds"))
 
-# Uholka plot ----
+## Uholka plot ----
 df_uholka <- readRDS(here::here("data/inputs/df_uholka_v2026.rds"))
 
-# Greece sites ----
+## Greece sites ----
 df_fep_gre <- readRDS(here::here("data/inputs/df_fep_gre_v2026.rds"))
 
-# France sites ----
+## France sites ----
 df_inrae_lessem <- readRDS(here::here("data/inputs/df_inrae_lessem_v2026.rds"))
 
-# EuFoRia plots ----
+## EuFoRia plots ----
 
-## bnp ----
+### bnp ----
 df_bnp <- readRDS(here::here("data/inputs/df_bnp_v2026.rds"))
 
-## czu ----
+### czu ----
 df_czu <- readRDS(here::here("data/inputs/df_czu_v2026.rds"))
 
-## fvabw ----
+### fvabw ----
 df_fvabw <- readRDS(here::here("data/inputs/df_fvabw_v2026.rds"))
 
-## iberbas ----
+### iberbas ----
 df_iberbas <- readRDS(here::here("data/inputs/df_iberbas_v2026.rds"))
 
-## unitbv ----
+### unitbv ----
 df_unitbv <- readRDS(here::here("data/inputs/df_unitbv_v2026.rds"))
 
-## lwf ----
+### lwf ----
 df_lwf <- readRDS(here::here("data/inputs/df_lwf_v2026.rds"))
 
-## npvbw ----
+### npvbw ----
 df_npvbw <- readRDS(here::here("data/inputs/df_npvbw_v2026.rds"))
 
-## nfr ----
+### nfr ----
 df_nfr_swi <- readRDS(here::here("data/inputs/df_nfr_swi_v2026.rds"))
 
-## nwfva ----
+### nwfva ----
 df_nwfva <- readRDS(here::here("data/inputs/df_nwfva_v2026.rds"))
 
-## tuzvo ----
+### tuzvo ----
 df_tuzvo <- readRDS(here::here("data/inputs/df_tuzvo_v2026.rds"))
 
-## ul ----
+### ul ----
 df_ul <- readRDS(here::here("data/inputs/df_ul_v2026.rds"))
 
-## unito ----
+### unito ----
 df_unito <- readRDS(here::here("data/inputs/df_unito_v2026.rds"))
 
-## urk ----
+### urk ----
 df_urk <- readRDS(here::here("data/inputs/df_urk_v2026.rds"))
 
-## wuls ----
+### wuls ----
 df_wuls <- readRDS(here::here("data/inputs/df_wuls_v2026.rds"))
 
-# ForestGEO ----
+## ForestGEO ----
 
-## Luquillo ----
+### Luquillo ----
 df_luquillo <- readRDS(here::here("data/inputs/df_luquillo_v2026.rds"))
 
-## BCI ----
+### BCI ----
 df_bci <- readRDS(here::here("data/inputs/df_bci_v2026.rds"))
 
-## SCBI ----
+### SCBI ----
 df_scbi <- readRDS(here::here("data/inputs/df_scbi_v2026.rds"))
 
-## Palanam ----
+### Palanam ----
 df_palanam <- readRDS(here::here("data/inputs/df_palanam_v2026.rds"))
 
-## SERC ----
+### SERC ----
 df_serc <- readRDS(here::here("data/inputs/df_serc_v2026.rds"))
 
-## Wytham woods ----
+### Wytham woods ----
 df_wytham <- readRDS(here::here("data/inputs/df_wytham_v2026.rds"))
 
-## Pasoh woods ----
+### Pasoh woods ----
 df_pasoh <- readRDS(here::here("data/inputs/df_pasoh_v2026.rds"))
 
-## Mudumalai ----
+### Mudumalai ----
 df_mudumalai <- readRDS(here::here("data/inputs/df_mudumalai_v2026.rds"))
 
-# Forest plots ----
+## Forest plots ----
 df_forestplots <- readRDS(here::here("data/inputs/df_forestplots_v2026.rds"))
 
-# Australian plots ----
+## Australian plots ----
 df_aus <- readRDS(here::here("data/inputs/df_aus_v2026.rds"))
 
-# RAINFOR plots ----
+## RAINFOR plots ----
 df_rainfor <- readRDS(here::here("data/inputs/df_rainfor_v2026.rds"))
 
-# Write data from all plots ----
-
-# join all datasets
-data_all <- bind_rows(
+## Join all -----
+df_all <- bind_rows(
   df_nfi_spain,
   df_nfi_sweeden,
   df_fia_us,
@@ -153,16 +154,124 @@ data_all <- bind_rows(
   df_rainfor
 )
 
-df_all <- data_all |>
+# Harmonise dataset names
+df_all <- df_all |>
   mutate(dataset = harmonise_dataset_names(dataset)) |>
+
   # unite plotID and dataset to ensure there are not matches form different sources
   rename(plotIDD = plotID) |>
   unite(plotID, dataset, plotIDD, sep = "_", remove = FALSE) |>
   select(-plotIDD) |>
+
   # Unify Forestplots and RAINFOR datasets
-  # Since Forestplots are deta provided by Y. Mahli and RAINFOR are taken from Esquivel et al., some plots can 
+  # Since Forestplots are deta provided by Y. Mahli and RAINFOR are taken from Esquivel et al., some plots can
   # be duplicated. We need to check the plots and years that are present in both datasets and keep the most updated ones.
   distinct(country, plotID, year, .keep_all = TRUE)
+
+# Apply basic filters ------
+# Apply filters relevant for all analyses
+df_all <- df_all |>
+
+  # filter for min qmd
+  filter(QMD >= 10) |>
+
+  # filter for unmanaged plots (between censi)
+  filter(management == 0) |>
+
+  # Filter by minimum 3 censi
+  group_by(dataset, plotID) |>
+  mutate(n_census_unm = n()) |>
+  filter(n_census_unm >= 3) |>
+
+  # remove plots with no change in ln(N)
+  mutate(var_logdensity = diff(range(logDensity))) |>
+  filter(var_logdensity > 0.001) |>
+
+  # clean up
+  ungroup() |>
+  relocate(n_census_unm, .after = n_census)
+
+# Add biome and environmental covariates ------
+# Extract global environmental fields for all plot locations ----
+# This section can also be rerun independently using the saved compilation.
+
+# Edit individual paths here if the global fields are stored elsewhere.
+environment_paths <- plot_environment_paths()
+
+# GSDE/Shangguan is required on the server. Set FALSE only when deliberately
+# omitting phosphorus; PBR will then be NA. LAI is no longer extracted.
+include_phosphorus <- TRUE
+
+df_all <- extract_plot_environment(
+  df_all,
+  paths = environment_paths,
+  include_phosphorus = include_phosphorus
+)
+
+# Construct 'major biome' --------
+df_all <- df_all |> 
+
+  # Re-group into "major biomes"
+  mutate(
+    biome_major = ifelse(
+      biomeID %in% c(1, 2),
+      "Tropical & Subtropical Broadleaf Forests",
+      # biomeID == 1,
+      # "Tropical & Subtropical Moist Broadleaf Forests",
+      # ifelse(
+      #   biomeID == 2,
+      #   "Tropical & Subtropical Dry Broadleaf Forests",
+      ifelse(
+        biomeID %in% c(4, 5),
+        "Temperate Forests",
+        ifelse(
+          biomeID == 6,
+          "Boreal Forests/Taiga",
+          ifelse(
+            biomeID == 12,
+            "Mediterranean Forests",
+            NA
+          )
+        )
+      )
+    )
+  )
+
+# Construct 'major dataset' ----
+df_all <- df_all |> 
+  mutate(
+    dataset_major = ifelse(
+      dataset %in% c("bnp", "czu", "fvabw", "iberbas", "unitbv", "lwf", "nbw", "nfr", "nwfva", "tuzvo", "ul", "unito", "urk", "wuls", "uholka"),
+      "euforia",
+      ifelse(
+        dataset %in% c("luquillo", "bci", "scbi", "palanan", "serc", "pasoh", "mudumalai"),
+        "forestgeo",
+        ifelse(
+          dataset == "forestplots", 
+          "forestplots",
+          ifelse(
+            dataset == "rainfor",
+            "rainfor",
+            dataset
+          )
+        )
+      )
+    )
+  )
+
+tmp <- df_unm |> 
+  group_by(dataset_major) |> 
+  summarise(n = n())
+
+# View(tmp)
+
+# Write file ----
+
+
+
+# Retain all records, including missing environmental values. Forest and other
+# analysis filters are applied downstream in 02_create_filters.R.
+
 
 saveRDS(df_all, file = here::here("data/inputs/df_all_v2026.rds"))
 
