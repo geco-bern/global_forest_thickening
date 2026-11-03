@@ -170,10 +170,11 @@ df_all <- df_all |>
 
 # Apply basic filters ------
 # Apply filters relevant for all analyses
-df_all <- df_all |>
+df_unm <- df_all |>
 
-  # filter for min qmd
-  filter(QMD >= 10) |>
+  # Beni: this is an important step: not to remove this a priori.
+  # # filter for min qmd
+  # filter(QMD >= 10) |>
 
   # filter for unmanaged plots (between censi)
   filter(management == 0) |>
@@ -184,8 +185,8 @@ df_all <- df_all |>
   filter(n_census_unm >= 3) |>
 
   # remove plots with no change in ln(N)
-  mutate(var_logdensity = diff(range(logDensity))) |>
-  filter(var_logdensity > 0.001) |>
+  mutate(var_logdensity = diff(range(log(density)))) |>
+  filter(var_logdensity > 0.01) |>
 
   # clean up
   ungroup() |>
@@ -202,14 +203,18 @@ environment_paths <- plot_environment_paths()
 # omitting phosphorus; PBR will then be NA. LAI is no longer extracted.
 include_phosphorus <- TRUE
 
-df_all <- extract_plot_environment(
-  df_all,
+df_unm <- extract_plot_environment(
+  df_unm,
   paths = environment_paths,
   include_phosphorus = include_phosphorus
 )
 
+saveRDS(df_unm, file = here::here("data/inputs/df_unm_step_environment.rds"))
+
 # Construct 'major biome' --------
-df_all <- df_all |> 
+# df_unm <- readRDS(here::here("data/inputs/df_unm_step_environment.rds"))
+
+df_unm <- df_unm |> 
 
   # Re-group into "major biomes"
   mutate(
@@ -238,43 +243,111 @@ df_all <- df_all |>
   )
 
 # Construct 'major dataset' ----
-df_all <- df_all |> 
+df_unm <- df_unm |>
   mutate(
     dataset_major = ifelse(
-      dataset %in% c("bnp", "czu", "fvabw", "iberbas", "unitbv", "lwf", "nbw", "nfr", "nwfva", "tuzvo", "ul", "unito", "urk", "wuls", "uholka"),
+      dataset %in%
+        c(
+          # "bnp", # no
+          "czu", # yes
+          "fvabw", # yes
+          "iberbas", # yes
+          "unitbv", # yes
+          "lwf", # yes
+          "nbw", # yes
+          "nwfva", # yes
+          "tuzvo", # yes
+          "ul", # yes
+          "unito", # yes
+          "urk" # yes
+          # "wuls", # no
+        ),
       "euforia",
       ifelse(
-        dataset %in% c("luquillo", "bci", "scbi", "palanan", "serc", "pasoh", "mudumalai"),
-        "forestgeo",
-        ifelse(
-          dataset == "forestplots", 
-          "forestplots",
-          ifelse(
-            dataset == "rainfor",
-            "rainfor",
-            dataset
-          )
-        )
+        dataset %in%
+          c(
+            "wytham",
+            "uholka",
+            "nfr_swi",
+            "efm_swi",
+            "fep_gre_stand",
+            "inrae_lessem"
+          ),
+        "other_europe",
+        dataset
       )
     )
   )
 
-tmp <- df_unm |> 
+  # # old
+  # mutate(
+  #   dataset_major = ifelse(
+  #     dataset %in% c("bnp", "czu", "fvabw", "iberbas", "unitbv", "lwf", "nbw", "nfr", "nwfva", "tuzvo", "ul", "unito", "urk", "wuls", "uholka"),
+  #     "euforia",
+  #     ifelse(
+  #       dataset %in% c("luquillo", "bci", "scbi", "palanan", "serc", "pasoh", "mudumalai"),
+  #       "forestgeo",
+  #       ifelse(
+  #         dataset == "forestplots", 
+  #         "forestplots",
+  #         ifelse(
+  #           dataset == "rainfor",
+  #           "rainfor",
+  #           dataset
+  #         )
+  #       )
+  #     )
+  #   )
+  # )
+
+df_unm |> 
   group_by(dataset_major) |> 
   summarise(n = n())
 
-# View(tmp)
-
 # Write file ----
+saveRDS(df_unm, file = here::here("data/inputs/df_unm_v2026.rds"))
+
+# Plots by dataset ----
+source(here::here("R/plot_logn_logqmd_dataset.R"))
+# df_unm <- readRDS(here::here("data/inputs/df_unm_v2026.rds"))
+
+plots_logn_logqmd <- split(df_unm, df_unm$dataset, drop = TRUE) |>
+  purrr::map(plot_logn_logqmd_dataset)
+
+# Divide the dataset plots evenly between two multi-panel plots.
+n_first <- ceiling(length(plots_logn_logqmd) / 2)
+plots_logn_logqmd_1 <- head(plots_logn_logqmd, n_first)
+plots_logn_logqmd_2 <- tail(plots_logn_logqmd, length(plots_logn_logqmd) - n_first)
+
+gg_logn_logqmd_1 <- cowplot::plot_grid(
+  plotlist = plots_logn_logqmd_1,
+  ncol = 3,
+  labels = letters[length(plots_logn_logqmd_1)]
+)
+
+gg_logn_logqmd_2 <- cowplot::plot_grid(
+  plotlist = plots_logn_logqmd_2,
+  ncol = 3,
+  labels = letters[length(plots_logn_logqmd_2)]
+)
+
+ggsave(
+  here::here("fig/logn_logqmd_1.pdf"), 
+  plot = gg_logn_logqmd_1,
+  width = 14,
+  height = 20
+)
+
+ggsave(
+  here::here("fig/logn_logqmd_2.pdf"),
+  plot = gg_logn_logqmd_2,
+  width = 14,
+  height = 20
+)
 
 
-
-# Retain all records, including missing environmental values. Forest and other
-# analysis filters are applied downstream in 02_create_filters.R.
-
-
-saveRDS(df_all, file = here::here("data/inputs/df_all_v2026.rds"))
-
+# /////////////////////////////////////////////////////////////////////
+# Legacy code --------------
 # # Next run the plot-extraction section in 00_collect_global_drivers.R,
 # # then apply the common analysis filters in 02_create_filters.R.
 

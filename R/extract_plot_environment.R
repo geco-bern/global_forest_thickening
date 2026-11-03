@@ -30,7 +30,7 @@ plot_environment_paths <- function() {
     ai = path.expand("~/data/aridityindex_zomer_2022/Global-AI_ET0_v3_annual/ai_v3_yr.tif"),
     ndep = path.expand("~/data/ndep_lamarque"),
     wise = path.expand("~/data/soil/wise"),
-    gsde = path.expand("~/data/soil/shangguan"),
+    gsde = path.expand("~/data/archive/soil_shangguan_2014/data"),
     worldclim = path.expand("~/data/archive/worldclim_fick_2017/data")
   )
 }

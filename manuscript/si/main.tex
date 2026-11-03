@@ -426,6 +426,26 @@ Plots were assigned \texttt{management = 0} and \texttt{management\_cat = 2}. Fo
 
 % \input{dataset_figures/rainfor.tex}
 
+\subsection{Density--diameter relationships by constituent dataset}
+Figure~\ref{fig:dataset-logn-logqmd} shows the saved stand-level outputs for all 34 constituent datasets processed by \texttt{01\_process\_data\_orig.R}, including datasets subsequently omitted from the combined analysis. The figure precedes the common analysis filters. Only records with finite, positive density and QMD can be displayed on logarithmic axes. Lines connect successive dated observations within plots; observations with missing values or ambiguous within-plot census years interrupt the lines. Undated observations are shown as points only. Each panel uses its own axis ranges. Transparency varies with the number of displayed records, making small datasets darker and large datasets lighter.
+
+\clearpage
+\begin{figure}[p]
+\centering
+% The source is A4; crop its standalone heading/caption to retain the panel block.
+\includegraphics[page=1,trim=25mm 74mm 25mm 40mm,clip,width=\textwidth]{../figures/dataset_logN_logQMD/dataset_logN_logQMD_A4.pdf}
+\caption{Natural-log density versus natural-log QMD by constituent dataset (part 1 of 2). Points represent stand--census records; lines connect successive dated observations within plots. Subtitles give plotted plot and record counts. Axis ranges vary among panels, and opacity decreases with dataset size.}
+\label{fig:dataset-logn-logqmd}
+\end{figure}
+\clearpage
+\begin{figure}[p]
+\ContinuedFloat
+\centering
+\includegraphics[page=2,trim=25mm 74mm 25mm 40mm,clip,width=\textwidth]{../figures/dataset_logN_logQMD/dataset_logN_logQMD_A4.pdf}
+\caption[]{Natural-log density versus natural-log QMD by constituent dataset (part 2 of 2). Panels continue Fig.~\ref{fig:dataset-logn-logqmd}; plotting conventions are identical.}
+\end{figure}
+\clearpage
+
 \subsection{Data coverage}
 \label{sec:datacoverage}
 

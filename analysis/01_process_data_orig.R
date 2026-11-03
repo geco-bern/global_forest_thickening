@@ -94,16 +94,6 @@ df_nfi_spain <- coords_to_lonlat(df_nfi_spain, crs = 25830) |>
   standardise_stand_data() |>
   as_tibble()
 
-ggplot() +
-  geom_point(
-    data = df_nfi_spain,
-    aes(x = log(QMD), y = log(density)),
-    alpha = 0.5,
-    size = 1.5,
-    col = "black",
-    inherit.aes = FALSE
-  )
-
 plot_point_map(df_nfi_spain)
 
 # Save stand-level data

@@ -23,10 +23,12 @@ All scripts are in `analysis/` and are to be executed in the following order. Fu
 - Applies basic filters for all analyses (no management, mimimum census, ...).
 - Adds (major) biome identity and environmental covariates per plot.
 - Constructs `major dataset` additionally grouping some of the constituent datasets. 
-- Adds additional filters for management-sensitivity analysis.
 - Writes combined dataset with filter levels.
 
 3. `03_additional_filters.R`
+
+- Adds additional filters for management-sensitivity analysis.
+
 
 4. `04_compile_global_drivers.R`
 
