@@ -350,7 +350,7 @@ write_rds(
 # get coastline
 coast <- rnaturalearth::ne_coastline(scale = 110, returnclass = "sf")
 
-df_plots <- read_rds(here("data/inputs/data_fil75_biomes.rds")) |>
+df_plots <- read_rds(here("data/inputs/df_unm_v2026.rds")) |>
   distinct(plotID, lat, lon)
 
 # df_plots |>

@@ -248,7 +248,7 @@ df_unm <- df_unm |>
     dataset_major = ifelse(
       dataset %in%
         c(
-          # "bnp", # no
+          # "bnp", # no -- too big, analysed separately
           "czu", # yes
           "fvabw", # yes
           "iberbas", # yes
@@ -260,7 +260,7 @@ df_unm <- df_unm |>
           "ul", # yes
           "unito", # yes
           "urk" # yes
-          # "wuls", # no
+          # "wuls", # no -- too big, analysed separately
         ),
       "euforia",
       ifelse(
@@ -322,24 +322,24 @@ plots_logn_logqmd_2 <- tail(plots_logn_logqmd, length(plots_logn_logqmd) - n_fir
 gg_logn_logqmd_1 <- cowplot::plot_grid(
   plotlist = plots_logn_logqmd_1,
   ncol = 3,
-  labels = letters[length(plots_logn_logqmd_1)]
+  labels = letters[1:length(plots_logn_logqmd_1)]
 )
 
 gg_logn_logqmd_2 <- cowplot::plot_grid(
   plotlist = plots_logn_logqmd_2,
   ncol = 3,
-  labels = letters[length(plots_logn_logqmd_2)]
+  labels = letters[1:length(plots_logn_logqmd_2)]
 )
 
 ggsave(
-  here::here("fig/logn_logqmd_1.pdf"), 
+  here::here("manuscript/figures/logn_logqmd_1.pdf"), 
   plot = gg_logn_logqmd_1,
   width = 14,
   height = 20
 )
 
 ggsave(
-  here::here("fig/logn_logqmd_2.pdf"),
+  here::here("manuscript/figures/logn_logqmd_2.pdf"),
   plot = gg_logn_logqmd_2,
   width = 14,
   height = 20

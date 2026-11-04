@@ -1,4 +1,4 @@
-plot_lqmm_bybiome <- function(data, mod, name = NULL, plot_legend = FALSE){
+plot_lqmm_bygroup <- function(data, mod, name = NULL, plot_legend = FALSE){
 
   # get three round decades that are centered around the available years in the dataset
   display_years <- c(1980, 2000, 2020) # get_centered_decades(data$year)

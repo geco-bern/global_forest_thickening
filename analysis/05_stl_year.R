@@ -34,27 +34,23 @@ source(here("R/calc_percent_change.R"))
 source(here("R/plot_disturbed.R"))
 source(here("R/fit_model.R"))
 source(here("R/extract_coef.R"))
-source(here("R/analyse_biome.R"))
+source(here("R/analyse_group.R"))
 
-## Run workflow ---------------------
-### Read and process data ------------
-df <- read_rds(here("data/inputs/df_unm_withfilters.rds")) |>
-  mutate(across(any_of(c("dataset", "dataset_major")), harmonise_dataset_names))
+# Read and process data ------------
+df <- read_rds(here("data/inputs/df_unm_v2026.rds"))
 
-### Apply workflow by biome -------------
+# Run workflow ---------------------
+
+## Apply workflow by biome -------------
 df_biome_analysis <- df |> 
   group_by(biome_major) |> 
   nest() |> 
 
   # avoid tropical/subtropical coniferous
   filter(!is.na(biome_major)) |> 
-    
-  # # xxx test
-  # ungroup() |> 
-  # tail(1) |> 
   
   # apply workflow by biome
-  mutate(out = purrr::map2(data, biome_major, ~analyse_biome(df = .x, biome_name = .y)))
+  mutate(out = purrr::map2(data, biome_major, ~analyse_group(df = .x, group_name = .y)))
 
 ### Save results -------------
 # (includes fitted models and ggplot objects for each major biome)
@@ -62,6 +58,31 @@ df_biome_analysis <- df |>
 write_rds(
   df_biome_analysis,
   file = here("data/df_biome_analysis.rds")
+)
+
+## Apply workflow by dataset -------------
+df_dataset_analysis <- df |>
+  group_by(dataset_major) |>
+  nest() |>
+
+  # avoid tropical/subtropical coniferous
+  filter(!is.na(dataset_major)) |>
+
+  # apply workflow by biome
+  mutate(
+    out = purrr::map2(
+      data,
+      dataset_major,
+      ~ analyse_group(df = .x, group_name = .y)
+    )
+  )
+
+### Save results -------------
+# (includes fitted models and ggplot objects for each major biome)
+# warning: large file, approx 6 GB
+write_rds(
+  df_dataset_analysis,
+  file = here("data/df_dataset_analysis.rds")
 )
 
 

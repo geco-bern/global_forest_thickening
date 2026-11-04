@@ -1,9 +1,9 @@
 ## Define workflow -------------
-analyse_biome <- function(df, biome_name, n_boot = 500){
+analyse_group <- function(df, group_name, n_boot = 500){
 
   # Analyse disturbance trend (before applying disturbed-filter)
   breaks <- get_breaks(df$year)
-  gg_fdisturbed <- plot_disturbed(df, biome_name, breaks)
+  gg_fdisturbed <- plot_disturbed(df, group_name, breaks)
 
   # Define filter stages --------------
   list_df_filtered <- list(
@@ -47,7 +47,7 @@ analyse_biome <- function(df, biome_name, n_boot = 500){
       ),
 
     # only old-growth
-    "primary" = df |>
+    "oldgrowth" = df |>
       filter(
         ndisturbed == 0,
         !badqmdbin,
@@ -55,7 +55,7 @@ analyse_biome <- function(df, biome_name, n_boot = 500){
 
         # Pristine/primary/old-growth/protected
         management_cat == 2 |
-          (management_cat == 1 & management_since_census1_yrs >= 900)
+          (management_cat == 1 & management_since_census1_yrs >= 300)
       )
   )
 
@@ -94,7 +94,7 @@ analyse_biome <- function(df, biome_name, n_boot = 500){
     mutate(
       step = fct_relevel(
         step,
-        "primary",
+        "oldgrowth",
         "no_mgmt_100",
         "no_mgmt_30",
         "no_badslope",
@@ -129,8 +129,8 @@ analyse_biome <- function(df, biome_name, n_boot = 500){
   # Create classic LQMM plot -------------
   # for filter level no_badslope
   fit_lqmm <- df_filtereffects |> 
-      filter(step == "no_badslope") |> 
-      pull(fit_lqmm)
+    filter(step == "no_badslope") |> 
+    pull(fit_lqmm)
 
   # Bootstrap LQMM fit for the selected filter level only.
   fit_bootstrap_sample <- function(split) {
@@ -159,7 +159,7 @@ analyse_biome <- function(df, biome_name, n_boot = 500){
 
   df_boot <- boot_results |>
     filter(term == "year") |>
-    mutate(biome = biome_name)
+    mutate(group = group_name)
   
   gg_lqmm <- plot_lqmm_bybiome(
     list_df_filtered$no_badslope,

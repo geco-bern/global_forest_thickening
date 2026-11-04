@@ -1385,13 +1385,20 @@ df_npvbw <- from_tree_data(npvbw) |>
 df_npvbw <- standardise_stand_data(df_npvbw)
 
 ggplot() +
-  geom_line(
+  geom_point(
     data = df_npvbw,
-    aes(x = log(QMD), y = log(density), group = plotID),
+    aes(x = log(QMD), y = log(density)),
     alpha = 0.5,
     col = "black",
     inherit.aes = FALSE
   )
+  # geom_line(
+  #   data = df_npvbw,
+  #   aes(x = log(QMD), y = log(density), group = plotID),
+  #   alpha = 0.5,
+  #   col = "black",
+  #   inherit.aes = FALSE
+  # )
 
 plot_point_map(df_npvbw)
 
