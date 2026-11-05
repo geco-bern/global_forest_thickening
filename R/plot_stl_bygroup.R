@@ -1,4 +1,4 @@
-plot_stl_bybiome <- function(df, mod, name, years = c(1985, 2000, 2015), plot_legend = FALSE, interactions = FALSE){
+plot_stl_bygroup <- function(df, mod, name, years = c(1985, 2000, 2015), plot_legend = FALSE, interactions = FALSE){
   
   # predict for visualisation
   preddata <- ggpredict(

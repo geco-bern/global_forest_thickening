@@ -1,6 +1,5 @@
 ## Define workflow -------------
-analyse_group <- function(df, group_name, n_boot = 500){
-
+analyse_group <- function(df, group_name, n_boot = 500) {
   # Analyse disturbance trend (before applying disturbed-filter)
   breaks <- get_breaks(df$year)
   gg_fdisturbed <- plot_disturbed(df, group_name, breaks)
@@ -8,7 +7,7 @@ analyse_group <- function(df, group_name, n_boot = 500){
   # Define filter stages --------------
   list_df_filtered <- list(
     # all data
-    "raw" = df,
+    "orig" = df,
 
     # no disturbance-affecte plots
     "no_disturbance" = df |>
@@ -63,7 +62,7 @@ analyse_group <- function(df, group_name, n_boot = 500){
   # (year coefficient) subject filter levels
   df_filtereffects <- imap_dfr(list_df_filtered, \(df, step_name) {
     df |>
-      ungroup() |> 
+      ungroup() |>
       nest() |>
       mutate(
         n = map_int(data, nrow),
@@ -82,70 +81,41 @@ analyse_group <- function(df, group_name, n_boot = 500){
       mutate(
         fit_lqmm = purrr::map(res, "model"),
         coef_lqmm = purrr::map(res, "coefs")
-      ) |>     # creates columns: model, coefs
-      tidyr::unnest(coef_lqmm) |>         # expand coefficient table
+      ) |> # creates columns: model, coefs
+      tidyr::unnest(coef_lqmm) |> # expand coefficient table
       dplyr::select(-data) |>
       mutate(step = step_name)
   })
 
-  # Create plot --------------
-  # of coefficient 'year' for all filter levels
-  gg_coef_filters <- df_filtereffects |>
-    mutate(
-      step = fct_relevel(
-        step,
-        "oldgrowth",
-        "no_mgmt_100",
-        "no_mgmt_30",
-        "no_badslope",
-        "no_badqmd",
-        "no_disturbance",
-        "raw",
-      )
-    ) |> 
-    ggplot(aes(x = step, y = estimate)) +
-    geom_point(size = 2) +
-    geom_errorbar(aes(ymin = lower, ymax = upper), width = 0) +
-    geom_hline(yintercept = 0, linetype = "dotted") +
-    # geom_text(aes(label = paste0("n=", n)), hjust = -0.9, size = 3) +
-    # scale_y_continuous(expand = expansion(mult = c(0.05, 0.1))) +
-    labs(
-      x = "Filtering step",
-      y = "Coefficient (year)"
-    ) +
-    # Add observation counts to the right of points
-    geom_text(
-      aes(label = n), 
-      y = Inf,
-      hjust = 1.1,
-      size = 3
-    ) + 
-    theme_classic() +
-    ylim(-0.5, 0.5) +
-    theme(
-      axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)
-    )
+  # Create plot --------------  
+  gg_coef_filters <- plot_filtereffects(
+    df_filtereffects,
+    group_name = group_name
+  )
 
   # Create classic LQMM plot -------------
-  # for filter level no_badslope
-  fit_lqmm <- df_filtereffects |> 
-    filter(step == "no_badslope") |> 
+  # for filter level orig
+  fit_lqmm <- df_filtereffects |>
+    filter(step == "orig") |>
     pull(fit_lqmm)
 
-  # Bootstrap LQMM fit for the selected filter level only.
+  # Bootstrap LQMM fit for the selected filter level ('orig') only.
   fit_bootstrap_sample <- function(split) {
     # Drop failed fits; retain convergence warnings for diagnosis.
-    tryCatch({
-      model <- fit_model(rsample::analysis(split), lqmm = TRUE)
-      beta <- coef_original_units(model)
+    tryCatch(
+      {
+        model <- fit_model(rsample::analysis(split), lqmm = TRUE)
+        beta <- coef_original_units(model)
 
-      # The year estimate is per calendar year.
-      tibble::tibble(term = names(beta), estimate = unname(beta))
-    }, error = function(e) NULL)
+        # The year estimate is per calendar year.
+        tibble::tibble(term = names(beta), estimate = unname(beta))
+      },
+      error = function(e) NULL
+    )
   }
 
   boot_data <- rsample::bootstraps(
-    list_df_filtered$no_badslope %>%
+    list_df_filtered$orig %>%
       group_by(plotID),
     times = n_boot,
     apparent = FALSE
@@ -160,28 +130,37 @@ analyse_group <- function(df, group_name, n_boot = 500){
   df_boot <- boot_results |>
     filter(term == "year") |>
     mutate(group = group_name)
-  
-  gg_lqmm <- plot_lqmm_bybiome(
-    list_df_filtered$no_badslope,
+
+  gg_boot <- plot_boot(df_boot)
+
+  # get year effect within QMD bin before applying any filters
+  gg_lqmm <- plot_lqmm_bygroup(
+    list_df_filtered$orig,
     fit_lqmm[[1]]
-  )
+  ) +
+    labs(title = group_name)
 
   # LQMM by QMD bin ----------------
-  # for filter no_badslope
-  df_lqmm_byqmdbin <- calc_lqmm_byqmdbin(list_df_filtered$no_badslope)
+  # for filter orig
+  df_lqmm_byqmdbin <- calc_lqmm_byqmdbin(list_df_filtered$orig)
   gg_lqmm_byqmdbin <- plot_lqmm_byqmdbin(df_lqmm_byqmdbin$df)
+
+  gg_lqmm_qmdbin_boot <- combine_plot_qmdbin_boot(
+    gg_lqmm_byqmdbin,
+    gg_boot,
+    group_name = group_name
+  )
 
   return(
     list(
-      gg_fdisturbed = gg_fdisturbed,
       df_filtereffects = df_filtereffects,
-      gg_lqmm = gg_lqmm,
       fit_lqmm = fit_lqmm,
       boot_results = boot_results,
       df_boot = df_boot,
+      gg_fdisturbed = gg_fdisturbed,
+      gg_lqmm = gg_lqmm,
       gg_coef_filters = gg_coef_filters,
-      gg_lqmm_byqmdbin = gg_lqmm_byqmdbin
+      gg_lqmm_qmdbin_boot = gg_lqmm_qmdbin_boot
     )
   )
-
 }

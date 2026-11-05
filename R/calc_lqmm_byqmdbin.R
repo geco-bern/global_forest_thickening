@@ -1,4 +1,23 @@
 calc_lqmm_byqmdbin <- function(df, binwidth = 0.25, breaks = NA) {
+
+  # fit_model() takes raw QMD/density, logs them, then learns scaling in its
+  # recipe. Recreate only the log transform here; predict_model() reuses the
+  # fitted recipe's means/SDs. These temporary columns do not modify the input.
+  df <- df |>
+    mutate(
+      logQMD = log(if_else(is.finite(QMD) & QMD > 0, QMD, NA_real_)),
+      logDensity = log(if_else(
+        is.finite(density) & density > 0,
+        density,
+        NA_real_
+      ))
+    ) |>
+    filter(is.finite(logQMD), is.finite(logDensity))
+
+  if (nrow(df) == 0L) {
+    stop("No positive, finite QMD/density observations are available to plot.")
+  }
+
   # -- 1. make sure at least 300 points are on average in each bin
   # nbins <- min(round(length(df$logQMD[!is.na(df$logQMD)]) / 300), 10)
   # if (identical(breaks, NA)){
@@ -18,12 +37,14 @@ calc_lqmm_byqmdbin <- function(df, binwidth = 0.25, breaks = NA) {
 
   # Assign bins
   df <- df |>
-    mutate(bin_lqmm = cut(
-      logQMD,
-      breaks = breaks,
-      include.lowest = TRUE,
-      labels = bin_labels
-    ))
+    mutate(
+      bin_lqmm = cut(
+        logQMD,
+        breaks = breaks,
+        include.lowest = TRUE,
+        labels = bin_labels
+      )
+    )
 
   # Learn scaling separately within each QMD bin.
   df <- df |>
@@ -33,13 +54,18 @@ calc_lqmm_byqmdbin <- function(df, binwidth = 0.25, breaks = NA) {
     filter(nvals >= 30) |> # require enough data in a bin
 
     # LQMM fit per bin
-    mutate(mod_lqmm = purrr::map(data, ~ fit_model(
-      .x,
-      control = list(
-        LP_max_iter = 6000,
-        UP_max_iter = 6000
+    mutate(
+      mod_lqmm = purrr::map(
+        data,
+        ~ fit_model(
+          .x,
+          control = list(
+            LP_max_iter = 6000,
+            UP_max_iter = 6000
+          )
+        )
       )
-    ))) |>
+    ) |>
     # extract summaries safely
     mutate(sum_lqmm = purrr::map(mod_lqmm, ~ try(summary(.)))) |>
     mutate(failed = purrr::map_lgl(sum_lqmm, determine_failed)) |>

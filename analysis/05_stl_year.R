@@ -23,10 +23,10 @@ library(cowplot)
 
 # Load functions ---------------------------------------------------------------
 source(here("R/functions.R"))
-source(here("R/plot_stl_bybiome.R"))
+source(here("R/plot_stl_bygroup.R"))
 source(here("R/identify_disturbed_plots.R"))
 source(here("R/get_breaks.R"))
-source(here("R/plot_lqmm_bybiome.R"))
+source(here("R/plot_lqmm_bygroup.R"))
 source(here("R/calc_lqmm_byqmdbin.R"))
 source(here("R/create_table_latex.R"))
 source(here("R/process_cite_lines.R"))
@@ -35,9 +35,12 @@ source(here("R/plot_disturbed.R"))
 source(here("R/fit_model.R"))
 source(here("R/extract_coef.R"))
 source(here("R/analyse_group.R"))
+source(here("R/plot_boot.R"))
+source(here("R/combine_plot_qmdbin_boot.R"))
+source(here("R/plot_filtereffects.R"))
 
 # Read and process data ------------
-df <- read_rds(here("data/inputs/df_unm_v2026.rds"))
+df <- read_rds(here("data/inputs/df_unm_withfilters_v2026.rds"))
 
 # Run workflow ---------------------
 
@@ -60,14 +63,14 @@ write_rds(
   file = here("data/df_biome_analysis.rds")
 )
 
-## Apply workflow by dataset -------------
+## Apply workflow by dataset ------------------------------------------------------
 df_dataset_analysis <- df |>
   group_by(dataset_major) |>
   nest() |>
 
   # avoid tropical/subtropical coniferous
   filter(!is.na(dataset_major)) |>
-
+  
   # apply workflow by biome
   mutate(
     out = purrr::map2(

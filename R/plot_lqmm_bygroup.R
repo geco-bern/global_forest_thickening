@@ -1,15 +1,30 @@
 plot_lqmm_bygroup <- function(data, mod, name = NULL, plot_legend = FALSE){
 
+  # fit_model() takes raw QMD/density, logs them, then learns scaling in its
+  # recipe. Recreate only the log transform here; predict_model() reuses the
+  # fitted recipe's means/SDs. These temporary columns do not modify the input.
+  data <- data |>
+    mutate(
+      logQMD = log(if_else(is.finite(QMD) & QMD > 0, QMD, NA_real_)),
+      logDensity = log(if_else(is.finite(density) & density > 0, density, NA_real_))
+    ) |>
+    filter(is.finite(logQMD), is.finite(logDensity))
+
+  if (nrow(data) == 0L) {
+    stop("No positive, finite QMD/density observations are available to plot.")
+  }
+
   # get three round decades that are centered around the available years in the dataset
   display_years <- c(1980, 2000, 2020) # get_centered_decades(data$year)
 
-  # predict STL as 70% and 90% quantiles from regression fit for three chosen years
+  # Predict the fitted 90% quantile over an evenly spaced, unscaled log-QMD grid.
   df_pred <- purrr::map_dfr(
     as.list(display_years),
     ~ tibble(
       logQMD = seq(from = min(data$logQMD), to = max(data$logQMD), length.out = 100),
       year = .x,
-      plotID = "dummy" # unique(data$plotID)[1]  # may take any value here, as long as predict(..., level = 0)
+      # Preserve the ID type expected by the recipe; level = 0 omits random effects.
+      plotID = data$plotID[1]
     )
   ) |>
     mutate(pred_90 = predict_model(mod, new_data = pick(everything()), level = 0)) |>
@@ -79,7 +94,7 @@ plot_lqmm_bygroup <- function(data, mod, name = NULL, plot_legend = FALSE){
       plot.caption = element_text(vjust = -1),
       plot.title.position = "plot"
     ) +
-    #guides(color = guide_legend(direction = "horizontal")) +
+    # guides(color = guide_legend(direction = "horizontal")) +
     scale_x_continuous(limits = c(2.2, 4.7), breaks = seq(3, 4, 1)) +
     scale_y_continuous(limits = c(2.9, 9.3), breaks = seq(4, 8, 2))
 
@@ -102,11 +117,12 @@ plot_lqmm_byqmdbin <- function(
       geom_point(
         aes(
           as.numeric(as.character(bin_lqmm)),
-          coef_year
+          coef_year,
+          size = nvals
         ),
         data = df_lqmm_byqmdbin_including_disturbed,
-        size = 1.5,
-        color = "grey"
+        color = "grey",
+        show.legend = FALSE
       ) +
       geom_errorbar(
         aes(
@@ -127,10 +143,10 @@ plot_lqmm_byqmdbin <- function(
     geom_point(
       aes(
         as.numeric(as.character(bin_lqmm)),
-        coef_year
+        coef_year,
+        size = nvals
       ),
-      data = df_lqmm_byqmdbin,
-      size = 1.5
+      data = df_lqmm_byqmdbin
     ) +
     geom_errorbar(
       aes(
@@ -145,10 +161,10 @@ plot_lqmm_byqmdbin <- function(
 
     # Theme + labels
     theme_classic() +
-    theme(
-      axis.text = element_text(size = 12),
-      axis.title = element_text(size = 12)
-    ) +
+    # theme(
+    #   axis.text = element_text(size = 12),
+    #   axis.title = element_text(size = 12)
+    # ) +
     geom_hline(yintercept = 0, linetype = "dotted") +
     labs(
       x = expression(ln(QMD)),
@@ -156,6 +172,9 @@ plot_lqmm_byqmdbin <- function(
     ) +
 
     # Scales
+    # Point area is proportional to the number of observations in each bin.
+    # scale_size_area(name = "Observations", max_size = 4) +
+    guides(size = "none") +
     scale_x_continuous(limits = x_limits, breaks = x_breaks) +
     scale_y_continuous(limits = y_limits, breaks = y_breaks)
 
