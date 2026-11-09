@@ -1353,6 +1353,7 @@ npvbw <- npvbw |>
   filter(status == "alive") |>
   # calculate basal area
   mutate(
+    dbh = dbh / 10, # inferred source unit: mm; convert to cm
     ba_tree = pi * (dbh * 0.01 / 2)^2,
     biomass = NA,
     country = "Germany"

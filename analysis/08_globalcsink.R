@@ -21,8 +21,8 @@ library(ggplot2)
 library(scales)
 
 ## Load data -------------------------------------------------------------------
-df <- read_rds(here("data/inputs/df_unm_withfilters.rds")) |>
-  mutate(across(any_of(c("dataset", "dataset_major")), harmonise_dataset_names)) |>
+df <- read_rds(here("data/inputs/df_unm_withfilters_v2026.rds"))
+  # mutate(across(any_of(c("dataset", "dataset_major")), harmonise_dataset_names)) |>
 
   # variable substitute, needed here
   mutate(NQMD2 = density * QMD^2) |>

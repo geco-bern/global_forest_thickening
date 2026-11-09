@@ -21,8 +21,8 @@ library(ggplot2)
 ## Load data -----------
 # note: always use (use_slopefilter = TRUE). Results are consistent for MI and
 # Ndep against alternative filter options, but not for other factors.
-df <- read_rds(here("data/inputs/df_unm_withfilters.rds")) |>
-  mutate(across(any_of(c("dataset", "dataset_major")), harmonise_dataset_names)) |>
+df <- read_rds(here("data/inputs/df_unm_withfilters.rds"))
+  # mutate(across(any_of(c("dataset", "dataset_major")), harmonise_dataset_names)) |>
 
   # # Re-define all bnp plots as management_cat == 2 (primary), see email Rupert Seidl, 16.04.2026
   # mutate(management_cat = ifelse(dataset == "bnp", 2, management_cat)) |>
@@ -117,7 +117,6 @@ mod_lmer_env_nosoil <- lmer(
 summary(mod_lmer_env_nosoil)
 
 write_rds(mod_lmer_env_nosoil, file = here("data/mod_lmer_env_nosoil.rds"))
-
 
 ### no PBR ---------
 # fit model without PBR - this turns out as the best one

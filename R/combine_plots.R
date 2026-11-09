@@ -1,4 +1,4 @@
-combine_plot_qmdbin_boot <- function(gg1, gg2, group_name){
+combine_plots <- function(gg1, gg2, group_name){
 
   gg_lqmm_combined <- cowplot::plot_grid(
     gg1,

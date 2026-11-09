@@ -22,10 +22,10 @@
 library(tidyverse)
 library(here)
 
-source(here("R/harmonise_dataset_names.R"))
 library(segmented)
 library(lqmm)
 
+source(here("R/harmonise_dataset_names.R"))
 source(here("R/identify_disturbed_plots.R"))
 source(here("R/identify_ingrowth_plots.R"))
 source(here("R/identify_badbins.R"))
@@ -298,7 +298,7 @@ ggsave(
 ### Longest-observation --------------------------------------------------------
 
 # read data with filters
-df_unm_withfilters <- read_rds(here("data/inputs/df_unm_withfilters.rds"))
+df_unm_withfilters <- read_rds(here("data/inputs/df_unm_withfilters_v2026.rds"))
 
 gg_longplots_tropical <- plot_stl_longplots(
   df_unm_withfilters,

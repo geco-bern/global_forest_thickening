@@ -36,7 +36,7 @@ source(here("R/fit_model.R"))
 source(here("R/extract_coef.R"))
 source(here("R/analyse_group.R"))
 source(here("R/plot_boot.R"))
-source(here("R/combine_plot_qmdbin_boot.R"))
+source(here("R/combine_plots.R"))
 source(here("R/plot_filtereffects.R"))
 
 # Read and process data ------------
@@ -45,7 +45,7 @@ df <- read_rds(here("data/inputs/df_unm_withfilters_v2026.rds"))
 # Run workflow ---------------------
 
 ## Apply workflow by biome -------------
-df_biome_analysis <- df |> 
+df_biome_analysis <- df |>
   group_by(biome_major) |> 
   nest() |> 
 
@@ -60,6 +60,7 @@ df_biome_analysis <- df |>
 # warning: large file, approx 6 GB
 write_rds(
   df_biome_analysis,
+  # file = here("data/df_biome_analysis_ALTERNATIVEFILTERS.rds")
   file = here("data/df_biome_analysis.rds")
 )
 
@@ -85,21 +86,124 @@ df_dataset_analysis <- df |>
 # warning: large file, approx 6 GB
 write_rds(
   df_dataset_analysis,
+  # file = here("data/df_dataset_analysis_ALTERNATIVEFILTERS.rds")
   file = here("data/df_dataset_analysis.rds")
 )
 
+# Plots -------------------------
+## Panel biomes ------------------
+# df_biome_analysis <- read_rds(here("data/df_biome_analysis_ALTERNATIVEFILTERS.rds"))
+# df_biome_analysis <- read_rds(here("data/df_biome_analysis.rds"))
 
-# ## Plots -------------------------
-# # construct panel
-# left_panel <- cowplot::plot_grid(
-#   gg_lqmm,
-#   gg_lqmm_byqmdbin,
-#   ncol = 1,
-#   rel_heights = c(1, 0.6),
-#   align = "v",
-#   # labels = c("",  "g"),
-#   label_y = 1.1
-# )
+### Classic LQMM logN-logQMD plot -----------------------
+legend <- get_legend(
+  purrr::map(df_biome_analysis$out, "gg_lqmm_orig")[[1]] +
+    theme(legend.position = "right")
+)
+
+# need to overwrite title to nicely place label (letter)
+fig1_lqmm_onlystl <- cowplot::plot_grid(
+  purrr::map(df_biome_analysis$out, "gg_lqmm_orig")[[1]] +
+    labs(title = bquote(bold("a") ~ ~"Temperate Forests")),
+  purrr::map(df_biome_analysis$out, "gg_lqmm_orig")[[2]] +
+    labs(title = bquote(bold("b") ~ ~"Mediterranean Forests")),
+  purrr::map(df_biome_analysis$out, "gg_lqmm_orig")[[3]] +
+    labs(title = bquote(bold("c") ~ ~"Boreal Forests/Taiga")),
+  purrr::map(df_biome_analysis$out, "gg_lqmm_orig")[[4]] +
+    labs(title = bquote(bold("d") ~ ~"Tropical & Subtropical Broadleaf Forests")),
+  ncol = 2
+)
+
+fig1_lqmm_onlystl <- cowplot::plot_grid(
+  fig1_lqmm_onlystl,
+  legend,
+  ncol = 2,
+  rel_widths = c(1, 0.15)
+)
+
+ggsave(
+  filename = here("manuscript/figures/fig1_lqmm_onlystl_v2026.pdf"),
+  plot = fig1_lqmm_onlystl,
+  width = 11,
+  height = 8
+)
+
+ggsave(
+  filename = here("manuscript/figures/fig1_lqmm_onlystl_v2026.pdf"),
+  plot = fig1_lqmm_onlystl,
+  width = 11,
+  height = 8
+)
+
+# Numbers:
+# Our estimates of the effect size of year were virtually certain to be greater than
+# zero and ranged between XXX yr-1 across the individual four biomes.
+tmp <- df_biome_analysis |>
+  dplyr::mutate(fit = purrr::map(out, "fit_lqmm")) |>
+  dplyr::mutate(fit = purrr::map(fit, 1)) |>
+  dplyr::mutate(coef = purrr::map(fit, coef_original_units)) |>
+  dplyr::mutate(coef = 100 * expm1(purrr::map_dbl(coef, "year"))) |>
+  dplyr::select(biome_major, coef)
+
+knitr::kable(tmp)
+
+### Sensitivity to filters -----------------------
+gg_coef_filters <- cowplot::plot_grid(
+  plotlist = purrr::map(df_biome_analysis$out, "gg_coef_filters"),
+  ncol = 2,
+  labels = letters[1:length(plots)]
+)
+
+ggsave(
+  here::here("manuscript/figures/coef_filters_biomes.pdf"),
+  plot = gg_coef_filters,
+  width = 10,
+  height = 8
+)
+
+### By QMD bin -----------------------
+gg_lqmm_byqmdbin <- cowplot::plot_grid(
+  plotlist = purrr::map(df_biome_analysis$out, "gg_lqmm_byqmdbin"),
+  ncol = 2,
+  labels = letters[1:length(plots)]
+)
+
+ggsave(
+  here::here("manuscript/figures/gg_lqmm_byqmdbin_biomes.pdf"),
+  plot = gg_lqmm_byqmdbin,
+  width = 10,
+  height = 8
+)
+
+## Panels datasets ----------
+# df_dataset_analysis <- read_rds(here("data/df_dataset_analysis_ALTERNATIVEFILTERS.rds"))
+df_dataset_analysis <- read_rds(here("data/df_dataset_analysis.rds"))
+
+plots <- purrr::map(df_dataset_analysis$out, "gg_coef_filters")
+
+gg_coef_filters <- cowplot::plot_grid(
+  plotlist = plots,
+  ncol = 3,
+  labels = letters[1:length(plots)]
+)
+
+ggsave(
+  here::here("manuscript/figures/coef_filters_datasets.pdf"),
+  plot = gg_coef_filters,
+  width = 14,
+  height = 20
+)
+
+# construct panel
+left_panel <- cowplot::plot_grid(
+  gg_lqmm,
+  gg_lqmm_byqmdbin,
+  ncol = 1,
+  rel_heights = c(1, 0.6),
+  align = "v",
+  # labels = c("",  "g"),
+  label_y = 1.1
+)
 
 # panel <- cowplot::plot_grid(
 #   left_panel,
@@ -876,55 +980,6 @@ df_plots <- df_biome_analysis |>
 
 ## Figure 1 --------------------------------------------------------------------
 ### Fig 1 only STL ------------------
-legend <- get_legend(
-  df_plots$gg_lqmm[[1]] +
-    theme(legend.position = "right")
-)
-
-fig1_lqmm_onlystl <- cowplot::plot_grid(
-  df_plots$gg_lqmm[[1]] +
-    labs(title = bquote(bold("a") ~ ~"Temperate Forests")),
-  df_plots$gg_lqmm[[2]] +
-    labs(title = bquote(bold("b") ~ ~"Mediterranean Forests")),
-  df_plots$gg_lqmm[[3]] +
-    labs(title = bquote(bold("c") ~ ~"Boreal Forests/Taiga")),
-  df_plots$gg_lqmm[[4]] +
-    labs(title = bquote(bold("d") ~ ~"Tropical & Subtropical Broadleaf Forests")),
-  ncol = 2
-)
-
-fig1_lqmm_onlystl <- cowplot::plot_grid(
-  fig1_lqmm_onlystl,
-  legend,
-  ncol = 2,
-  rel_widths = c(1, 0.2)
-)
-
-ggsave(
-  filename = here("manuscript/figures/fig1_lqmm_onlystl.pdf"),
-  plot = fig1_lqmm_onlystl,
-  width = 11,
-  height = 8
-)
-
-ggsave(
-  filename = here("manuscript/figures/fig1_lqmm_onlystl.png"),
-  plot = fig1_lqmm_onlystl,
-  width = 11,
-  height = 8
-)
-
-# Numbers:
-# Our estimates of the effect size of year were virtually certain to be greater than
-# zero and ranged between XXX yr-1 across the individual four biomes.
-tmp <- df_biome_analysis |>
-  dplyr::mutate(fit = purrr::map(out, "fit_lqmm")) |>
-  dplyr::mutate(fit = purrr::map(fit, 1)) |>
-  dplyr::mutate(coef = purrr::map(fit, coef_original_units)) |>
-  dplyr::mutate(coef = 100 * expm1(purrr::map_dbl(coef, "year"))) |>
-  dplyr::select(biome_major, coef)
-
-knitr::kable(tmp)
 
 ### Filter effects on 'year' coefficient ---------------------------------------
 fig_filters_biomes <- cowplot::plot_grid(

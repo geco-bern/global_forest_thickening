@@ -22,7 +22,7 @@ All scripts are in `analysis/` and are to be executed in the following order. Fu
 - Collects and combines data from standard-formatted files.
 - Applies basic filters for all analyses (no management, mimimum census, ...).
 - Adds (major) biome identity and environmental covariates per plot.
-- Constructs `major dataset` additionally grouping some of the constituent datasets. 
+- Constructs `major_dataset` additionally grouping some of the constituent datasets. 
 - Writes combined dataset with filter levels.
 
 3. `03_additional_filters.R`

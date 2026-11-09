@@ -168,6 +168,12 @@ df_all <- df_all |>
   # be duplicated. We need to check the plots and years that are present in both datasets and keep the most updated ones.
   distinct(country, plotID, year, .keep_all = TRUE)
 
+# Data explorations ------
+df_all |> 
+  ggplot(aes(x = log(QMD), y = ..density.., color = dataset, group = dataset)) +
+  geom_density()
+
+
 # Apply basic filters ------
 # Apply filters relevant for all analyses
 df_unm <- df_all |>
@@ -214,6 +220,16 @@ saveRDS(df_unm, file = here::here("data/inputs/df_unm_step_environment.rds"))
 # Construct 'major biome' --------
 # df_unm <- readRDS(here::here("data/inputs/df_unm_step_environment.rds"))
 
+# Fill missing biome assignments from the most frequent biome in the dataset
+# (counting distinct plots), before deriving biome_major from biomeID.
+df_unm <- fill_missing_biomes(df_unm)
+
+df_unm |> 
+  group_by(dataset) |> 
+  summarise(n = n()) |> 
+  arrange(desc(n)) |> 
+  View()
+
 df_unm <- df_unm |> 
 
   # Re-group into "major biomes"
@@ -248,19 +264,19 @@ df_unm <- df_unm |>
     dataset_major = ifelse(
       dataset %in%
         c(
-          # "bnp", # no -- too big, analysed separately
-          "czu", # yes
-          "fvabw", # yes
-          "iberbas", # yes
-          "unitbv", # yes
-          "lwf", # yes
-          "nbw", # yes
-          "nwfva", # yes
-          "tuzvo", # yes
-          "ul", # yes
-          "unito", # yes
-          "urk" # yes
-          # "wuls", # no -- too big, analysed separately
+          # "bnp", # too big, keeping separate
+          "czu",
+          "fvabw",
+          "iberbas",
+          "unitbv",
+          "lwf",
+          "nbw",
+          "nwfva",
+          "tuzvo",
+          "ul",
+          "unito",
+          "urk"
+          # "wuls" # too big, keeping separate
         ),
       "euforia",
       ifelse(
@@ -280,29 +296,31 @@ df_unm <- df_unm |>
   )
 
   # # old
-  # mutate(
-  #   dataset_major = ifelse(
-  #     dataset %in% c("bnp", "czu", "fvabw", "iberbas", "unitbv", "lwf", "nbw", "nfr", "nwfva", "tuzvo", "ul", "unito", "urk", "wuls", "uholka"),
-  #     "euforia",
-  #     ifelse(
-  #       dataset %in% c("luquillo", "bci", "scbi", "palanan", "serc", "pasoh", "mudumalai"),
-  #       "forestgeo",
-  #       ifelse(
-  #         dataset == "forestplots", 
-  #         "forestplots",
-  #         ifelse(
-  #           dataset == "rainfor",
-  #           "rainfor",
-  #           dataset
-  #         )
-  #       )
-  #     )
-  #   )
-  # )
+# mutate(
+#   dataset_major = ifelse(
+#     dataset %in% c("bnp", "czu", "fvabw", "iberbas", "unitbv", "lwf", "nbw", "nfr", "nwfva", "tuzvo", "ul", "unito", "urk", "wuls", "uholka"),
+#     "euforia",
+#     ifelse(
+#       dataset %in% c("luquillo", "bci", "scbi", "palanan", "serc", "pasoh", "mudumalai"),
+#       "forestgeo",
+#       ifelse(
+#         dataset == "forestplots",
+#         "forestplots",
+#         ifelse(
+#           dataset == "rainfor",
+#           "rainfor",
+#           dataset
+#         )
+#       )
+#     )
+#   )
+# )
 
-df_unm |> 
-  group_by(dataset_major) |> 
-  summarise(n = n())
+df_unm |>
+  group_by(dataset_major) |>
+  summarise(n = n()) |>
+  arrange(desc(n)) |>
+  View()
 
 # Write file ----
 saveRDS(df_unm, file = here::here("data/inputs/df_unm_v2026.rds"))
@@ -345,6 +363,40 @@ ggsave(
   height = 20
 )
 
+df_unm |>
+  ggplot(aes(
+    x = forcats::fct_reorder(biome_major, QMD, .fun = median, .desc = TRUE),
+    y = QMD
+  )) +
+  geom_boxplot(outliers = FALSE) +
+  labs(x = NULL, y = "QMD (cm)") +
+  theme_classic() +
+  coord_flip()
+
+df_unm |>
+  ggplot(aes(
+    x = tidytext::reorder_within(
+      dataset,
+      QMD,
+      biome_major,
+      fun = function(x) -median(x, na.rm = TRUE)
+    ),
+    y = QMD
+  )) +
+  geom_boxplot(outliers = FALSE) +
+  tidytext::scale_x_reordered() +
+  facet_wrap(~biome_major, scales = "free_y", ncol = 2) +
+  labs(x = NULL, y = "QMD (cm)") +
+  theme_classic() +
+  coord_flip()
+
+unique(df_unm$plotID)[1]
+
+df_unm |>
+  filter(plotID == "nfi_spain_100008A1") |>   
+  group_by(plotID) |> 
+  filter(year == first(year)) |> 
+  View()
 
 # /////////////////////////////////////////////////////////////////////
 # Legacy code --------------

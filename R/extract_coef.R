@@ -1,5 +1,12 @@
 # Extract coefficient + CI
 extract_coef <- function(fit, lqmm = TRUE) {
+  # Preserve a skipped filter stage and its observation count in summaries.
+  if (is.null(fit)) {
+    return(tibble::tibble(
+      term = "year_sc", estimate = NA_real_, se = NA_real_,
+      lower = NA_real_, upper = NA_real_
+    ))
+  }
   
   if (lqmm) {
     cf <- summary(fit)$tTable

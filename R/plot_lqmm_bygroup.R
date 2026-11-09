@@ -101,52 +101,37 @@ plot_lqmm_bygroup <- function(data, mod, name = NULL, plot_legend = FALSE){
 }
 
 plot_lqmm_byqmdbin <- function(
-  df_lqmm_byqmdbin, 
+  df_lqmm_byqmdbin,
+  name,
   df_lqmm_byqmdbin_including_disturbed = NULL,
   x_limits = c(2.2, 4.7),
   y_limits = c(-0.56, 0.56),
   x_breaks = seq(3, 4, 1),
   y_breaks = seq(-0.4, 0.4, 0.4)
 ) {
-
   gg <- ggplot()
-  
-  if (!is.null(df_lqmm_byqmdbin_including_disturbed)){
-    gg <- gg +
-      # including disturbed plots — grey
-      geom_point(
-        aes(
-          as.numeric(as.character(bin_lqmm)),
-          coef_year,
-          size = nvals
-        ),
-        data = df_lqmm_byqmdbin_including_disturbed,
-        color = "grey",
-        show.legend = FALSE
-      ) +
-      geom_errorbar(
-        aes(
-          as.numeric(as.character(bin_lqmm)),
-          coef_year,
-          ymin = coef_year_lower,
-          ymax = coef_year_upper
-        ),
-        data = df_lqmm_byqmdbin_including_disturbed,
-        width = 0,
-        color = "grey"
-      )
-  }
+
+  # if (!is.null(df_lqmm_byqmdbin_including_disturbed)){
+  # }
 
   gg <- gg +
-
-    # excluding disturbed plots — black
     geom_point(
       aes(
         as.numeric(as.character(bin_lqmm)),
         coef_year,
         size = nvals
       ),
-      data = df_lqmm_byqmdbin
+      data = df_lqmm_byqmdbin,
+      color = "#B3B3B3",
+      show.legend = FALSE
+    ) +
+    geom_point(
+      aes(
+        as.numeric(as.character(bin_lqmm)),
+        coef_year
+      ),
+      data = df_lqmm_byqmdbin,
+      show.legend = FALSE
     ) +
     geom_errorbar(
       aes(
@@ -156,17 +141,44 @@ plot_lqmm_byqmdbin <- function(
         ymax = coef_year_upper
       ),
       data = df_lqmm_byqmdbin,
-      width = 0
+      width = 0,
     ) +
+
+  # gg <- gg +
+
+  #   # excluding disturbed plots — black
+  #   geom_point(
+  #     aes(
+  #       as.numeric(as.character(bin_lqmm)),
+  #       coef_year,
+  #       size = nvals
+  #     ),
+  #     data = df_lqmm_byqmdbin,
+  #     color = "grey30"
+  #   ) +
+  #   geom_point(
+  #     aes(
+  #       as.numeric(as.character(bin_lqmm)),
+  #       coef_year,
+  #     ),
+  #     data = df_lqmm_byqmdbin,
+  #   ) +
+  #   geom_errorbar(
+  #     aes(
+  #       as.numeric(as.character(bin_lqmm)),
+  #       coef_year,
+  #       ymin = coef_year_lower,
+  #       ymax = coef_year_upper
+  #     ),
+  #     data = df_lqmm_byqmdbin,
+  #     width = 0
+  #   ) +
 
     # Theme + labels
     theme_classic() +
-    # theme(
-    #   axis.text = element_text(size = 12),
-    #   axis.title = element_text(size = 12)
-    # ) +
     geom_hline(yintercept = 0, linetype = "dotted") +
     labs(
+      title = name,
       x = expression(ln(QMD)),
       y = expression(italic(beta)(year))
     ) +
@@ -174,9 +186,10 @@ plot_lqmm_byqmdbin <- function(
     # Scales
     # Point area is proportional to the number of observations in each bin.
     # scale_size_area(name = "Observations", max_size = 4) +
-    guides(size = "none") +
-    scale_x_continuous(limits = x_limits, breaks = x_breaks) +
-    scale_y_continuous(limits = y_limits, breaks = y_breaks)
+    guides(size = "none")
+
+  # scale_x_continuous(limits = x_limits, breaks = x_breaks) +
+  # scale_y_continuous(limits = y_limits, breaks = y_breaks)
 
   return(gg)
 }

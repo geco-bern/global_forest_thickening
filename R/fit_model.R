@@ -1,12 +1,35 @@
 # Fit the same model after learning predictor scaling from its training sample.
-fit_model <- function(df, lqmm = TRUE, control = list()) {
+fit_model <- function(df, lqmm = TRUE, control = list(), min_rows = 30L) {
+
+  # Count usable model inputs, rather than rows that will be lost to missing
+  # values or produce non-finite logarithms. A skipped fit returns NULL.
+  df <- as.data.frame(df)[, c("density", "QMD", "year", "plotID")]
+
+  usable <- is.finite(df$density) & df$density > 0 &
+    is.finite(df$QMD) & df$QMD > 0 & is.finite(df$year) & !is.na(df$plotID)
+
+  df <- df[usable, , drop = FALSE]
+
+  if (nrow(df) < min_rows) {
+    warning(sprintf("Skipping model: only %d usable rows (minimum %d).",
+                    nrow(df), min_rows), call. = FALSE)
+    return(NULL)
+  }
+
+  if (length(unique(df$QMD)) < 2L || length(unique(df$year)) < 2L) {
+    warning("Skipping model: QMD and year must both vary.", call. = FALSE)
+    return(NULL)
+  }
+  
+  if (length(unique(df$plotID)) < 2L) {
+    warning("Skipping mixed model: at least two plots are required.", call. = FALSE)
+    return(NULL)
+  }
+
   set.seed(123)
-
-  df <- df |> 
-    mutate(logDensity = log(density), logQMD = log(QMD))
-
-  df <- as.data.frame(df)[, c("logDensity", "logQMD", "year", "plotID")]
-  df <- df[stats::complete.cases(df), , drop = FALSE]
+  df$logDensity <- log(df$density)
+  df$logQMD <- log(df$QMD)
+  df <- df[, c("logDensity", "logQMD", "year", "plotID")]
 
   rec <- recipes::recipe(logDensity ~ logQMD + year + plotID, data = df) |>
     recipes::update_role(plotID, new_role = "id") |>

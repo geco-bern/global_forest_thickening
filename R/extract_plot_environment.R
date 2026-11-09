@@ -57,6 +57,29 @@ wwf_biome_legend <- function() {
   )
 }
 
+# Count each plot once per observed biome, so longer records do not receive
+# more weight. Ties are resolved alphabetically; all-missing datasets stay NA.
+fill_missing_biomes <- function(data) {
+  modal_biomes <- data |>
+    dplyr::ungroup() |>
+    dplyr::filter(!is.na(dataset), !is.na(biome)) |>
+    dplyr::distinct(dataset, plotID, biome) |>
+    dplyr::count(dataset, biome) |>
+    dplyr::arrange(dataset, dplyr::desc(n), biome) |>
+    dplyr::distinct(dataset, .keep_all = TRUE)
+
+  fallback <- modal_biomes$biome[match(data$dataset, modal_biomes$dataset)]
+  fill <- which(is.na(data$biome) & !is.na(fallback))
+  legend <- wwf_biome_legend()
+  biome_rows <- match(fallback[fill], legend$biome)
+  data$biome[fill] <- fallback[fill]
+  
+  # Major-biome grouping uses biomeID, so fill the associated fields together.
+  data$biomeID[fill] <- legend$biomeID[biome_rows]
+  data$type[fill] <- legend$type[biome_rows]
+  data
+}
+
 extract_biome_locations <- function(locations, path) {
   ecoregions <- terra::vect(path)
   points <- terra::vect(as.data.frame(locations[, c("lon", "lat")]),
