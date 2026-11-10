@@ -49,7 +49,6 @@ library(here)
 source(here::here("R/functions.R"))
 source(here::here("R/harmonise_census_year.R"))
 source(here::here("R/rainfor_coordinates.R"))
-source(here::here("R/forestplots_subplots.R"))
 
 # NFI Spain ----
 # Data providers: Paloma Ruiz-Benito and Veronica Cruz-Alonso
@@ -2663,9 +2662,16 @@ saveRDS(
 
 # Forests plots MZ ----
 # Data provided by Yadvinder Mahli and Huanyuan Zhang
-# Allocate trees to 20 x 20 m cells only for resolved parent-coordinate grids.
-# Exclude affected subplots across censuses; retain unaffected cells and an audit.
-forestplots_grids <- list()
+# Allocate trees using provider-defined T1 subplots (normally 20 x 20 m).
+# Exclude only tree records with unresolved T1 labels and retain an audit.
+# Use DBH1/D1: Our best estimate of diameter for that stem during that census, at POM height POM . In most cases this will be the same as DBH0. If different, flag4 will define the quality control method applied to DBH0 to get DBH1
+# T1: Subplot: number or code of the primary subplot where the tree is located (as collected in the field). For a standard 1 ha plot, T1 corresponds to the 25 20m x 20m subplot division
+# From Huanyuan Email: The only exception from your lists is plot ANK-03. For this plot, each subplot’s size is 40m * 240m /25 (you can see that ANK03 T1 also runs from 1 to 25).
+
+source(here::here("R/forestplots_subplots.R"))
+source(here::here("R/forestplots_management.R"))
+
+forestplots_t1 <- list()
 
 # 0) Metadata
 meta_fp <- read.csv(file.path(raw_data_dir, "forestplots/mahli_zhang/fp_mz_metadata.csv"))
@@ -2678,8 +2684,13 @@ meta_fp <- meta_fp |>
     lon = Longitude,
     lat = Latitude,
     elevation = Elevation..m.,
-    plotsize = Plot.Size..ha.
-  )
+    plotsize = Plot.Size..ha.,
+    forest_type = Forest.Type,
+    anthropogenic_effects = Anthropogenic.Effects,
+    key_personnel = Key.Personnel,
+    key_reference = Key.Reference
+  ) |>
+  classify_forestplots_management()
 
 ## forestplots.net: Multiple plots ------
 # Contains 28 plots
@@ -2690,51 +2701,50 @@ multiplots <- multiplots |>
   select(
     country = Country,
     plotID = Plot.Code,
-    X, Y,
-    source_subplot = Sub.Plot.T1,
+    X,
+    Y,
+    subplot = Sub.Plot.T1,
     treeID = TreeID,
     species = Species,
     year = Census.Date,
-    D0,
-    D1,
-    D2,
-    D3,
-    D4
+    dbh = D1
   ) |>
-  mutate(year = as.integer(year)) |>
-  mutate(
-    dbh = rowMeans(across(D0:D4), na.rm = TRUE),
-    dbh = dbh / 10 # must be in cm
-  ) |>
-  filter(is.na(dbh) | dbh != 0) |>
-  select(-c(D0, D1, D2, D3, D4)) |>
+  mutate(year = as.integer(year), dbh = dbh / 10) |> # DBH in cm
 
   # Join metadata using the parent ID before constructing the subplot ID.
-  left_join(meta_fp |> select(-country), by = "plotID") |>
+  join_forestplots_metadata(meta_fp) |>
 
   # calculate basal area
   mutate(
     ba_tree = pi * (dbh * 0.01 / 2)^2, # ba in m2, dbh in cm
-    biomass = NA,
-    management_since_census1_yrs = NA
+    biomass = NA
   ) |>
-
   as_tibble()
 
-forestplots_grids$multiplots <- forestplots_subplots(multiplots)
-multiplots <- forestplots_grids$multiplots$data
+# Use provider-defined T1 labels; omit only records with unresolved labels.
+forestplots_t1$multiplots <- forestplots_t1_subplots(multiplots)
+multiplots_unresolved_subplots <- forestplots_t1$multiplots$audit |>
+  filter(!retained) |>
+  select(-retained)
 
-unique(multiplots$country)
+write_rds(
+  multiplots_unresolved_subplots,
+  file = here("data/multiplots_unresolved_subplots.csv")
+)
 
-# aggregate data from stand to stand data
+multiplots <- forestplots_t1$multiplots$data
+
+# Aggregate trees within each provider-defined subplot and census.
 df_multiplots <- from_tree_data(multiplots) |>
+  forestplots_stand_management(multiplots) |>
+  left_join(
+    distinct(multiplots, plotID, plotsize_major),
+    by = "plotID",
+    relationship = "many-to-one"
+  ) |>
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
   ungroup() |>
-  mutate(
-    management = 0,
-    management_cat = 2
-  ) |>
   filter(is.na(QMD) | log(QMD) < 4.5) # remove outliers
 
 ggplot() +
@@ -2752,7 +2762,8 @@ ggplot() +
     size = 1.5,
     col = "black",
     inherit.aes = FALSE
-  )
+  ) +
+  theme_classic()
 
 if (nrow(df_multiplots) > 0) plot_point_map(df_multiplots)
 
@@ -2764,22 +2775,16 @@ gabon <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/gabo
 # select and rename variables
 gabon <- gabon |>
   select(country, plot_code, treeID, species, year, dbh, X, Y,
-         source_subplot = subplot_T1) |>
+         subplot = subplot_T1) |>
   rename(plotID = plot_code) |>
   mutate(year = as.integer(year)) |>
   mutate(dbh = dbh / 10) |> # must be in cm
-  filter(is.na(dbh) | dbh != 0) |>
-  left_join(
-    meta_fp |>
-      select(-country),
-    by = "plotID"
-  ) |>
+  join_forestplots_metadata(meta_fp) |>
 
   # calculate basal area
   mutate(
     ba_tree = pi * (dbh * 0.01 / 2)^2, # ba in m2, dbh in cm
-    biomass = NA,
-    management_since_census1_yrs = NA
+    biomass = NA
   )
   
 # 3% missing DBH - impute with mean to avoid losing all data
@@ -2795,18 +2800,19 @@ gabon <- gabon |>
   ) |>
   ungroup()
 
-forestplots_grids$gabon <- forestplots_subplots(gabon)
-gabon <- forestplots_grids$gabon$data
+forestplots_t1$gabon <- forestplots_t1_subplots(gabon)
+gabon <- forestplots_t1$gabon$data
 
-# aggregate data from stand to stand data
+# aggregate data from tree to stand data
 df_gabon <- from_tree_data(gabon) |>
+  forestplots_stand_management(gabon) |>
+  left_join(
+    distinct(gabon, plotID, plotsize_major),
+    by = "plotID", relationship = "many-to-one"
+  ) |>
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
-  ungroup() |>
-  mutate(
-    management = 0,
-    management_cat = 2
-  )
+  ungroup()
   # filter(is.na(QMD) | log(QMD) < 4.5) # remove outliers
 
 ggplot() +
@@ -2824,7 +2830,8 @@ ggplot() +
     size = 1.5,
     col = "black",
     inherit.aes = FALSE
-  )
+  ) +
+  theme_classic()
 
 if (nrow(gabon) > 0) plot_point_map(gabon)
 
@@ -2836,35 +2843,30 @@ ghana <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/ghan
 # select and rename variables
 ghana <- ghana |>
   select(country, plotID, treeID, species, year, dbh, X, Y,
-         source_subplot = T1) |>
+         subplot = T1) |>
   mutate(year = as.integer(year)) |>
   mutate(dbh = dbh / 10) |> # must be in cm
-  filter(is.na(dbh) | dbh != 0) |>
-  left_join(
-    meta_fp |>
-      select(-country),
-    by = "plotID"
-  ) |>
+  join_forestplots_metadata(meta_fp) |>
 
   # calculate basal area
   mutate(
     ba_tree = pi * (dbh * 0.01 / 2)^2, # ba in m2, dbh in cm
-    biomass = NA,
-    management_since_census1_yrs = NA
+    biomass = NA
   )
 
-forestplots_grids$ghana <- forestplots_subplots(ghana)
-ghana <- forestplots_grids$ghana$data
+forestplots_t1$ghana <- forestplots_t1_subplots(ghana)
+ghana <- forestplots_t1$ghana$data
 
 # aggregate data from stand to stand data
 df_ghana <- from_tree_data(ghana) |>
+  forestplots_stand_management(ghana) |>
+  left_join(
+    distinct(ghana, plotID, plotsize_major),
+    by = "plotID", relationship = "many-to-one"
+  ) |>
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
-  ungroup() |>
-  mutate(
-    management = 0,
-    management_cat = 2
-  )
+  ungroup()
 # filter(is.na(QMD) | log(QMD) < 4.5) # remove outliers
 
 ggplot() +
@@ -2894,21 +2896,15 @@ malaysia <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/m
 # select and rename variables
 malaysia <- malaysia |>
   select(country, plotID, treeID, species, year, dbh, X, Y,
-         source_subplot = T1) |>
+         subplot = T1) |>
   mutate(year = as.integer(year)) |>
   mutate(dbh = dbh / 10) |> # must be in cm
-  filter(is.na(dbh) | dbh != 0) |>
-  left_join(
-    meta_fp |>
-      select(-country),
-    by = "plotID"
-  ) |>
+  join_forestplots_metadata(meta_fp) |>
 
   # calculate basal area
   mutate(
     ba_tree = pi * (dbh * 0.01 / 2)^2, # ba in m2, dbh in cm
-    biomass = NA,
-    management_since_census1_yrs = NA
+    biomass = NA
   )
 
 # 1% missing DBH - impute with mean to avoid losing all data
@@ -2924,18 +2920,19 @@ malaysia <- malaysia |>
   ) |>
   ungroup()
 
-forestplots_grids$malaysia <- forestplots_subplots(malaysia)
-malaysia <- forestplots_grids$malaysia$data
+forestplots_t1$malaysia <- forestplots_t1_subplots(malaysia)
+malaysia <- forestplots_t1$malaysia$data
 
 # aggregate data from stand to stand data
 df_malaysia <- from_tree_data(malaysia) |>
+  forestplots_stand_management(malaysia) |>
+  left_join(
+    distinct(malaysia, plotID, plotsize_major),
+    by = "plotID", relationship = "many-to-one"
+  ) |>
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
-  ungroup() |>
-  mutate(
-    management = 0,
-    management_cat = 2
-  )
+  ungroup()
 # filter(is.na(QMD) | log(QMD) < 4.5) # remove outliers
 
 ggplot() +
@@ -2957,9 +2954,9 @@ ggplot() +
 
 if (nrow(df_malaysia) > 0) plot_point_map(df_malaysia)
 
-# Combine eligible grid cells from all four contributions.
+# Combine T1-label audits from all four contributions.
 forestplots_subplot_audit <- bind_rows(
-  lapply(forestplots_grids, function(x) x$audit), .id = "source"
+  lapply(forestplots_t1, function(x) x$audit), .id = "source"
 )
 forestplots_audit_dir <- here::here("analysis/diagnostics/forestplots_coordinates")
 dir.create(forestplots_audit_dir, recursive = TRUE, showWarnings = FALSE)
