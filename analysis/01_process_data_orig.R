@@ -2734,6 +2734,8 @@ write_rds(
 
 multiplots <- forestplots_t1$multiplots$data
 
+multiplots$Site.Name |> unique()
+
 # Aggregate trees within each provider-defined subplot and census.
 df_multiplots <- from_tree_data(multiplots) |>
   forestplots_stand_management(multiplots) |>
@@ -2786,6 +2788,8 @@ gabon <- gabon |>
     ba_tree = pi * (dbh * 0.01 / 2)^2, # ba in m2, dbh in cm
     biomass = NA
   )
+
+gabon$Site.Name |> unique()
   
 # 3% missing DBH - impute with mean to avoid losing all data
 gabon <- gabon |>
@@ -2853,6 +2857,8 @@ ghana <- ghana |>
     ba_tree = pi * (dbh * 0.01 / 2)^2, # ba in m2, dbh in cm
     biomass = NA
   )
+
+ghana$Site.Name |> unique()
 
 forestplots_t1$ghana <- forestplots_t1_subplots(ghana)
 ghana <- forestplots_t1$ghana$data
@@ -2963,28 +2969,33 @@ dir.create(forestplots_audit_dir, recursive = TRUE, showWarnings = FALSE)
 write_csv(forestplots_subplot_audit,
           file.path(forestplots_audit_dir, "subplot_exclusions.csv"))
 
+# combine all data from forestplots
 df_forestplots <- df_multiplots |>
   bind_rows(df_gabon, df_ghana, df_malaysia)
 
 # Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
-df_forestplots <- standardise_stand_data(df_forestplots)
+df_forestplots <- standardise_stand_data(df_forestplots) |> 
+
+  # rename all to 'forestplots'
+  mutate(dataset = "forestplots")
 
 ggplot() +
   geom_line(
     data = df_forestplots,
     aes(x = log(QMD), y = log(density), group = plotID),
-    alpha = 0.5,
+    alpha = 0.2,
     col = "black",
     inherit.aes = FALSE
   ) +
   geom_point(
     data = df_forestplots,
     aes(x = log(QMD), y = log(density)),
-    alpha = 0.5,
+    alpha = 0.2,
     size = 1.5,
     col = "black",
     inherit.aes = FALSE
-  )
+  ) +
+  theme_classic()
 
 if (nrow(df_forestplots) > 0) plot_point_map(df_forestplots)
 

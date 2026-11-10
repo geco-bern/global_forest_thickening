@@ -27,20 +27,20 @@ analyse_group <- function(
         !badqmdbin
       ),
 
-    # no data from plots with outlying self-thinning slope
-    "no_badslope" = df |>
-      filter(
-        # ndisturbed == 0, 
-        !badqmdbin, 
-        !badslope
-      ),
+    # # no data from plots with outlying self-thinning slope
+    # "no_badslope" = df |>
+    #   filter(
+    #     # ndisturbed == 0, 
+    #     !badqmdbin, 
+    #     !badslope
+    #   ),
 
     # no data from plots without management history and management <30 years prior to first census
     "no_mgmt_30" = df |>
       filter(
         # ndisturbed == 0,
-        !badqmdbin,
-        !badslope,
+        # !badqmdbin,
+        # !badslope,
 
         # recorded history and management > 30 years prior to first census OR pristine
         (management_cat == 1 & management_since_census1_yrs >= 30) |
@@ -51,8 +51,8 @@ analyse_group <- function(
     "no_mgmt_100" = df |>
       filter(
         # ndisturbed == 0,
-        !badqmdbin,
-        !badslope,
+        # !badqmdbin,
+        # !badslope,
 
         # recorded history and management > 30 years prior to first census OR pristine
         (management_cat == 1 & management_since_census1_yrs >= 100) |
@@ -63,8 +63,8 @@ analyse_group <- function(
     "oldgrowth" = df |>
       filter(
         # ndisturbed == 0,
-        !badqmdbin,
-        !badslope,
+        # !badqmdbin,
+        # !badslope,
 
         # Pristine/primary/old-growth/protected
         management_cat == 2 |

@@ -8,6 +8,7 @@ library(tidyverse)
 source(here::here("R/functions.R"))
 source(here::here("R/extract_plot_environment.R"))
 source(here::here("R/plot_logn_logqmd_dataset.R"))
+source(here::here("R/deduplicate_parent_plots.R"))
 
 # Collect data ----------------
 # Collect and combine data from standard-formatted files.
@@ -150,23 +151,42 @@ df_all <- bind_rows(
   df_wytham,
   # df_pasoh,  # not included because QMD of all plots lie far outside the range of qmd of remaining plots (except Luquillo, which is also excluded)
   df_mudumalai,
-  # df_forestplots,  # not included. Missing subplot size prevents calculations.
+  df_forestplots,
   df_aus,
   df_rainfor
 )
 
 # Harmonise dataset names
 df_all <- df_all |>
-  mutate(dataset = harmonise_dataset_names(dataset)) |>
+  mutate(dataset = harmonise_dataset_names(dataset))
 
+# Remove duplicate parent plots before adding dataset prefixes to plot IDs.
+# Matching leading codes (e.g. ACJ-01) identify source representations of the
+# same parent, including all its subplots. Keep the longest census span;
+# ties favour more census years, then the latest census, then dataset name.
+# Different codes within 10 km count as duplicates only when parent-level BA
+# and density agree within 1% in every shared census year (at least one needed).
+# Missing comparisons remain unconfirmed. Subplot values are area-weighted.
+parent_plot_dedup <- deduplicate_parent_plots(
+  df_all, review_distance_km = 10, measurement_tolerance_pct = 1
+)
+df_all <- parent_plot_dedup$data
+dedup_audit_dir <- here::here("analysis/diagnostics/parent_plot_duplicates")
+dir.create(dedup_audit_dir, recursive = TRUE, showWarnings = FALSE)
+write_csv(parent_plot_dedup$code_matches,
+          file.path(dedup_audit_dir, "code_matches.csv"))
+write_csv(parent_plot_dedup$geographic_candidates,
+          file.path(dedup_audit_dir, "geographic_candidates.csv"))
+write_csv(parent_plot_dedup$geographic_year_comparisons,
+          file.path(dedup_audit_dir, "geographic_year_comparisons.csv"))
+
+df_all <- df_all |>
   # unite plotID and dataset to ensure there are not matches form different sources
   rename(plotIDD = plotID) |>
   unite(plotID, dataset, plotIDD, sep = "_", remove = FALSE) |>
   select(-plotIDD) |>
 
-  # Unify Forestplots and RAINFOR datasets
-  # Since Forestplots are deta provided by Y. Mahli and RAINFOR are taken from Esquivel et al., some plots can
-  # be duplicated. We need to check the plots and years that are present in both datasets and keep the most updated ones.
+  # Remove repeated census rows within the retained source and subplot.
   distinct(country, plotID, year, .keep_all = TRUE)
 
 # Apply basic filters ------
@@ -180,14 +200,15 @@ df_unm <- df_all |>
   # filter for unmanaged plots (between censi)
   filter(management == 0) |>
 
-  # Filter by minimum 3 censi
+  # Filter by minimum 2 censi
   group_by(dataset, plotID) |>
   mutate(n_census_unm = n()) |>
-  filter(n_census_unm >= 3) |>
+  filter(n_census_unm >= 2) |>
 
-  # remove plots with no change in ln(N)
-  mutate(var_logdensity = diff(range(log(density)))) |>
-  filter(var_logdensity > 0.01) |>
+  # since we don't remove disturbed and bad-slope anymore, also don't remove non-declining densities
+  # # remove plots with no change in ln(N)
+  # mutate(var_logdensity = diff(range(log(density)))) |>
+  # filter(var_logdensity > 0.01) |>
 
   # clean up
   ungroup() |>
@@ -242,6 +263,7 @@ df_unm <- df_unm |>
         biomeID
       )
     )
+
 
 # Fill missing biome assignments from the most frequent biome in the dataset
 # (counting distinct plots), before deriving biome_major from biomeID.
