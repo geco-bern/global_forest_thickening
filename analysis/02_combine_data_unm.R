@@ -142,13 +142,13 @@ df_all <- bind_rows(
   df_unito,
   df_urk,
   df_wuls,
-  # df_luquillo,  # not included because QMD of all plots lie far outside the range of qmd of remaining plots (except Pasoh, which is also excluded)
+  df_luquillo,  # not included because QMD of all plots lie far outside the range of qmd of remaining plots (except Pasoh, which is also excluded)
   # df_bci,  # not included. Comment in `00_raw_data.R`: finally not added to the global dataset due to difficulty to exclude management (communication with  Salomón Aguilar, Research Technician)
   df_scbi,
   # df_palanam,  # not included. None of the 1,401 raw quadrat–census groups spans more than one year. The forest data doesn't exhibit a self-thinning pattern, potentially due to recent disturbances (Typhoons in 2003 and 2010, see https://forestgeo.si.edu/sites/philippines/palanan).
   df_serc,
   df_wytham,
-  # df_pasoh,  # not included because QMD of all plots lie far outside the range of qmd of remaining plots (except Luquillo, which is also excluded)
+  df_pasoh,  # not included because QMD of all plots lie far outside the range of qmd of remaining plots (except Luquillo, which is also excluded)
   df_mudumalai,
   df_forestplots,
   df_aus,
@@ -202,11 +202,30 @@ df_all <- df_all |>
 
 # Apply basic filters ------
 # Apply filters relevant for all analyses
+
+# identify plots for which QMD < 10 cm (10965 plots)
+drop_plots_qmdlimit <- df_all |>
+  group_by(plotID) |>
+  filter(year == min(year, na.rm = TRUE)) |>
+  ungroup() |>
+  filter(QMD < 10.0) |> 
+  pull(plotID)
+
+# overview of dropped plots by dataset
+df_all |>
+  group_by(plotID) |>
+  filter(year == min(year, na.rm = TRUE)) |>
+  ungroup() |> 
+  filter(QMD < 10.0) |> 
+  group_by(dataset) |> 
+  summarise(n = n()) |> 
+  arrange(desc(n)) |> 
+  knitr::kable()
+
 df_unm <- df_all |>
 
-  # Beni: this is an important step: not to remove this a priori.
-  # # filter for min qmd
-  # filter(QMD >= 10) |>
+  # filter for minimum QMD (10 cm)
+  filter(!(plotID %in% drop_plots_qmdlimit)) |>
 
   # filter for unmanaged plots (between censi)
   filter(management == 0) |>
@@ -377,10 +396,6 @@ df_unm <- df_unm |>
 #     )
 #   )
 # )
-
-# additionally exclude tropical data from fia_us
-df_unm <- df_unm |>
-  filter(!(biome_major == "Tropical & Subtropical Broadleaf Forests" & dataset == "fia_us"))
 
 # Write file ----
 saveRDS(df_unm, file = here::here("data/inputs/df_unm_v2026.rds"))

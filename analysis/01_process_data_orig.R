@@ -2733,7 +2733,7 @@ write_rds(
   file = here("data/multiplots_unresolved_subplots.csv")
 )
 
-# multiplots <- forestplots_t1$multiplots$data
+multiplots <- forestplots_t1$multiplots$data
 
 # multiplots$Site.Name |> unique()
 
@@ -2748,8 +2748,8 @@ write_rds(
 df_multiplots <- from_tree_data(multiplots) |>
   forestplots_stand_management(multiplots) |>
   left_join(
-    distinct(multiplots, plotID, plotsize_major),
-    by = "plotID",
+    distinct(multiplots, plotID, year, plotsize_major),
+    by = c("plotID", "year"),
     relationship = "many-to-one"
   ) |>
   group_by(plotID) |>
@@ -2776,6 +2776,9 @@ ggplot() +
   theme_classic()
 
 if (nrow(df_multiplots) > 0) plot_point_map(df_multiplots)
+
+df_multiplots |>
+  distinct(parent_plotID)
 
 ## Gabon -------------
 gabon <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/gabon"), full.names = TRUE, pattern = "\\.csv$") |>
@@ -2808,7 +2811,7 @@ gabon <- gabon |>
     biomass = NA
   )
 
-# gabon$Site.Name |> unique()
+# gabon$subplot |> unique()
   
 # 3% missing DBH - impute with mean to avoid losing all data
 gabon <- gabon |>
@@ -2837,8 +2840,8 @@ gabon <- forestplots_t1$gabon$data
 df_gabon <- from_tree_data(gabon) |>
   forestplots_stand_management(gabon) |>
   left_join(
-    distinct(gabon, plotID, plotsize_major),
-    by = "plotID", relationship = "many-to-one"
+    distinct(gabon, plotID, year, plotsize_major),
+    by = c("plotID", "year"), relationship = "many-to-one"
   ) |>
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
@@ -2900,8 +2903,8 @@ ghana <- forestplots_t1$ghana$data
 df_ghana <- from_tree_data(ghana) |>
   forestplots_stand_management(ghana) |>
   left_join(
-    distinct(ghana, plotID, plotsize_major),
-    by = "plotID", relationship = "many-to-one"
+    distinct(ghana, plotID, year, plotsize_major),
+    by = c("plotID", "year"), relationship = "many-to-one"
   ) |>
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
@@ -2973,8 +2976,8 @@ malaysia <- forestplots_t1$malaysia$data
 df_malaysia <- from_tree_data(malaysia) |>
   forestplots_stand_management(malaysia) |>
   left_join(
-    distinct(malaysia, plotID, plotsize_major),
-    by = "plotID", relationship = "many-to-one"
+    distinct(malaysia, plotID, year, plotsize_major),
+    by = c("plotID", "year"), relationship = "many-to-one"
   ) |>
   group_by(plotID) |>
   mutate(census = match(year, unique(year))) |>
@@ -3006,12 +3009,19 @@ forestplots_subplot_audit <- bind_rows(
 )
 forestplots_audit_dir <- here::here("analysis/diagnostics/forestplots_coordinates")
 dir.create(forestplots_audit_dir, recursive = TRUE, showWarnings = FALSE)
-write_csv(forestplots_subplot_audit,
-          file.path(forestplots_audit_dir, "subplot_exclusions.csv"))
+write_csv(
+  forestplots_subplot_audit,
+  file.path(forestplots_audit_dir, "subplot_exclusions.csv")
+)
 
 # combine all data from forestplots
-df_forestplots <- df_multiplots |>
-  bind_rows(df_gabon, df_ghana, df_malaysia)
+df_forestplots <- tibble() |>
+  bind_rows(
+    # df_multiplots,  # do not include - no permissions
+    df_gabon,
+    df_ghana,
+    df_malaysia
+  )
 
 # Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
 df_forestplots <- standardise_stand_data(df_forestplots) |> 

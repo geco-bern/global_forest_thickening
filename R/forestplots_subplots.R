@@ -1,18 +1,33 @@
 # Provider-defined T1 subplots, independent of X/Y availability or orientation.
 # Only unresolved tree records are excluded, not their entire parent plot.
 forestplots_t1_subplots <- function(data) {
-  stopifnot(all(c("plotID", "subplot", "plotsize") %in% names(data)))
-  resolved <- !is.na(data$subplot) &
-    grepl("^(0?[1-9]|1[0-9]|2[0-5])$", trimws(as.character(data$subplot)))
+  stopifnot(all(c("plotID", "subplot", "plotsize", "year") %in% names(data)))
+  # Provider clarification: .r denotes root measurements within the same T1
+  # subplot, not a separate spatial unit. Blank and zero labels remain invalid.
+  label <- sub("\\.r$", "", trimws(as.character(data$subplot)))
+  number <- suppressWarnings(as.integer(label))
+  # SPD-01 expanded in 2010 from 25 to 38 standard 20 x 20 m subplots.
+  limit <- ifelse(data$plotID == "SPD-01",
+                  ifelse(is.finite(data$year), ifelse(data$year >= 2010, 38L, 25L), NA_integer_),
+                  25L)
+  resolved <- !is.na(label) & grepl("^[0-9]{1,2}$", label) &
+    !is.na(number) & !is.na(limit) & number >= 1L & number <= limit
+  parent_area <- dplyr::case_when(
+    data$plotID == "SPD-01" ~ limit * 0.04,
+    data$plotID %in% c("SPD-02", "ESP-01", "MLA-02") ~ 1,
+    TRUE ~ as.numeric(data$plotsize)
+  )
   audit <- data |>
-    dplyr::mutate(subplot = as.character(subplot), retained = resolved) |>
-    dplyr::count(plotID, subplot, retained, name = "n_tree_census")
+    dplyr::mutate(subplot = as.character(subplot), subplot_clean = label,
+                  max_subplot = limit, plotsize_major = parent_area, retained = resolved) |>
+    dplyr::count(plotID, year, subplot, subplot_clean, max_subplot, plotsize_major,
+                 retained, name = "n_tree_census")
   trees <- data[resolved, ] |>
     dplyr::mutate(
       parent_plotID = plotID,
-      plotsize_major = plotsize,
+      plotsize_major = parent_area[resolved],
       plotsize = dplyr::if_else(plotID == "ANK-03", 40 * 240 / 25 / 10000, 0.04),
-      subplot = sprintf("%02d", as.integer(as.character(subplot))),
+      subplot = sprintf("%02d", number[resolved]),
       plotID = paste(plotID, subplot, sep = "_")
     )
   message("ForestPlots T1: excluded ", sum(!resolved), " tree-census records; retained ",

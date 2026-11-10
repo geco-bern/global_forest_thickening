@@ -2,7 +2,7 @@
 standardise_stand_data <- function(data) {
   data |>
     dplyr::select(dplyr::any_of(c(
-      "dataset", "country", "plotID", "plotsize", "lon", "lat", "census", "year",
+      "dataset", "country", "plotID", "plotsize", "plotsize_major", "lon", "lat", "census", "year",
       "management", "management_cat", "management_since_census1_yrs", "ba", "dbh",
       "QMD", "density", "period", "ba_inc", "biomass", "n_census", "species"
     ))) |>
