@@ -14,7 +14,15 @@ filter_stl_slope2 <- function(df, fit_lqmm, group_name, multiplier_sd = 2) {
 
     # linear model
     mutate(
-      linmod = purrr::map(data, ~ lm(logDensity ~ logQMD, data = .))
+      linmod = purrr::map(
+        data, 
+        ~ {
+          tryCatch(
+            lm(logDensity ~ logQMD, data = .),
+            error = function(e) NULL
+          )
+        }
+      )
     ) |>
 
     # segmented model (1 breakpoint 2 segments)
@@ -31,7 +39,10 @@ filter_stl_slope2 <- function(df, fit_lqmm, group_name, multiplier_sd = 2) {
     ) |>
 
     mutate(
-      slope_lin = map_dbl(linmod, ~ coef(.x)[2]),
+      slope_lin = map_dbl(
+        linmod, 
+        ~ if (is.null(.x)) NA else coef(.x)[2]
+      ),
       slopes_seg = map(
         segmod,
         ~ if (is.null(.x)) NA else slope(.x)$logQMD[, "Est."]

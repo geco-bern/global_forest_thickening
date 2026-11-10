@@ -20,12 +20,12 @@ analyse_group <- function(
     # "no_disturbance" = df |>
     #   filter(ndisturbed == 0),
 
-    # no data from years with shifted QMD distribution
-    "no_badqmd" = df |>
-      filter(
-        # ndisturbed == 0, 
-        !badqmdbin
-      ),
+    # # no data from years with shifted QMD distribution
+    # "no_badqmd" = df |>
+    #   filter(
+    #     # ndisturbed == 0, 
+    #     !badqmdbin
+    #   ),
 
     # # no data from plots with outlying self-thinning slope
     # "no_badslope" = df |>

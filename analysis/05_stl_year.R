@@ -46,14 +46,17 @@ df <- read_rds(here("data/inputs/df_unm_withfilters_v2026.rds"))
 
 ## Apply workflow by biome -------------
 df_biome_analysis <- df |>
-  group_by(biome_major) |> 
-  nest() |> 
+  group_by(biome_major) |>
+  nest() |>
 
-  # avoid tropical/subtropical coniferous
-  filter(!is.na(biome_major)) |> 
-  
   # apply workflow by biome
-  mutate(out = purrr::map2(data, biome_major, ~analyse_group(df = .x, group_name = .y)))
+  mutate(
+    out = purrr::map2(
+      data,
+      biome_major,
+      ~ analyse_group(df = .x, group_name = .y)
+    )
+  )
 
 ### Save results -------------
 # (includes fitted models and ggplot objects for each major biome)
@@ -68,9 +71,6 @@ write_rds(
 df_dataset_analysis <- df |>
   group_by(dataset_major) |>
   nest() |>
-
-  # avoid tropical/subtropical coniferous
-  filter(!is.na(dataset_major)) |>
   
   # apply workflow by biome
   mutate(

@@ -2700,6 +2700,7 @@ multiplots <- read.csv(file.path(raw_data_dir, "forestplots/mahli_zhang/fp_mz_mu
 multiplots <- multiplots |>
   select(
     country = Country,
+    site_name = Plot.Name,
     plotID = Plot.Code,
     X,
     Y,
@@ -2732,9 +2733,16 @@ write_rds(
   file = here("data/multiplots_unresolved_subplots.csv")
 )
 
-multiplots <- forestplots_t1$multiplots$data
+# multiplots <- forestplots_t1$multiplots$data
 
-multiplots$Site.Name |> unique()
+# multiplots$Site.Name |> unique()
+
+# multiplots |>
+#   select(plotID, parent_plotID, country, site_name, lon, lat) |>
+#   distinct() |> 
+#   group_by(parent_plotID, country, site_name, lon, lat) |>
+#   summarise(n = n()) |> 
+#   View()
 
 # Aggregate trees within each provider-defined subplot and census.
 df_multiplots <- from_tree_data(multiplots) |>
@@ -2774,10 +2782,21 @@ gabon <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/gabo
   lapply(read_csv) |>
   bind_rows()
 
+# gabon$plot_code |> unique()
+
 # select and rename variables
 gabon <- gabon |>
-  select(country, plot_code, treeID, species, year, dbh, X, Y,
-         subplot = subplot_T1) |>
+  select(
+    country,
+    plot_code,
+    treeID,
+    species,
+    year,
+    dbh,
+    X,
+    Y,
+    subplot = subplot_T1
+  ) |>
   rename(plotID = plot_code) |>
   mutate(year = as.integer(year)) |>
   mutate(dbh = dbh / 10) |> # must be in cm
@@ -2789,7 +2808,7 @@ gabon <- gabon |>
     biomass = NA
   )
 
-gabon$Site.Name |> unique()
+# gabon$Site.Name |> unique()
   
 # 3% missing DBH - impute with mean to avoid losing all data
 gabon <- gabon |>
@@ -2806,6 +2825,13 @@ gabon <- gabon |>
 
 forestplots_t1$gabon <- forestplots_t1_subplots(gabon)
 gabon <- forestplots_t1$gabon$data
+
+# gabon |>
+#   select(plotID, parent_plotID, country, lon, lat) |>
+#   distinct() |>
+#   group_by(parent_plotID, country, lon, lat) |>
+#   summarise(n = n()) |>
+#   View()
 
 # aggregate data from tree to stand data
 df_gabon <- from_tree_data(gabon) |>
@@ -2862,6 +2888,13 @@ ghana$Site.Name |> unique()
 
 forestplots_t1$ghana <- forestplots_t1_subplots(ghana)
 ghana <- forestplots_t1$ghana$data
+
+# ghana |>
+#   select(plotID, parent_plotID, country, lon, lat) |>
+#   distinct() |>
+#   group_by(parent_plotID, country, lon, lat) |>
+#   summarise(n = n()) |>
+#   View()
 
 # aggregate data from stand to stand data
 df_ghana <- from_tree_data(ghana) |>
@@ -2928,6 +2961,13 @@ malaysia <- malaysia |>
 
 forestplots_t1$malaysia <- forestplots_t1_subplots(malaysia)
 malaysia <- forestplots_t1$malaysia$data
+
+# malaysia |>
+#   select(plotID, parent_plotID, country, lon, lat) |>
+#   distinct() |>
+#   group_by(parent_plotID, country, lon, lat) |>
+#   summarise(n = n()) |>
+#   View()
 
 # aggregate data from stand to stand data
 df_malaysia <- from_tree_data(malaysia) |>

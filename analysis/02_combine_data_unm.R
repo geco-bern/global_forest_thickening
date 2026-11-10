@@ -1,7 +1,6 @@
 # Compile stand records for all datasets, before environmental extraction.
 
 # Load packages ----
-# library(renv)
 library(tidyverse)
 
 # Load functions ----
@@ -168,17 +167,29 @@ df_all <- df_all |>
 # and density agree within 1% in every shared census year (at least one needed).
 # Missing comparisons remain unconfirmed. Subplot values are area-weighted.
 parent_plot_dedup <- deduplicate_parent_plots(
-  df_all, review_distance_km = 10, measurement_tolerance_pct = 1
+  df_all,
+  review_distance_km = 10,
+  measurement_tolerance_pct = 1
 )
 df_all <- parent_plot_dedup$data
 dedup_audit_dir <- here::here("analysis/diagnostics/parent_plot_duplicates")
-dir.create(dedup_audit_dir, recursive = TRUE, showWarnings = FALSE)
-write_csv(parent_plot_dedup$code_matches,
-          file.path(dedup_audit_dir, "code_matches.csv"))
-write_csv(parent_plot_dedup$geographic_candidates,
-          file.path(dedup_audit_dir, "geographic_candidates.csv"))
-write_csv(parent_plot_dedup$geographic_year_comparisons,
-          file.path(dedup_audit_dir, "geographic_year_comparisons.csv"))
+dir.create(
+  dedup_audit_dir,
+  recursive = TRUE,
+  showWarnings = FALSE
+)
+write_csv(
+  parent_plot_dedup$code_matches,
+  file.path(dedup_audit_dir, "code_matches.csv")
+)
+write_csv(
+  parent_plot_dedup$geographic_candidates,
+  file.path(dedup_audit_dir, "geographic_candidates.csv")
+)
+write_csv(
+  parent_plot_dedup$geographic_year_comparisons,
+  file.path(dedup_audit_dir, "geographic_year_comparisons.csv")
+)
 
 df_all <- df_all |>
   # unite plotID and dataset to ensure there are not matches form different sources
@@ -200,12 +211,12 @@ df_unm <- df_all |>
   # filter for unmanaged plots (between censi)
   filter(management == 0) |>
 
-  # Filter by minimum 2 censi
+  # Filter by minimum 3 censi
   group_by(dataset, plotID) |>
   mutate(n_census_unm = n()) |>
-  filter(n_census_unm >= 2) |>
+  filter(n_census_unm >= 3) |>
 
-  # since we don't remove disturbed and bad-slope anymore, also don't remove non-declining densities
+  # Beni: since we don't remove disturbed and bad-slope anymore, also don't remove non-declining densities
   # # remove plots with no change in ln(N)
   # mutate(var_logdensity = diff(range(log(density)))) |>
   # filter(var_logdensity > 0.01) |>
@@ -231,7 +242,7 @@ df_unm <- extract_plot_environment(
   include_phosphorus = include_phosphorus
 )
 
-# some biome information is implausibly ascribed from global maps. Overwrite with NA.
+# some biome information is implausibly ascribed from global maps. Overwrite with NA, to later fill with dominant biome from the same dataset.
 df_unm <- df_unm |>
   mutate(
     biome = ifelse(

@@ -101,13 +101,13 @@ biomes_raster_forest_major <- subst(
 )
 names(biomes_raster_forest_major) <- "biome_major"
 
-# # write to file as NetCDF
-# terra::writeCDF(
-#   biomes_raster,
-#   filename = here("data/biomes_raster_0.5deg.nc"),
-#   overwrite = TRUE,
-#   varname = "biome"
-# )
+# write to file as NetCDF
+terra::writeCDF(
+  biomes_raster_forest_major,
+  filename = here("data/biomes_raster_forest_major_0.5deg.nc"),
+  overwrite = TRUE,
+  varname = "biome"
+)
 
 df_grid <- as.data.frame(biomes_raster_forest, xy = TRUE, na.rm = FALSE) |>
   as_tibble() |>
@@ -423,6 +423,10 @@ land <- rnaturalearth::ne_countries(
   scale = 110,
   returnclass = "sf"
 )
+
+# biomes_raster_forest_major <- terra::rast(
+#   here("data/biomes_raster_forest_major_0.5deg.nc")
+# )
 
 gg_sitepoints <- ggplot() +
   # Grey continent interiors beneath the biome raster

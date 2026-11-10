@@ -58,10 +58,10 @@ df_unm <- readRDS(here::here("data/inputs/df_unm_v2026.rds"))
 df_unm <- df_unm |>
   identify_disturbed_plots()
 
-### Identify ingrowth-affected plots -------------------------------------------
-# adds column 'ingrowth'
-df_unm <- df_unm |>
-  identify_ingrowth_plots()
+# ### Identify ingrowth-affected plots -------------------------------------------
+# # adds column 'ingrowth'
+# df_unm <- df_unm |>
+#   identify_ingrowth_plots()
 
 ## By (major) dataset ----------------------------------------------------------
 
@@ -132,7 +132,7 @@ ggsave(
 # For manuscript text:
 # Median slope by biome:
 tmp_slopefilter |> 
-  mutate(slope_med = purrr::map_dbl(data, ~median(.$slope_lin)))
+  mutate(slope_med = purrr::map_dbl(data, ~median(.$slope_lin, na.rm = TRUE)))
 
 # Make df flat again
 df_unm_withfilters <- tmp_slopefilter |> 
