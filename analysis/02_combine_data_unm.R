@@ -7,6 +7,7 @@ library(tidyverse)
 # Load functions ----
 source(here::here("R/functions.R"))
 source(here::here("R/extract_plot_environment.R"))
+source(here::here("R/plot_logn_logqmd_dataset.R"))
 
 # Collect data ----------------
 # Collect and combine data from standard-formatted files.
@@ -141,13 +142,13 @@ df_all <- bind_rows(
   df_unito,
   df_urk,
   df_wuls,
-  df_luquillo,
+  # df_luquillo,  # not included because QMD of all plots lie far outside the range of qmd of remaining plots (except Pasoh, which is also excluded)
   # df_bci,  # not included. Comment in `00_raw_data.R`: finally not added to the global dataset due to difficulty to exclude management (communication with  Salomón Aguilar, Research Technician)
   df_scbi,
   # df_palanam,  # not included. None of the 1,401 raw quadrat–census groups spans more than one year. The forest data doesn't exhibit a self-thinning pattern, potentially due to recent disturbances (Typhoons in 2003 and 2010, see https://forestgeo.si.edu/sites/philippines/palanan).
   df_serc,
   df_wytham,
-  df_pasoh,
+  # df_pasoh,  # not included because QMD of all plots lie far outside the range of qmd of remaining plots (except Luquillo, which is also excluded)
   df_mudumalai,
   # df_forestplots,  # not included. Missing subplot size prevents calculations.
   df_aus,
@@ -167,12 +168,6 @@ df_all <- df_all |>
   # Since Forestplots are deta provided by Y. Mahli and RAINFOR are taken from Esquivel et al., some plots can
   # be duplicated. We need to check the plots and years that are present in both datasets and keep the most updated ones.
   distinct(country, plotID, year, .keep_all = TRUE)
-
-# Data explorations ------
-df_all |> 
-  ggplot(aes(x = log(QMD), y = ..density.., color = dataset, group = dataset)) +
-  geom_density()
-
 
 # Apply basic filters ------
 # Apply filters relevant for all analyses
@@ -215,21 +210,51 @@ df_unm <- extract_plot_environment(
   include_phosphorus = include_phosphorus
 )
 
-saveRDS(df_unm, file = here::here("data/inputs/df_unm_step_environment.rds"))
-
-# Construct 'major biome' --------
-# df_unm <- readRDS(here::here("data/inputs/df_unm_step_environment.rds"))
+# some biome information is implausibly ascribed from global maps. Overwrite with NA.
+df_unm <- df_unm |>
+  mutate(
+    biome = ifelse(
+      biomeID %in%
+        c(
+          3, # Tropical & Subtropical Coniferous Forests
+          13, # Deserts & Xeric Shrublands
+          9, # Flooded Grasslands & Savannas
+          8, # Temperate Grasslands, Savannas & Shrublands
+          14, # Mangroves
+          7, # Tropical & Subtropical Grasslands, Savannas & Shrublands
+          10 # Montane Grasslands & Shrublands
+        ),
+        NA, 
+        biome
+      ),
+    biomeID = ifelse(
+      biomeID %in%
+        c(
+          3, # Tropical & Subtropical Coniferous Forests
+          13, # Deserts & Xeric Shrublands
+          9, # Flooded Grasslands & Savannas
+          8, # Temperate Grasslands, Savannas & Shrublands
+          14, # Mangroves
+          7, # Tropical & Subtropical Grasslands, Savannas & Shrublands
+          10 # Montane Grasslands & Shrublands
+        ),
+        NA, 
+        biomeID
+      )
+    )
 
 # Fill missing biome assignments from the most frequent biome in the dataset
 # (counting distinct plots), before deriving biome_major from biomeID.
 df_unm <- fill_missing_biomes(df_unm)
 
 df_unm |> 
-  group_by(dataset) |> 
-  summarise(n = n()) |> 
-  arrange(desc(n)) |> 
-  View()
+  select(biome, biomeID) |> 
+  distinct()
 
+saveRDS(df_unm, file = here::here("data/inputs/df_unm_step_environment.rds"))
+
+# Construct 'major biome' --------
+# df_unm <- readRDS(here::here("data/inputs/df_unm_step_environment.rds"))
 df_unm <- df_unm |> 
 
   # Re-group into "major biomes"
@@ -257,6 +282,10 @@ df_unm <- df_unm |>
       )
     )
   )
+
+df_unm |>
+  select(biome, biomeID, biome_major) |>
+  distinct()
 
 # Construct 'major dataset' ----
 df_unm <- df_unm |>
@@ -316,19 +345,15 @@ df_unm <- df_unm |>
 #   )
 # )
 
-df_unm |>
-  group_by(dataset_major) |>
-  summarise(n = n()) |>
-  arrange(desc(n)) |>
-  View()
+# additionally exclude tropical data from fia_us
+df_unm <- df_unm |>
+  filter(!(biome_major == "Tropical & Subtropical Broadleaf Forests" & dataset == "fia_us"))
 
 # Write file ----
 saveRDS(df_unm, file = here::here("data/inputs/df_unm_v2026.rds"))
 
 # Plots by dataset ----
-source(here::here("R/plot_logn_logqmd_dataset.R"))
 # df_unm <- readRDS(here::here("data/inputs/df_unm_v2026.rds"))
-
 plots_logn_logqmd <- split(df_unm, df_unm$dataset, drop = TRUE) |>
   purrr::map(plot_logn_logqmd_dataset)
 
@@ -374,6 +399,8 @@ df_unm |>
   coord_flip()
 
 df_unm |>
+  group_by(plotID) |>
+  filter(year == first(year)) |>
   ggplot(aes(
     x = tidytext::reorder_within(
       dataset,
@@ -384,19 +411,13 @@ df_unm |>
     y = QMD
   )) +
   geom_boxplot(outliers = FALSE) +
+  # geom_density() +
   tidytext::scale_x_reordered() +
+  scale_y_log10() +
   facet_wrap(~biome_major, scales = "free_y", ncol = 2) +
   labs(x = NULL, y = "QMD (cm)") +
   theme_classic() +
   coord_flip()
-
-unique(df_unm$plotID)[1]
-
-df_unm |>
-  filter(plotID == "nfi_spain_100008A1") |>   
-  group_by(plotID) |> 
-  filter(year == first(year)) |> 
-  View()
 
 # /////////////////////////////////////////////////////////////////////
 # Legacy code --------------

@@ -16,22 +16,29 @@ analyse_group <- function(
     # all data
     "orig" = df,
 
-    # no disturbance-affecte plots
-    "no_disturbance" = df |>
-      filter(ndisturbed == 0),
+    # # no disturbance-affecte plots
+    # "no_disturbance" = df |>
+    #   filter(ndisturbed == 0),
 
     # no data from years with shifted QMD distribution
     "no_badqmd" = df |>
-      filter(ndisturbed == 0, !badqmdbin),
+      filter(
+        # ndisturbed == 0, 
+        !badqmdbin
+      ),
 
     # no data from plots with outlying self-thinning slope
     "no_badslope" = df |>
-      filter(ndisturbed == 0, !badqmdbin, !badslope),
+      filter(
+        # ndisturbed == 0, 
+        !badqmdbin, 
+        !badslope
+      ),
 
     # no data from plots without management history and management <30 years prior to first census
     "no_mgmt_30" = df |>
       filter(
-        ndisturbed == 0,
+        # ndisturbed == 0,
         !badqmdbin,
         !badslope,
 
@@ -43,7 +50,7 @@ analyse_group <- function(
     # no data from plots without management history and management <100 years prior to first census
     "no_mgmt_100" = df |>
       filter(
-        ndisturbed == 0,
+        # ndisturbed == 0,
         !badqmdbin,
         !badslope,
 
@@ -55,7 +62,7 @@ analyse_group <- function(
     # only old-growth
     "oldgrowth" = df |>
       filter(
-        ndisturbed == 0,
+        # ndisturbed == 0,
         !badqmdbin,
         !badslope,
 

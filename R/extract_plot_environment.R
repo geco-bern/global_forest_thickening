@@ -77,6 +77,13 @@ fill_missing_biomes <- function(data) {
   # Major-biome grouping uses biomeID, so fill the associated fields together.
   data$biomeID[fill] <- legend$biomeID[biome_rows]
   data$type[fill] <- legend$type[biome_rows]
+
+  # Also repair missing IDs when the biome name was already available (for
+  # example, from an earlier gap-filling run that updated names only).
+  missing_id <- which(is.na(data$biomeID) & !is.na(data$biome))
+  data$biomeID[missing_id] <- legend$biomeID[
+    match(data$biome[missing_id], legend$biome)
+  ]
   data
 }
 

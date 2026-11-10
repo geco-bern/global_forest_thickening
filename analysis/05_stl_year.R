@@ -151,7 +151,7 @@ knitr::kable(tmp)
 gg_coef_filters <- cowplot::plot_grid(
   plotlist = purrr::map(df_biome_analysis$out, "gg_coef_filters"),
   ncol = 2,
-  labels = letters[1:length(plots)]
+  labels = letters
 )
 
 ggsave(
@@ -165,7 +165,7 @@ ggsave(
 gg_lqmm_byqmdbin <- cowplot::plot_grid(
   plotlist = purrr::map(df_biome_analysis$out, "gg_lqmm_byqmdbin"),
   ncol = 2,
-  labels = letters[1:length(plots)]
+  labels = letters
 )
 
 ggsave(
@@ -179,12 +179,10 @@ ggsave(
 # df_dataset_analysis <- read_rds(here("data/df_dataset_analysis_ALTERNATIVEFILTERS.rds"))
 df_dataset_analysis <- read_rds(here("data/df_dataset_analysis.rds"))
 
-plots <- purrr::map(df_dataset_analysis$out, "gg_coef_filters")
-
 gg_coef_filters <- cowplot::plot_grid(
-  plotlist = plots,
+  plotlist = purrr::map(df_dataset_analysis$out, "gg_coef_filters"),
   ncol = 3,
-  labels = letters[1:length(plots)]
+  labels = letters
 )
 
 ggsave(

@@ -30,11 +30,13 @@ plot_logn_logqmd_dataset <- function(df) {
   ggplot() +
     geom_point(
       data = df,
-      aes(x = log(QMD), y = log(density)),
+      aes(x = QMD, y = density),
       alpha = alpha,
       size = 1.5,
       col = "black",
     ) +
+    scale_x_log10() +
+    scale_y_log10() +
     # # Follow census order, including intervals when QMD decreases.
     # geom_path(
     #   data = trajectories,
