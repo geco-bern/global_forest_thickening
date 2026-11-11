@@ -11,6 +11,9 @@ analyse_group <- function(
   breaks <- get_breaks(df$year)
   gg_fdisturbed <- plot_disturbed(df, group_name, breaks)
 
+  # Plot-level slopes and pooled 90th-quantile slope, using all group data.
+  slope_analysis <- analyse_plot_slopes(df, group_name)
+
   # Define filter stages --------------
   list_df_filtered <- list(
     # all data
@@ -185,6 +188,10 @@ analyse_group <- function(
   return(
     list(
       df_filtereffects = df_filtereffects,
+      df_slopes = slope_analysis$df_slopes,
+      fit_qr = slope_analysis$fit_qr,
+      slope_qr = slope_analysis$slope_qr,
+      gg_slopes = slope_analysis$gg_slopes,
       fit_lqmm = fit_lqmm_orig,
       boot_results = boot_results,
       df_boot = df_boot,
@@ -195,6 +202,77 @@ analyse_group <- function(
       gg_lqmm_byqmdbin = gg_lqmm_byqmdbin,
       gg_coef_filters = gg_coef_filters
     )
+  )
+}
+
+# Diagnostic only: these slopes do not filter records or change the LQMM fits.
+analyse_plot_slopes <- function(df, group_name) {
+  # Derive unscaled natural logs locally, ignoring any stale log columns.
+  valid <- df |>
+    dplyr::ungroup() |>
+    dplyr::filter(is.finite(QMD), QMD > 0, is.finite(density), density > 0) |>
+    dplyr::mutate(logN = log(density), logQMD = log(QMD))
+
+  per_plot <- valid |>
+    dplyr::group_by(plotID) |>
+    tidyr::nest() |>
+    dplyr::mutate(
+      nobs = purrr::map_int(data, nrow),
+      slope_lin = purrr::map_dbl(data, function(d) {
+        # Same minimum of three observations as filter_stl_slope2().
+        if (nrow(d) < 3L || dplyr::n_distinct(d$logQMD) < 2L) return(NA_real_)
+        fit <- stats::lm(logN ~ logQMD, data = d)
+        unname(stats::coef(fit)["logQMD"])
+      })
+    ) |>
+    dplyr::ungroup() |>
+    dplyr::select(plotID, nobs, slope_lin)
+
+  # Preserve one row per input plot, including those without a usable slope.
+  df_slopes <- df |>
+    dplyr::ungroup() |>
+    dplyr::distinct(plotID) |>
+    dplyr::left_join(per_plot, by = "plotID") |>
+    dplyr::mutate(nobs = dplyr::coalesce(nobs, 0L))
+
+  fit_qr <- NULL
+  if (nrow(valid) >= 3L && dplyr::n_distinct(valid$logQMD) >= 2L) {
+    fit_qr <- tryCatch(
+      quantreg::rq(logN ~ logQMD, tau = 0.9, data = valid),
+      error = function(e) {
+        warning("Pooled quantile regression failed for ", group_name, ": ",
+                conditionMessage(e), call. = FALSE)
+        NULL
+      }
+    )
+  }
+
+  slope_qr <- if (is.null(fit_qr)) NA_real_ else unname(stats::coef(fit_qr)["logQMD"])
+
+  gg_slopes <- df_slopes |>
+    dplyr::filter(is.finite(slope_lin)) |>
+    ggplot2::ggplot(ggplot2::aes(x = slope_lin)) +
+    ggplot2::geom_histogram(bins = 30, colour = "black", fill = "grey70") +
+    ggplot2::labs(x = "Slope", y = "Count", title = group_name) +
+    ggplot2::theme_classic() +
+    ggplot2::xlim(
+      quantile(df_slopes$slope_lin, c(0.10, 0.90), na.rm = TRUE) + c(-10, 10)
+    )
+
+    if (is.finite(slope_qr)) {
+      gg_slopes <- gg_slopes +
+        ggplot2::geom_vline(
+          xintercept = slope_qr,
+          colour = "red",
+          linewidth = 0.7
+        )
+    }
+
+  list(
+    df_slopes = df_slopes,
+    fit_qr = fit_qr,
+    slope_qr = slope_qr,
+    gg_slopes = gg_slopes
   )
 }
 
