@@ -23,15 +23,15 @@ analyse_group <- function(
     # # no data from years with shifted QMD distribution
     # "no_badqmd" = df |>
     #   filter(
-    #     # ndisturbed == 0, 
+    #     # ndisturbed == 0,
     #     !badqmdbin
     #   ),
 
     # # no data from plots with outlying self-thinning slope
     # "no_badslope" = df |>
     #   filter(
-    #     # ndisturbed == 0, 
-    #     !badqmdbin, 
+    #     # ndisturbed == 0,
+    #     !badqmdbin,
     #     !badslope
     #   ),
 

@@ -21,14 +21,26 @@ plot_lqmm_bygroup <- function(data, mod, name = NULL, plot_legend = FALSE){
   df_pred <- purrr::map_dfr(
     as.list(display_years),
     ~ tibble(
-      logQMD = seq(from = min(data$logQMD), to = max(data$logQMD), length.out = 100),
+      logQMD = seq(
+        from = min(data$logQMD),
+        to = max(data$logQMD),
+        length.out = 100
+      ),
       year = .x,
       # Preserve the ID type expected by the recipe; level = 0 omits random effects.
       plotID = data$plotID[1]
     )
   ) |>
-    mutate(pred_90 = predict_model(mod, new_data = pick(everything()), level = 0)) |>
-    mutate(year = as.factor(year))
+    mutate(
+      pred_90 = predict_model(mod, new_data = pick(everything()), level = 0)
+    ) |>
+    mutate(year = as.factor(year)) |>
+
+    # convert to "non-log"
+    mutate(
+      qmd = exp(logQMD),
+      density = exp(pred_90)
+    )
 
   # extract fit info
   out <- summary(mod)
@@ -51,8 +63,9 @@ plot_lqmm_bygroup <- function(data, mod, name = NULL, plot_legend = FALSE){
   ggplot() +
     geom_point(
       data = data,
-      aes(x = logQMD, y = logDensity),
-      col = "grey30",
+      # aes(x = logQMD, y = logDensity),
+      aes(x = QMD, y = density),
+      col = "grey20",
       alpha = 0.1,
       size = 1,
       shape = 16,
@@ -60,11 +73,12 @@ plot_lqmm_bygroup <- function(data, mod, name = NULL, plot_legend = FALSE){
     ) +
     geom_line(
       data = df_pred,
-      aes(logQMD, pred_90, color = year, group = year)
+      # aes(logQMD, pred_90, color = year, group = year)
+      aes(qmd, density, color = year, group = year)
     ) +
     labs(
-      x = expression(ln(QMD)),
-      y = expression(ln(italic(N))),
+      x = "QMD (cm)",
+      y = expression(italic(N)),
       title = name,
       subtitle = subtitle,
       color = "Year"
@@ -95,8 +109,10 @@ plot_lqmm_bygroup <- function(data, mod, name = NULL, plot_legend = FALSE){
       plot.title.position = "plot"
     ) +
     # guides(color = guide_legend(direction = "horizontal")) +
-    scale_x_continuous(limits = c(2.2, 4.7), breaks = seq(3, 4, 1)) +
-    scale_y_continuous(limits = c(2.9, 9.3), breaks = seq(4, 8, 2))
+    # scale_x_continuous(limits = c(2.2, 4.7), breaks = seq(3, 4, 1)) +
+    # scale_y_continuous(limits = c(2.9, 9.3), breaks = seq(4, 8, 2))
+    scale_x_log10(limits = c(10, 100)) +
+    scale_y_log10(limits = c(20, 11000))
 
 }
 
