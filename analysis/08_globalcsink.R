@@ -9,8 +9,6 @@ library(lme4)
 library(purrr)
 library(tidyr)
 library(here)
-
-source(here("R/harmonise_dataset_names.R"))
 library(rsample)
 library(recipes)
 library(multidplyr)
@@ -20,293 +18,98 @@ library(rnaturalearth)
 library(ggplot2)
 library(scales)
 
+source(here("R/harmonise_dataset_names.R"))
+
 ## Load data -------------------------------------------------------------------
-df <- read_rds(here("data/inputs/df_unm_withfilters_v2026.rds"))
+df <- read_rds(here("data/inputs/df_unm_withfilters_v2026.rds"))|>
+
+  dplyr::ungroup() |>
+  dplyr::filter(is.finite(QMD), QMD > 0, is.finite(density), density > 0) |>
+  dplyr::mutate(logDensity = log(density), logQMD = log(QMD)) |>
   # mutate(across(any_of(c("dataset", "dataset_major")), harmonise_dataset_names)) |>
 
   # variable substitute, needed here
   mutate(NQMD2 = density * QMD^2) |>
 
-  # # Re-define all bnp plots as management_cat == 2 (primary), see email Rupert Seidl, 16.04.2026
-  # mutate(management_cat = ifelse(dataset == "bnp", 2, management_cat)) |>
+    # use only "primary" for global model
+    # # use only "old-growth" for global model
+    filter(
+      management_cat == 2 |
+        (management_cat == 1 & management_since_census1_yrs >= 300)
+    )
 
-  # # filter level: no disturbed, no QMD shifts, no outlier slope
-  # filter(ndisturbed == 0) #, !badqmdbin, !badslope)
-
-  # use only "primary" for global model
-  filter(
-    ndisturbed == 0,
-    !badqmdbin,
-    !badslope,
-
-    # Pristine/primary/old-growth/protected
-    management_cat == 2
-  )
-
-### Plot data, filtered upper edge ---------------------------------------------
+    ### Plot data, filtered upper edge ---------------------------------------------
 
 ### Maps of environmental covariates -------------------------------------------
 # Load data for upscaling: maps of environmental factors
 grid_drivers <- read_rds(here("data/df_grid.rds")) |>
   as_tibble() |>
-  mutate(lon_i = round(lon * 4), lat_i = round(lat * 4))
-
-## Function definitions --------------
-### Fit LMM for STL per bootstrap --------
-# this is hard-coded here based on model selection results from 03_env_drivers.R
-fit_stl_byboot <- function(df) {
-  vars_to_scale <- c("logQMD", "year", "tavg", "ai", "ndep")
-
-  rec <- recipe(
-    logDensity ~ logQMD + year + tavg + ai + ndep + dataset + plotID + species,
-    data = df |>
-      drop_na(
-        all_of(
-          c(
-            "logDensity",
-            "logQMD",
-            "year",
-            "tavg",
-            "ai",
-            "ndep",
-            # "ORGC",
-            # "CNrt",
-            # "PBR",
-            # "dataset",
-            "plotID",
-            "species"
-          )
-        )
-      )
-  ) %>%
-    step_center(all_of(vars_to_scale)) %>%
-    step_scale(all_of(vars_to_scale))
-
-  # fit the recipe (stores the sds and sds)
-  rec_prep <- prep(rec)
-
-  # get the preprocessed training data
-  df_scaled <- bake(rec_prep, new_data = NULL)
-
-  # fit your model using these preprocessed columns
-  model <- lmer(
-    logDensity ~ logQMD +
-      year * tavg +
-      year * ai +
-      year * ndep +
-      # year * ORGC +
-      # year * CNrt +
-      # year * PBR +
-      (1 | plotID) + (1 | species),
-    data = df_scaled
+  mutate(
+    lon_i = round(lon * 4),
+    lat_i = round(lat * 4)
   )
 
-  # useful to combine
-  model_bundle <- list(recipe = rec_prep, model = model)
+# Reuse each fit's recipe for both calendar years, including all interactions.
+source(here("R/global_csink.R"))
 
-  return(model_bundle)
-}
-
-### Fit LMM for biomass per bootstrap --------
-fit_biomass_byboot <- function(df) {
-  # biomass data is in kg-DM/ha
-  df <- df |>
-    drop_na(
-      all_of(
-        c(
-          "biomass",
-          "NQMD2",
-          # "dataset",
-          "plotID"
-        )
-      )
-    )
-  if (nrow(df) == 0) {
-    return(NA)
-  } else {
-    model <- lmer(
-      biomass ~ NQMD2 + 0 + (1 | plotID),
-      data = df
-    )
-    return(model)
+# Negative soil values occur in the cached inputs (including averaged missing
+# codes). Report them explicitly; do not silently change the scientific sample.
+for (input_name in c("df", "grid_drivers")) {
+  soil <- get(input_name)[, c("ORGC", "CNrt", "PBR")]
+  if (any(as.matrix(soil) < 0, na.rm = TRUE)) {
+    warning(input_name, ": negative soil predictors present. Rebuild soil inputs with ",
+            "missing codes masked before aggregation before interpreting the soil model.")
   }
 }
-
-### Predict density change (dn) with fitted model
-predict_dn <- function(bundle_stl, vec_qmd, df) {
-  # sample QMD from empirical distribution and add dummy random factor levels
-  # (ignored for prediction but required to avoid error)
-  df <- df |>
-    mutate(
-      qmd = sample(vec_qmd, nrow(df), replace = TRUE),
-      year = 2000,
-      dataset = "dummy_dataset",
-      plotID = "dummy_plot",
-      species = "dummy_species"
-    ) |>
-    mutate(logQMD = log(qmd))
-
-  # apply same preprocessing as for the STL data
-  new_df_scaled <- bake(bundle_stl$recipe, new_data = df)
-
-  # predict N, given QMD, year, and environmental factors for all forest gridcells globally
-  df$logDensity_0 <- predict(
-    bundle_stl$model,
-    newdata = new_df_scaled,
-    re.form = NA
-  ) # Predict ignoring random effects
-
-  df <- df |>
-    mutate(year = 2001)
-
-  # apply same preprocessing as for the STL data
-  new_df_scaled <- bake(bundle_stl$recipe, new_data = df)
-
-  # predict N, given QMD, year, and environmental factors for all forest gridcells globally
-  df$logDensity_1 <- predict(
-    bundle_stl$model,
-    newdata = new_df_scaled,
-    re.form = NA
-  ) # Predict ignoring random effects
-
-  df <- df |>
-    mutate(dn = exp(logDensity_1) - exp(logDensity_0)) |>
-    mutate(dnqmd2 = dn * qmd^2) |>
-    select(lon_i, lat_i, dn, dnqmd2)
-
-  return(df)
-}
-
-predict_db <- function(df, model) {
-  if (identical(model, NA)) {
-    df <- df |>
-      mutate(db = NA)
-  } else {
-    # add dummy random factor levels
-    # (ignored for prediction but required to avoid error)
-    df <- df |>
-      mutate(
-        dataset = "dummy_dataset",
-        plotID  = "dummy_plot"
-      )
-
-    # predict N, given QMD, year, and environmental factors for all forest gridcells globally
-    df$db <- predict(
-      model,
-      newdata = df |>
-        rename(NQMD2 = dnqmd2), # predict one with difference rather than twice with absolute
-      re.form = NA # Predict ignoring random effects
-    )
-
-    df <- df |>
-      select(-dataset, -plotID)
-  }
-
-  return(df)
-}
-
-calc_csink_global <- function(df, df_info){
-  # biomass data is in kg-DM/ha
-  df |>
-    left_join(
-      df_info,
-      by = join_by(lon_i, lat_i)
-    ) |>
-    # convert from kg-DM ha-2 on forest land to gC (integral across gridcell)
-    mutate(db_gc_per_gridcell = db * 1e3 * 0.5 * fcf * area_ha) |>
-
-    # sum across all gridcells globally and convert to PgC
-    summarise(db_pgc = 1e-15 * sum(db_gc_per_gridcell, na.rm = TRUE)) |>
-    pull(db_pgc)
-}
-
-calc_csink_bylat <- function(df, df_info){
-  # biomass data is in kg-DM/ha
-  df |>
-    left_join(
-      df_info,
-      by = join_by(lon_i, lat_i)
-    ) |>
-    # convert from kg-DM ha-2 on forest land to gC (integral across gridcell)
-    mutate(db_gc_per_gridcell = db * 1e3 * 0.5 * fcf * area_ha) |>
-
-    # sum across all gridcells by latitudinal band and convert to TgC
-    group_by(lat_i) |>
-    summarise(db_tgc = 1e-12 * sum(db_gc_per_gridcell, na.rm = TRUE))
-}
-
 
 ## Create bootstraps ------------
 set.seed(1982)
-n_boot <- 300
+n_boot <- 9
 boot_resamples <- bootstraps(df, times = n_boot)
 
-### Un-parallel version --------------------------
-# tic()
-# df_boot <- boot_resamples |>
-#   mutate(id = row_number()) |>
-#   mutate(
-#     bundle_stl = map(splits, ~ fit_stl_byboot(analysis(.x))),
-#     model_biomass = map(splits, ~ fit_biomass_byboot(analysis(.x)))
-#   ) |>
-#   select(-splits) |>
-#   mutate(
-#     grid_predictions = map(
-#       bundle_stl,
-#       ~ predict_dn(., vec_qmd = df$QMD, df = grid_drivers)
-#     )) |>
-#   select(-bundle_stl) |>
-#   mutate(
-#     grid_predictions = map2(
-#       grid_predictions,
-#       model_biomass,
-#       ~ predict_db(.x, .y)
-#     )
-#   ) |>
-#   select(-model_biomass) |>
-
-#   # calculate C sink by latitude (retain to keep sprad across bootstraps)
-#   mutate(db_pgc_global = map_dbl(grid_predictions, ~calc_csink_global(., grid_drivers)))
-
-# toc()
-
-## Parallel version --------------------------
+## Run once, serially (ncores = 1) or in parallel --------------------------
 ncores <- 4 # parallel::detectCores() - 2
 
-cl <- new_cluster(n = ncores) |>
-  cluster_library(
-    packages = c(
-      "dplyr",
-      "tidyr",
-      "lme4",
-      "purrr",
-      "recipes",
-      "rsample"
+if (ncores > 1L) {
+  cl <- new_cluster(n = ncores) |>
+    cluster_library(
+      packages = c(
+        "dplyr",
+        "tidyr",
+        "lme4",
+        "purrr",
+        "recipes",
+        "rsample"
+      )
+    ) |>
+    cluster_assign(
+      fit_stl_byboot = fit_stl_byboot,
+      fit_biomass_byboot = fit_biomass_byboot,
+      predict_dn = predict_dn,
+      predict_db = predict_db,
+      df = df,
+      grid_drivers = grid_drivers,
+      calc_csink_global = calc_csink_global,
+      sum_csink_available = sum_csink_available
     )
-  ) |>
-  cluster_assign(
-    fit_stl_byboot = fit_stl_byboot,
-    fit_biomass_byboot = fit_biomass_byboot,
-    predict_dn = predict_dn,
-    predict_db = predict_db,
-    df = df,
-    grid_drivers = grid_drivers,
-    calc_csink_global = calc_csink_global
-  )
+}
 
 tic()
-df_boot <- boot_resamples |>
-  mutate(id = row_number()) |>
-  partition(cl) |>
+df_boot <- boot_resamples |> mutate(id = row_number())
+
+if (ncores > 1L) df_boot <- partition(df_boot, cl)
+
+df_boot <- df_boot |>
   mutate(
     bundle_stl = map(splits, ~ fit_stl_byboot(analysis(.x))),
     model_biomass = map(splits, ~ fit_biomass_byboot(analysis(.x)))
   ) |>
   select(-splits) |>
   mutate(
-    grid_predictions = map(
-      bundle_stl,
-      ~ predict_dn(., vec_qmd = df$QMD, df = grid_drivers)
+    grid_predictions = map2(
+      bundle_stl, id,
+      ~ withr::with_seed(1982L + .y,
+                        predict_dn(.x, vec_qmd = df$QMD, df = grid_drivers))
     )) |>
   select(-bundle_stl) |>
   mutate(
@@ -318,13 +121,13 @@ df_boot <- boot_resamples |>
   ) |>
   select(-model_biomass) |>
 
-  # calculate C sink by latitude (retain to keep sprad across bootstraps)
-  mutate(db_pgc_global = map_dbl(grid_predictions, ~calc_csink_global(., grid_drivers))) |>
+  # calculate C sink by latitude (retain to keep spread across bootstraps)
+  mutate(db_pgc_global = map_dbl(grid_predictions, ~calc_csink_global(., grid_drivers)))
 
-  # # drop full information to avoid excessive memory use - uncomment when n_boot is very large
-  # select(-grid_predictions) |>
+if (ncores > 1L) df_boot <- collect(df_boot)
 
-  collect()
+df_boot <- arrange(df_boot, id)
+
 toc()
 
 write_rds(
@@ -368,7 +171,7 @@ write_rds(
   here(paste0("data/df_summ_nboot_", as.character(n_boot),".rds"))
 )
 
-df_summ <- read_rds(here("data/df_summ_nboot_300.rds"))
+# df_summ <- read_rds(here("data/df_summ_nboot_300.rds"))
 
 ## Visualisations --------------------------------------------------------------
 ### Distribution of global C sink estimates ------------------------------------
@@ -623,9 +426,8 @@ ggsave(
 )
 
 ### Sink across latitude ---------
-df_boot_small <- read_rds(here("data/df_boot_nboot_300.rds"))
-
-df_bylat <- df_boot_small |>
+# Use the same run as the map and global histogram.
+df_bylat <- df_boot |>
   select(-db_pgc_global) |>
   mutate(csink_tgc_bylat = map(grid_predictions, ~calc_csink_bylat(., grid_drivers))) |>
   select(-grid_predictions) |>
@@ -634,7 +436,7 @@ df_bylat <- df_boot_small |>
   summarise(
     db_tgc_bylat_mean = mean(db_tgc, na.rm = TRUE),
     db_tgc_bylat_median = median(db_tgc, na.rm = TRUE),
-    db_tgc_bylat_q05 = quantile(db_tgc, probs = 0.5, na.rm = TRUE),
+    db_tgc_bylat_q05 = quantile(db_tgc, probs = 0.05, na.rm = TRUE),
     db_tgc_bylat_q95 = quantile(db_tgc, probs = 0.95, na.rm = TRUE),
   ) |>
   mutate(lat = lat_i / 4)

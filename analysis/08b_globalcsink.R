@@ -173,25 +173,117 @@ write_csv(df_summary, file.path(output_dir, "summary.csv"))
 write_csv(forest_area, file.path(output_dir, "forest_area.csv"))
 
 # Figures ----------------------------------------------------------------------
+# If objects are not available, read them
+df_boot <- read_csv(file.path(output_dir, "bootstrap_by_biome.csv"))
+df_boot_global <- read_csv(file.path(output_dir, "bootstrap_global.csv"))
+df_summary <- read_csv(file.path(output_dir, "summary.csv"))
+forest_area <- read_csv(file.path(output_dir, "forest_area.csv"))
+
 ## Distribution of bootstrap sink estimates ------------------------------------
-gg_distribution <- bind_rows(df_boot, df_boot_global) |>
+distribution_order <- c("Global", sort(unique(as.character(df_boot$biome_major))))
+df_distribution <- bind_rows(
+  df_boot_global |>
+    # Convert the summed C sink to the forest-area-weighted global biomass rate.
+    mutate(db_kgdm_ha_yr = sink_pgc_yr * 1e12 /
+             (carbon_fraction * sum(forest_area$forest_area_ha))),
+  df_boot
+) |>
+  mutate(biome_major = factor(biome_major, levels = distribution_order))
+
+gg_distribution_sink <- df_distribution |>
   ggplot(aes(sink_pgc_yr)) +
-  geom_histogram(bins = 15, fill = "grey75", colour = "white", na.rm = TRUE) +
-  geom_vline(xintercept = 0, linetype = 2) +
-  facet_wrap(~biome_major, scales = "free", ncol = 2) +
+  geom_histogram(bins = 30, fill = "grey75", colour = "black", na.rm = TRUE) +
+  geom_vline(xintercept = 0, linetype = "dotted") +
+  facet_wrap(~biome_major, scales = "free", ncol = 1, drop = FALSE) +
   labs(
-    x = expression(paste("C sink associated with quantile shift (PgC ", yr^-1, ")")),
+    x = expression(paste(
+      "C sink associated with quantile shift (PgC ",
+      yr^-1,
+      ")"
+    )),
     y = "Bootstrap replicates"
   ) +
-  theme_bw()
+  theme_classic() +
+  theme(
+    strip.background = element_blank(),
+    strip.text.x = element_text(
+      size = 10,
+      hjust = 0,
+      margin = margin(t = 4.4, b = 4.4, l = 0, r = 0)
+    )
+  )
+
+gg_distribution_sink
+
+ggsave(
+  filename = file.path(output_dir, "sink_distributions.pdf"),
+  plot = gg_distribution_sink,
+  width = 10,
+  height = 10
+)
 
 ggsave(
   filename = file.path(output_dir, "sink_distributions.png"),
-  plot = gg_distribution,
+  plot = gg_distribution_sink,
   width = 10,
-  height = 8,
+  height = 10,
   dpi = 180
 )
+
+gg_distribution_biomass <- df_distribution |>
+  ggplot(aes(
+    x = db_kgdm_ha_yr,
+    group = biome_major,
+    color = biome_major,
+    fill = biome_major
+  )) +
+  geom_density(alpha = 0.5) +
+  geom_vline(xintercept = 0, linetype = "dotted") +
+  labs(
+    x = expression(paste("Biomass change (kg DM ", ha^-1, " ", yr^-1, ")")),
+    y = "Bootstrap replicates"
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Boreal Forests/Taiga" = "dodgerblue4",
+      "Mediterranean Forests" = "orangered3",
+      "Temperate Forests" = "darkgreen",
+      "Tropical & Subtropical Broadleaf Forests" = "springgreen3"
+    ),
+    na.value = NA,
+    breaks = ~ .x[!is.na(.x)],
+    name = ""
+  ) +
+  scale_color_manual(
+    values = c(
+      "Boreal Forests/Taiga" = "dodgerblue4",
+      "Mediterranean Forests" = "orangered3",
+      "Temperate Forests" = "darkgreen",
+      "Tropical & Subtropical Broadleaf Forests" = "springgreen3"
+    ),
+    na.value = NA,
+    breaks = ~ .x[!is.na(.x)],
+    name = ""
+  ) +
+  theme_classic() +
+  theme(
+    strip.background = element_blank(),
+    strip.text.x = element_text(
+      size = 10,
+      hjust = 0,
+      margin = margin(t = 4.4, b = 4.4, l = 0, r = 0)
+    )
+  )
+
+gg_distribution_biomass
+
+ggsave(
+  filename = here("manuscript/figures/distribution_percent_change.pdf"),
+  plot = gg_distribution_biomass,
+  width = 8,
+  height = 4
+)
+
 
 ## Mean sink per forest hectare ------------------------------------------------
 gg_map <- df_grid_sink |>

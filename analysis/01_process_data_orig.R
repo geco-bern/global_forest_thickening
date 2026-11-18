@@ -3062,46 +3062,18 @@ saveRDS(
 # Queensland data: Michael Ngug or John Neldner
 # Victoria: Andrew Clark
 # TERN: Open
-# Data has last management intervention. This shows the last year when some of the trees were labelled as thinned.
-# Missing management dates indicate no recorded thinning, not primary forest.
-# Revised treatment of management: 
-# Set to management_cat = 1 (known history) for all plots even if last_management_year was missing.
-# Assigned management = 0 if `last_management_year` was missing or when last_management_year < first_census_year.
-# For management = 0, management_since_census1_yrs was defined as first_census_year - last_management_year.
-# Indentified few plots where management happened during censi. These were excluded.
-# No plot is identified as management_cat = 2 (primary/old-growth).
 
 # Stand-level data
 aus_plots <- readRDS(file.path(raw_data_dir, "fp_aus/fp_aus_stand.RDS")) |> 
   mutate(plotID = as.character(plotID))
 
-# Classify once per plot using calendar years: management dates have only
-# annual precision, so a decimal census date cannot establish that management
-# in the same year preceded census 1. Where dates differ between records,
-# the latest known intervention determines the status.
-aus_management <- aus_plots |>
-  group_by(plotID) |>
-  summarise(
-    first_census_year = if (all(is.na(year))) NA_real_ else floor(min(year, na.rm = TRUE)),
-    last_management_year = if (all(is.na(year_last_management))) NA_real_ else
-      max(year_last_management, na.rm = TRUE),
-    .groups = "drop"
-  ) |>
-  mutate(
-    management = case_when(
-      is.na(last_management_year) ~ 0L,
-      is.na(first_census_year) ~ NA_integer_,
-      last_management_year < first_census_year ~ 0L,
-      TRUE ~ 1L
-    ),
-    management_since_census1_yrs = if_else(
-      management == 0L,
-      first_census_year - last_management_year,
-      NA_real_
-    ),
-    management_cat = 1L  # if_else(!is.na(management_since_census1_yrs), 1L, 3L)
-  ) |>
-  select(plotID, management, management_since_census1_yrs, management_cat)
+source(here::here("R/australian_management.R"))
+
+aus_protected_areas <- match_aus_protected_areas(aus_plots, read_aus_management_layers())
+aus_queensland_history <- match_aus_queensland_history(aus_plots)
+aus_management <- classify_aus_management(
+  aus_plots, aus_protected_areas$plotID, aus_queensland_history
+)
 
 # prepare data
 aus_plots <- aus_plots |>
@@ -3121,12 +3093,6 @@ aus_plots <- aus_plots |>
   ) |>
   left_join(aus_management, by = "plotID")
 
-aus_plots |> 
-  filter(!is.na(year_last_management) & !is.na(year) & management == 0) |> 
-  group_by(plotID) |> 
-  slice(1) |> 
-  View()
-
 # aggregate data from stand to stand data
 df_aus <- from_stand_data(aus_plots) |>
   # create census
@@ -3140,7 +3106,7 @@ df_aus <- standardise_stand_data(df_aus)
 ggplot() +
   geom_line(
     data = df_aus |>
-      filter(management == 0),
+      filter(management == 0, management_cat == 2),
     aes(x = log(QMD), y = log(density), group = plotID),
     alpha = 0.1,
     col = "black",
@@ -3148,7 +3114,7 @@ ggplot() +
   ) +
   geom_point(
     data = df_aus |>
-      filter(management == 0),
+      filter(management == 0, management_cat == 2),
     aes(x = log(QMD), y = log(density)),
     alpha = 0.1,
     size = 1.5,
@@ -3156,7 +3122,7 @@ ggplot() +
     inherit.aes = FALSE
   )
 
-plot_point_map(df_aus)
+plot_point_map(filter(df_aus, management == 0, management_cat == 2))
 
 # save stand-level data
 saveRDS(df_aus, file = here::here("data/inputs/df_aus_v2026.rds"))

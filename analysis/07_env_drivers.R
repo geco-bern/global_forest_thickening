@@ -21,30 +21,21 @@ library(ggplot2)
 ## Load data -----------
 # note: always use (use_slopefilter = TRUE). Results are consistent for MI and
 # Ndep against alternative filter options, but not for other factors.
-df <- read_rds(here("data/inputs/df_unm_withfilters.rds"))
+df <- read_rds(here("data/inputs/df_unm_withfilters_v2026.rds"))
+  
   # mutate(across(any_of(c("dataset", "dataset_major")), harmonise_dataset_names)) |>
 
-  # # Re-define all bnp plots as management_cat == 2 (primary), see email Rupert Seidl, 16.04.2026
-  # mutate(management_cat = ifelse(dataset == "bnp", 2, management_cat)) |>
-  
-  # # filter level: no disturbed, no QMD shifts, no outlier slope
-  # filter(ndisturbed == 0) #, !badqmdbin, !badslope)
-
-  # use only "primary" for global model
+  # use only "old-growth" for global model
   filter(
-    ndisturbed == 0,
-    !badqmdbin,
-    !badslope,
-
-    # Pristine/primary/old-growth/protected
-    management_cat == 2
+    management_cat == 2 |
+      (management_cat == 1 & management_since_census1_yrs >= 300)
   )
 
-# Downsample for even distribution.
-# Perform a stratified random sampling, where strata are defined by all
-# combinations of three levels in tavg, ai, and ndep. The number of
-# sampled points per stratum should be equal to the total number of
-# points in the sparsest stratum.
+# # Downsample for even distribution.
+# # Perform a stratified random sampling, where strata are defined by all
+# # combinations of three levels in tavg, ai, and ndep. The number of
+# # sampled points per stratum should be equal to the total number of
+# # points in the sparsest stratum.
 
 # # Create 3-level strata for each variable
 # df_strat <- df %>%
@@ -61,7 +52,8 @@ df <- read_rds(here("data/inputs/df_unm_withfilters.rds"))
 # min_n <- df_strat %>%
 #   count(tavg_strata, ai_strata, ndep_strata) %>%
 #   summarise(min_n = quantile(n, 0.25)) %>%
-#   pull(min_n)
+#   pull(min_n) |> 
+#   floor()
 
 # # Perform stratified sampling
 # set.seed(123)
@@ -78,9 +70,6 @@ df <- read_rds(here("data/inputs/df_unm_withfilters.rds"))
 # # subset original data frame to sampled plots
 # df <- df |> 
 #   filter(plotID %in% df_sampled$plotID)
-
-# # xxx try
-# df <- read_rds(here("data/data_unm_slopefilter.rds"))
 
 # LMM with lmer() --------------------------------------------------------------
 ## Fit model -------------------------------------------------------------------
@@ -169,33 +158,33 @@ mod_lmer_env_nopbr_nocn <- lmer(
 
 write_rds(mod_lmer_env_nopbr_nocn, file = here("data/mod_lmer_env_nopbr_nocn.rds"))
 
-### complete model with interactions on QMD ----------------
-mod_lmer_env_complete_interactions <- lmer(
-  logDensity ~
-    scale(logQMD) +
+# ### complete model with interactions on QMD ----------------
+# mod_lmer_env_complete_interactions <- lmer(
+#   logDensity ~
+#     scale(logQMD) +
 
-    # year × environment interactions
-    scale(year) * scale(tavg) +
-    scale(year) * scale(ai) +
-    scale(year) * scale(ndep) +
-    # scale(year) * scale(ORGC) +
-    # scale(year) * scale(PBR) +
-    # scale(year) * scale(CNrt) +
+#     # year × environment interactions
+#     scale(year) * scale(tavg) +
+#     scale(year) * scale(ai) +
+#     scale(year) * scale(ndep) +
+#     # scale(year) * scale(ORGC) +
+#     # scale(year) * scale(PBR) +
+#     # scale(year) * scale(CNrt) +
 
-    # logQMD × environment interactions
-    scale(logQMD) * scale(tavg) +
-    scale(logQMD) * scale(ai) +
-    scale(logQMD) * scale(ndep) +
-    # scale(logQMD) * scale(ORGC) +
-    # scale(logQMD) * scale(PBR) +
-    # scale(logQMD) * scale(CNrt) +
+#     # logQMD × environment interactions
+#     scale(logQMD) * scale(tavg) +
+#     scale(logQMD) * scale(ai) +
+#     scale(logQMD) * scale(ndep) +
+#     # scale(logQMD) * scale(ORGC) +
+#     # scale(logQMD) * scale(PBR) +
+#     # scale(logQMD) * scale(CNrt) +
 
-    (1 | plotID) + (1 | species),
-  data = df,
-  na.action = "na.exclude"
-)
+#     (1 | plotID) + (1 | species),
+#   data = df,
+#   na.action = "na.exclude"
+# )
 
-summary(mod_lmer_env_complete_interactions)
+# summary(mod_lmer_env_complete_interactions)
 
 ## Write summary of model fits to latex table
 options("modelsummary_format_numeric_latex" = "plain")
@@ -205,7 +194,8 @@ modelsummary(
   list(
     "Complete" = mod_lmer_env_complete,
     "No soil" = mod_lmer_env_nosoil,
-    "Complete with interactions" = mod_lmer_env_complete_interactions
+    "No P, C:N" = mod_lmer_env_nopbr_nocn
+    # "Complete with interactions" = mod_lmer_env_complete_interactions
   ),
   output = here(paste0("manuscript/tables/mods_env.tex")),
   # estimate  = "p.value",
@@ -216,22 +206,8 @@ modelsummary(
   coef_omit = "Intercept"
 )
 
-# with interactions between slope (QMD) and environmental factors
-modelsummary(
-  list(
-    "Complete interactions" = mod_lmer_env_complete_interactions
-  ),
-  output = here(paste0("manuscript/tables/mods_env_int_", lab_filter, ".tex")),
-  # estimate  = "p.value",
-  estimate = "{estimate}{stars}",
-  # estimate  = "{estimate} [{conf.low}, {conf.high}], {p.value}",
-  title = "Regression Results",
-  statistic = "conf.int",
-  coef_omit = "Intercept"
-)
-
 # Warning: this is not dynamic
-mod_lmer_env <- mod_lmer_env_nosoil  # based on slope filter
+mod_lmer_env <- mod_lmer_env_complete
 
 ## Visualise fixed effects -----------------------------------------------------
 tl <- attr(terms(mod_lmer_env), "term.labels")
@@ -384,6 +360,14 @@ ggsave(
   width = 6,
   height = 3
 )
+
+df |> 
+  ggplot(aes(x = ai)) +
+  geom_histogram() +
+  geom_vline(
+    xintercept = df |> 
+      filter(dataset == "nfi_spain")
+  )
 
 # # LMM with lqmm() --------------------------------------------------------------
 #

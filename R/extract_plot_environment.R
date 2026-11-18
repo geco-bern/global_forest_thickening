@@ -108,8 +108,11 @@ extract_biome_locations <- function(locations, path) {
 }
 
 extract_raster_locations <- function(raster, locations) {
-  points <- terra::vect(as.data.frame(locations[, c("lon", "lat")]),
-                        geom = c("lon", "lat"), crs = "EPSG:4326")
+  points <- terra::vect(
+    as.data.frame(locations[, c("lon", "lat")]),
+    geom = c("lon", "lat"),
+    crs = "EPSG:4326"
+  )
   terra::extract(raster, terra::project(points, terra::crs(raster)), ID = FALSE)
 }
 
@@ -137,6 +140,7 @@ extract_ndep_locations <- function(locations, dir) {
     on.exit(ncdf4::nc_close(nc), add = TRUE)
     time_dimension <- nc$dim[[which(tolower(names(nc$dim)) == "time")]]
     dates <- terra::time(raster)
+    
     # These files encode TIME as decimal calendar years ("year as %Y.%f"),
     # which terra can otherwise interpret as seconds after 1970-01-01.
     years <- if (grepl("^year as", time_dimension$units)) {
@@ -164,20 +168,30 @@ extract_temperature_locations <- function(locations, dir) {
 # One ingest call for both WISE variables, using the existing top-three-layer
 # depth weighting. GSDE retains its existing variable, layers and directory.
 extract_soil_locations <- function(locations, paths, include_phosphorus = TRUE) {
+
   siteinfo <- locations |>
     dplyr::transmute(sitename = as.character(dplyr::row_number()), lon, lat)
+
   read_soil <- function(source, settings, dir, variables) {
     values <- ingestr::ingest(siteinfo, source = source, settings = settings, dir = dir) |>
       tidyr::unnest(cols = data) |>
       dplyr::ungroup() |>
       dplyr::select(sitename, dplyr::all_of(variables)) |>
       dplyr::mutate(sitename = as.character(sitename))
+
     if (anyDuplicated(values$sitename)) stop("Multiple soil summaries returned for one location.")
+    
     dplyr::left_join(siteinfo[, "sitename", drop = FALSE], values, by = "sitename") |>
       dplyr::select(-sitename)
+
   }
-  values <- read_soil("wise", ingestr::get_settings_wise(c("CNrt", "ORGC"), layer = 1:3),
-                      paths$wise, c("CNrt", "ORGC"))
+
+  values <- read_soil(
+    "wise",
+    ingestr::get_settings_wise(c("CNrt", "ORGC"), layer = 1:3),
+    paths$wise,
+    c("CNrt", "ORGC")
+  )
   if (include_phosphorus) {
     values$PBR <- read_soil("gsde", list(varnam = "PBR", layer = 1:3), paths$gsde, "PBR")$PBR
   } else {

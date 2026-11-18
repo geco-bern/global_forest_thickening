@@ -63,7 +63,6 @@ df_biome_analysis <- df |>
 # warning: large file, approx 6 GB
 write_rds(
   df_biome_analysis,
-  # file = here("data/df_biome_analysis_ALTERNATIVEFILTERS.rds")
   file = here("data/df_biome_analysis.rds")
 )
 
@@ -86,13 +85,11 @@ df_dataset_analysis <- df |>
 # warning: large file, approx 6 GB
 write_rds(
   df_dataset_analysis,
-  # file = here("data/df_dataset_analysis_ALTERNATIVEFILTERS.rds")
   file = here("data/df_dataset_analysis.rds")
 )
 
 # Plots -------------------------
 ## Panel biomes ------------------
-# df_biome_analysis <- read_rds(here("data/df_biome_analysis_ALTERNATIVEFILTERS.rds"))
 # df_biome_analysis <- read_rds(here("data/df_biome_analysis.rds"))
 
 ### Classic LQMM logN-logQMD plot -----------------------
