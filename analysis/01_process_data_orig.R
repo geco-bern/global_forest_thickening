@@ -336,11 +336,11 @@ data_plot <- list.files(path = file.path(raw_data_dir, "fia_us/obs"), pattern = 
 
 data_plot_sel <- data_plot |>
   dplyr::select(plotID, LAT, LON, ELEV) |>
-  distinct(plotID, .keep_all = T)
+  distinct(plotID, .keep_all = TRUE)
 
 # Join tables
 df_fia_us <- data_stand |>
-  left_join(data_plot_sel) |>
+  left_join(data_plot_sel, by = join_by(plotID)) |>
 
   # rename variable
   rename(
@@ -349,7 +349,7 @@ df_fia_us <- data_stand |>
     lon = LON,
     biomass = abg_biomass_kg_ha
   ) |>
-  
+
   # Management classification is assigned from COND history below.
   mutate(
     # PLOT has design codes and COND has area proportions, not a single area
@@ -3220,7 +3220,6 @@ plot_point_map(df_rainfor)
 
 # Save stand-level data
 saveRDS(df_rainfor, file = here::here("data/inputs/df_rainfor_v2026.rds"))
-
 
 # Checks -----------
 ## Confirm units of SERC ---------------
