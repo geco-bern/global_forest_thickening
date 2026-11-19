@@ -110,6 +110,7 @@ The constituent datasets and their source-specific treatment are summarised in T
 \begingroup
 \sffamily\fontsize{8}{9.5}\selectfont
 \setlength{\tabcolsep}{3pt}
+\setlength{\extrarowheight}{3pt}
 \setlength{\LTcapwidth}{\textwidth}
 \urlstyle{same}
 \hypersetup{hidelinks}
@@ -143,11 +144,11 @@ Abbreviation & \textit{N} & Input level & Long name & Data owner/provider/refere
   nfi\_sweeden & 22569 & Stand & Swedish National Forest Inventory & Julian Tijerin-Triviño;\par Restricted data & C1 for all plots; $t$ from plot-specific first-census stand age (proxy); missing ages remain missing. \\
   bnp & 10884 & Stand & Berchtesgaden National Park & Michael Maroschek; Rupert Seidl;\par Restricted data & C2 for all plots (provider instruction); $t$ also derived per plot from last-management year. \\
   fia\_us & 6008 & Tree & Forest Inventory and Analysis, US & Open data; rFIA R package \citep{rfia} & Plot-specific: C1 from treatment dates or stand age; C2 interpreted from baseline old-growth indicators; C3 if history unknown. $t$ missing for C2/C3. \\
-  aus\_plots & 7893 & Stand & Contains: Queensland Native Forest Permanent Plots; FCNSW Native Forest Permanent Growth Plot; Victorian Forest Monitoring Program & Queensland Herbarium and Biodiversity Science (John Nelder); Forestry Corporation of New South Wales (Mike Sutton); Sustainable Timber Tasmania (Shaun Suitor); Department of Energy, Environment and Climate Action, Victoria (Andrew Clark); David Forrester; Michael Ngugi; \par Restricted data &
+  aus\_plots & 7893 & Stand & Contains: Queensland Native Forest Permanent Plots; FCNSW Native Forest Permanent Growth Plot; Victorian Forest Monitoring Program & Queensland Herbarium and Biodiversity Science (John Nelder); Forestry Corporation of New South Wales (Mike Sutton); Sustainable Timber Tasmania (Shaun Suitor); Department of Energy, Environment and Climate Action, Victoria (Andrew Clark); David Forrester; Michael Ngugi; \par Restricted data \par CSIRO North Queensland rainforest plots: \citet{bradford17data} &
   C1 for documented prior intervention. C2 for selected Queensland rainforest plots, NSW plots in mapped old growth, and plots meeting protected-area criteria. C3 where prior history was unresolved.
   \\
   luquillo & 1176 & Tree & Luquillo & Jess Zimmerman;\par \url{https://forestgeo.si.edu} & C2 for all plots (processing interpretation); $t$ missing. \\
-  nfi\_switzerland & 6804 & Stand & Swiss National Forest Inventory & Brigitte Rohner;\par Restricted data & C1 for all plots; $t$ from provider-reported years since intervention at the first census; missing values and the 999 marker retained. \\
+  nfi\_switzerland & 6804 & Stand & Swiss National Forest Inventory &  Swiss Federal Institute for Forest, Snow and Landscape Research WSL, Birmensdorf; Brigitte Rohner; \citet{wsl24nfi} (restricted data extract) \citet{abegg23nfi} (published data) & C1 for all plots; $t$ from provider-reported years since intervention at the first census; missing values and the 999 marker retained. \\
   scbi & 1773 & Tree & Smithsonian Conservation Biology Institute & Kristina J. Anderson-Teixeira; William J. McShea; Norman A. Bourg;\par \url{https://forestgeo.si.edu} & C1 for all plots; fixed $t=53$ yr (compilation assignment). \\
   wuls & 1416 & Tree & Białowieża National Park & Bogdan Brzeziecki;\par Restricted data & C2 for all plots; $t$ missing. \\
   wytham & 1796 & Tree & Wytham Woods & Yadvinder Malhi;\par \url{https://forestgeo.si.edu} & C2 for all plots (processing interpretation); $t$ missing. \\
