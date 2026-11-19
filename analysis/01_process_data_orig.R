@@ -117,12 +117,12 @@ species_code <- read.csv(file.path(raw_data_dir, "nfi_swe/swe_sp_code.csv"), sep
 species_code <- species_code |>
   filter(country == "ES") |>
   rename(species = acceptedname) |>
-  select(code, species)
+  dplyr::select(code, species)
 
 nfi_sweeden_tree <- read.csv(file.path(raw_data_dir, "nfi_swe/nfi_swe_tree.csv"), sep = ",")
 
 nfi_sweeden_tree <- nfi_sweeden_tree |>
-  select(-c(speciescode2, speciescode3)) |>
+  dplyr::select(-c(speciescode2, speciescode3)) |>
   rename(
     code = speciescode1,
     plotID = plotcode
@@ -270,7 +270,7 @@ if (!file.exists(filn)) {
       summarize(ba = sum((pi * DIA * DIA / 4) * TPA_UNADJ * 0.00064516 / 0.405, na.rm = FALSE)) |>
       slice_max(ba, with_ties = FALSE) |>
       ungroup() |>
-      select(plotID, INVYR, species)
+      dplyr::select(plotID, INVYR, species)
 
     currentDF <- currentDF |>
 
@@ -321,7 +321,7 @@ if (!file.exists(filn)) {
 
 # Refresh derived diameters in older caches, retaining every unfiltered plot.
 data_stand <- data_stand |>
-  select(-any_of(c("logQMD", "logDensity"))) |>
+  dplyr::select(-any_of(c("logQMD", "logDensity"))) |>
   mutate(QMD = ba_to_qmd(ba, density))
 
 ## PLOT table ---
@@ -335,7 +335,7 @@ data_plot <- list.files(path = file.path(raw_data_dir, "fia_us/obs"), pattern = 
   mutate(plotID = paste(UNITCD, STATECD, COUNTYCD, PLOT, sep = "_"))
 
 data_plot_sel <- data_plot |>
-  select(plotID, LAT, LON, ELEV) |>
+  dplyr::select(plotID, LAT, LON, ELEV) |>
   distinct(plotID, .keep_all = T)
 
 # Join tables
@@ -452,7 +452,7 @@ dom_species <- lfi_tree_census |>
   summarise(ba = sum(ba_tree, na.rm = FALSE)) |>
   slice_max(ba, with_ties = FALSE) |>
   ungroup() |>
-  select(PLOTID, year, species)
+  dplyr::select(PLOTID, year, species)
 
 # Stand-level data
 lfi_plot_census <- read.csv(file.path(raw_data_dir, "nfi_swi/lfi_plot_census.csv"), sep = ",")
@@ -493,7 +493,7 @@ nfi_switzerland <- lfi_plot_census |>
       if (any(is.na(census_date))) NA_real_ else as.numeric(first(LETZTENU))
   ) |>
   ungroup() |>
-  select(-census_date) |>
+  dplyr::select(-census_date) |>
   filter(management == 0) |> 
   mutate(
     management_cat = 1,
@@ -606,7 +606,7 @@ saveRDS(
 efm_metadata <- read.csv(file.path(raw_data_dir, "efm/raw/VFL_LISTmanual.csv"))
 efm_metadata <- efm_metadata |>
   mutate(FNUM = as.character(FNUM)) |>
-  select(-BA)
+  dplyr::select(-BA)
 
 # Plot area
 efm_area <- read.csv(file.path(raw_data_dir, "efm/raw/EFM_plot_area.csv"))
@@ -625,13 +625,13 @@ efm_management <- efm_management |>
     FNUM = as.character(FNUM),
     management_since_census1_yrs = first_measurement - year_last_intervention
   ) |>
-  select(FNUM, management_since_census1_yrs)
+  dplyr::select(FNUM, management_since_census1_yrs)
 
 # Stand level data (per plot, year and species)
 efm_stand <- readRDS(file.path(raw_data_dir, "efm/raw/efm_stand_v2026.rds"))
 efm_stand <- efm_stand |>
   mutate(FNUM = as.character(FNUM)) |>
-  select(-BA)
+  dplyr::select(-BA)
 
 # Select stand level data for all species: "All species combined"
 dom_species_efm <- efm_stand |>
@@ -789,7 +789,7 @@ dom_species <- fep_gre_tree |>
   summarise(ba = sum(ba_tree, na.rm = FALSE)) |>
   slice_max(ba, with_ties = FALSE) |>
   ungroup() |>
-  select(plotID, year, species)
+  dplyr::select(plotID, year, species)
 
 # stand-level data
 fep_gre_stand <- read.csv(file.path(raw_data_dir, "fp_gre/fp_gre_stand.csv"), sep = ",")
@@ -1158,7 +1158,7 @@ saveRDS(df_iberbas, file = here::here("data/inputs/df_iberbas_v2026.rds"))
 unitbv <- read.csv(file.path(raw_data_dir, "incds/euf_incds.csv"), sep = ",")
 
 unitbv <- unitbv |>
-  select(-c(Height2003, Height2013, Height2023)) |>
+  dplyr::select(-c(Height2003, Height2013, Height2023)) |>
   pivot_longer(
     cols = c(dbh_2003, dbh_2013, dbh_2023, status_2003, status_2013, status_2023, biomass_2003, biomass_2013, biomass_2023),
     names_to = c(".value", "year"),
@@ -1253,7 +1253,7 @@ lwf_stand <- lwf_stand |>
     lat = y_Koord_etrs32,
     plotsize = Plot_size
   ) |>
-  select(plotID, lon, lat, plotsize) |>
+  dplyr::select(plotID, lon, lat, plotsize) |>
   distinct()
 
 # Tree-level data
@@ -1345,7 +1345,7 @@ npvbw_management <- npvbw |>
     ),
     .groups = "drop"
   ) |>
-  select(plotID, management, management_since_census1_yrs)
+  dplyr::select(plotID, management, management_since_census1_yrs)
 
 # prepare data
 npvbw <- npvbw |>
@@ -1373,7 +1373,7 @@ npvbw <- npvbw |>
 df_npvbw <- from_tree_data(npvbw) |>
   # The generic tree aggregator drops management and averages the interval;
   # restore the plot-level fields, including explicit NA rather than NaN.
-  select(-management_since_census1_yrs) |>
+  dplyr::select(-management_since_census1_yrs) |>
   left_join(npvbw_management, by = "plotID") |>
   # create census
   group_by(plotID) |>
@@ -1415,7 +1415,7 @@ nfr_metadata <- read.csv(file.path(raw_data_dir, "nfr/raw/NFR_metadata.csv"))
 
 nfr_metadata <- nfr_metadata |>
   mutate(fg = as.character(fg)) |>
-  select(fg, lat, long, ele, temp, precip) |>
+  dplyr::select(fg, lat, long, ele, temp, precip) |>
   distinct(fg, .keep_all = TRUE)
 
 # Plot area
@@ -1516,7 +1516,7 @@ nwfva_tree <- read.csv(file.path(raw_data_dir, "nwfva/euf_nwfva_tree.csv"), sep 
 nwfva_stand <- nwfva_stand |>
   as_tibble() |>
   unite(plotID, c("reserve_id", "plot_id")) |>
-  select(plotID, year, census, year_last_management) |>
+  dplyr::select(plotID, year, census, year_last_management) |>
   group_by(plotID) |>
   mutate(management_since_census1_yrs = min(year, na.rm = TRUE) - year_last_management)
 
@@ -1585,7 +1585,7 @@ tuzvo_stand <- tuzvo_stand |>
     lat = Latitude,
     plotsize = Plot_size
   ) |>
-  select(plotID, lon, lat, plotsize) |>
+  dplyr::select(plotID, lon, lat, plotsize) |>
   distinct()
 
 # Tree-level data
@@ -1656,14 +1656,14 @@ ul_tree <- read.csv(file.path(raw_data_dir, "ul/euf_ul_tree.csv"), sep = ",")
 ul_metadata <- read.csv(file.path(raw_data_dir, "ul/euf_ul_meta.csv"), sep = ",")
 
 ul_metadata <- ul_metadata |>
-  select(plotid, plot_size) |>
+  dplyr::select(plotid, plot_size) |>
   distinct() |>
   rename(plotsize = plot_size)
 
 ul_coords <- read.csv(file.path(raw_data_dir, "ul/euf_ul_coor.csv"), sep = ",")
 
 ul_coords <- ul_coords |>
-  select(plotid, lat, lon)
+  dplyr::select(plotid, lat, lon)
 
 # prepare data
 ul_tree <- ul_tree |>
@@ -1955,7 +1955,7 @@ wuls_coords <- read.csv(file.path(raw_data_dir, "wuls/euf_wuls_coor.csv"), sep =
 wuls_species <- read.csv(file.path(raw_data_dir, "wuls/euf_wuls_sp.csv"), sep = ",")
 
 wuls <- wuls_tree |>
-  select(-c(H1, H2, H3, H4, H5, H6, H7, H8, V1, V2, V3, V4, V5, V6, V7, V8)) |>
+  dplyr::select(-c(H1, H2, H3, H4, H5, H6, H7, H8, V1, V2, V3, V4, V5, V6, V7, V8)) |>
   pivot_longer(
     cols = c(
       dbh_1, dbh_2, dbh_3, dbh_4, dbh_5, dbh_6, dbh_7, dbh_8,
@@ -2117,7 +2117,7 @@ bci <- list.files(path = file.path(raw_data_dir, "bci"), full.names = TRUE, patt
 
 ## Prepare data
 bci <- bci |>
-  select(-species) |>
+  dplyr::select(-species) |>
   rename(
     plotID = Quadrat,
     census = Census,
@@ -2677,7 +2677,7 @@ forestplots_t1 <- list()
 meta_fp <- read.csv(file.path(raw_data_dir, "forestplots/mahli_zhang/fp_mz_metadata.csv"))
 
 meta_fp <- meta_fp |>
-  # select(Plot_code, Country, Longitude, Latitude, Elevation..m., Plot.Size..ha.) |>
+  # dplyr::select(Plot_code, Country, Longitude, Latitude, Elevation..m., Plot.Size..ha.) |>
   rename(
     plotID = Plot_code,
     country = Country,
@@ -2698,7 +2698,7 @@ multiplots <- read.csv(file.path(raw_data_dir, "forestplots/mahli_zhang/fp_mz_mu
 
 # select and rename variables
 multiplots <- multiplots |>
-  select(
+  dplyr::select(
     country = Country,
     site_name = Plot.Name,
     plotID = Plot.Code,
@@ -2726,7 +2726,7 @@ multiplots <- multiplots |>
 forestplots_t1$multiplots <- forestplots_t1_subplots(multiplots)
 multiplots_unresolved_subplots <- forestplots_t1$multiplots$audit |>
   filter(!retained) |>
-  select(-retained)
+  dplyr::select(-retained)
 
 write_rds(
   multiplots_unresolved_subplots,
@@ -2738,7 +2738,7 @@ multiplots <- forestplots_t1$multiplots$data
 # multiplots$Site.Name |> unique()
 
 # multiplots |>
-#   select(plotID, parent_plotID, country, site_name, lon, lat) |>
+#   dplyr::select(plotID, parent_plotID, country, site_name, lon, lat) |>
 #   distinct() |> 
 #   group_by(parent_plotID, country, site_name, lon, lat) |>
 #   summarise(n = n()) |> 
@@ -2777,9 +2777,6 @@ ggplot() +
 
 if (nrow(df_multiplots) > 0) plot_point_map(df_multiplots)
 
-df_multiplots |>
-  distinct(parent_plotID)
-
 ## Gabon -------------
 gabon <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/gabon"), full.names = TRUE, pattern = "\\.csv$") |>
   lapply(read_csv) |>
@@ -2789,7 +2786,7 @@ gabon <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/gabo
 
 # select and rename variables
 gabon <- gabon |>
-  select(
+  dplyr::select(
     country,
     plot_code,
     treeID,
@@ -2830,7 +2827,7 @@ forestplots_t1$gabon <- forestplots_t1_subplots(gabon)
 gabon <- forestplots_t1$gabon$data
 
 # gabon |>
-#   select(plotID, parent_plotID, country, lon, lat) |>
+#   dplyr::select(plotID, parent_plotID, country, lon, lat) |>
 #   distinct() |>
 #   group_by(parent_plotID, country, lon, lat) |>
 #   summarise(n = n()) |>
@@ -2875,7 +2872,7 @@ ghana <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/ghan
 
 # select and rename variables
 ghana <- ghana |>
-  select(country, plotID, treeID, species, year, dbh, X, Y,
+  dplyr::select(country, plotID, treeID, species, year, dbh, X, Y,
          subplot = T1) |>
   mutate(year = as.integer(year)) |>
   mutate(dbh = dbh / 10) |> # must be in cm
@@ -2893,7 +2890,7 @@ forestplots_t1$ghana <- forestplots_t1_subplots(ghana)
 ghana <- forestplots_t1$ghana$data
 
 # ghana |>
-#   select(plotID, parent_plotID, country, lon, lat) |>
+#   dplyr::select(plotID, parent_plotID, country, lon, lat) |>
 #   distinct() |>
 #   group_by(parent_plotID, country, lon, lat) |>
 #   summarise(n = n()) |>
@@ -2937,7 +2934,7 @@ malaysia <- list.files(path = file.path(raw_data_dir, "forestplots/mahli_zhang/m
 
 # select and rename variables
 malaysia <- malaysia |>
-  select(country, plotID, treeID, species, year, dbh, X, Y,
+  dplyr::select(country, plotID, treeID, species, year, dbh, X, Y,
          subplot = T1) |>
   mutate(year = as.integer(year)) |>
   mutate(dbh = dbh / 10) |> # must be in cm
@@ -2966,7 +2963,7 @@ forestplots_t1$malaysia <- forestplots_t1_subplots(malaysia)
 malaysia <- forestplots_t1$malaysia$data
 
 # malaysia |>
-#   select(plotID, parent_plotID, country, lon, lat) |>
+#   dplyr::select(plotID, parent_plotID, country, lon, lat) |>
 #   distinct() |>
 #   group_by(parent_plotID, country, lon, lat) |>
 #   summarise(n = n()) |>
@@ -3015,7 +3012,7 @@ write_csv(
 )
 
 # combine all data from forestplots
-df_forestplots <- tibble() |>
+df_gem <- tibble() |>
   bind_rows(
     # df_multiplots,  # do not include - no permissions
     df_gabon,
@@ -3024,21 +3021,21 @@ df_forestplots <- tibble() |>
   )
 
 # Standardise stand columns; environmental fields are added in 00_collect_global_drivers.R
-df_forestplots <- standardise_stand_data(df_forestplots) |> 
+df_gem <- standardise_stand_data(df_gem) |> 
 
-  # rename all to 'forestplots'
-  mutate(dataset = "forestplots")
+  # rename all to 'gem'
+  mutate(dataset = "gem")
 
 ggplot() +
   geom_line(
-    data = df_forestplots,
+    data = df_gem,
     aes(x = log(QMD), y = log(density), group = plotID),
     alpha = 0.2,
     col = "black",
     inherit.aes = FALSE
   ) +
   geom_point(
-    data = df_forestplots,
+    data = df_gem,
     aes(x = log(QMD), y = log(density)),
     alpha = 0.2,
     size = 1.5,
@@ -3047,12 +3044,12 @@ ggplot() +
   ) +
   theme_classic()
 
-if (nrow(df_forestplots) > 0) plot_point_map(df_forestplots)
+if (nrow(df_gem) > 0) plot_point_map(df_gem)
 
 # Save stand-level data
 saveRDS(
-  df_forestplots,
-  file = here::here("data/inputs/df_forestplots_v2026.rds")
+  df_gem,
+  file = here::here("data/inputs/df_gem_v2026.rds")
 )
 
 # Australian plots ----

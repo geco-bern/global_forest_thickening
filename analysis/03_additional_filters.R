@@ -96,50 +96,53 @@ df_unm <- tmp_badbins |>
   ungroup()
 
 ## By (major) biome ----------------------------------------------------------
-### Identify non-self-thinning plots based on outlying slope ----------
-# separately for each (major) biome
-# adds column 'badslope'
-tmp_slopefilter <- df_unm |>
-  group_by(biome_major) |>
-  nest() |>
-  filter(!is.na(biome_major)) |> 
-  mutate(
-    mod = purrr::map(data, ~ fit_model(.)),
-    out = purrr::pmap(
-      list(data, mod, biome_major),
-      ~ filter_stl_slope2(..1, ..2, ..3, multiplier_sd = 1.0)
-    )
-  ) |>
-  mutate(
-    gg = purrr::map(out, "gg"),
-    data = purrr::map(out, "df")
-  ) |>
-  dplyr::select(-out)
+# ### Identify non-self-thinning plots based on outlying slope ----------
+# # separately for each (major) biome
+# # adds column 'badslope'
+# tmp_slopefilter <- df_unm |>
+#   group_by(biome_major) |>
+#   nest() |>
+#   filter(!is.na(biome_major)) |>
+#   mutate(
+#     mod = purrr::map(data, ~ fit_model(.)),
+#     out = purrr::pmap(
+#       list(data, mod, biome_major),
+#       ~ filter_stl_slope2(..1, ..2, ..3, multiplier_sd = 1.0)
+#     )
+#   ) |>
+#   mutate(
+#     gg = purrr::map(out, "gg"),
+#     data = purrr::map(out, "df")
+#   ) |>
+#   dplyr::select(-out)
 
-gg_slopefilter <- cowplot::plot_grid(
-  plotlist = tmp_slopefilter$gg,
-  ncol = 2,
-  labels = letters[1:18]
-)
+# gg_slopefilter <- cowplot::plot_grid(
+#   plotlist = tmp_slopefilter$gg,
+#   ncol = 2,
+#   labels = letters[1:18]
+# )
 
-ggsave(
-  here("manuscript/figures/slopefilter.pdf"),
-  plot = gg_slopefilter,
-  width = 12,
-  height = 8
-)
+# ggsave(
+#   here("manuscript/figures/slopefilter.pdf"),
+#   plot = gg_slopefilter,
+#   width = 12,
+#   height = 8
+# )
 
-# For manuscript text:
-# Median slope by biome:
-tmp_slopefilter |> 
-  mutate(slope_med = purrr::map_dbl(data, ~median(.$slope_lin, na.rm = TRUE)))
+# # For manuscript text:
+# # Median slope by biome:
+# tmp_slopefilter |>
+#   mutate(slope_med = purrr::map_dbl(data, ~median(.$slope_lin, na.rm = TRUE)))
 
-# Make df flat again
-df_unm_withfilters <- tmp_slopefilter |> 
-  dplyr::select(biome_major, data) |> 
-  unnest(data) |> 
-  unnest(data) |> 
-  dplyr::select(-logDensity, -logQMD)
+# # Make df flat again
+# df_unm_withfilters <- tmp_slopefilter |>
+#   dplyr::select(biome_major, data) |>
+#   unnest(data) |>
+#   unnest(data) |>
+#   dplyr::select(-logDensity, -logQMD)
+
+# because code above is commented out
+df_unm_withfilters <- df_unm 
 
 write_rds(df_unm_withfilters, here("data/inputs/df_unm_withfilters_v2026.rds"))
 

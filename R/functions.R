@@ -199,7 +199,7 @@ from_species_data <- function(data) {
     group_by(plotID, year) |>
     slice_max(ba, with_ties = FALSE) |>
     ungroup() |>
-    select(plotID, year, species)
+    dplyr::select(plotID, year, species)
 
   # Aggregate data at stand level
   data_agg <- data |>
@@ -257,11 +257,11 @@ from_stand_tree_data <- function(data_tree, data_stand) {
     group_by(plotID, census) |>
     slice_max(ba, with_ties = FALSE) |>
     ungroup() |>
-    select(plotID, census, species)
+    dplyr::select(plotID, census, species)
 
   # Aggregate data at stand level
   data_agg <- data_stand |>
-    select(-any_of(c("logQMD", "logDensity"))) |>
+    dplyr::select(-any_of(c("logQMD", "logDensity"))) |>
 
     # calculate QMD
     mutate(
@@ -297,7 +297,7 @@ from_stand_data <- function(data, qmd_col = NULL) {
 
   # Aggregate data at stand level
   data_agg <- data |>
-    select(-any_of(c("logQMD", "logDensity"))) |>
+    dplyr::select(-any_of(c("logQMD", "logDensity"))) |>
 
     # Calculate QMD unless a source column (already in cm) is explicitly supplied.
     # Preserve missing source values as well; do not fill them from BA/density.
@@ -343,7 +343,7 @@ from_tree_data <- function(data) {
     group_by(plotID, year) |>
     slice_max(ba, with_ties = FALSE) |> # top_n(1, ba)
     ungroup() |>
-    select(plotID, year, species)
+    dplyr::select(plotID, year, species)
 
   # Aggregate data at stand level
   data_agg <- data |>

@@ -39,24 +39,42 @@ source(here("R/plot_boot.R"))
 source(here("R/combine_plots.R"))
 source(here("R/plot_filtereffects.R"))
 
+analyse_groups <- function(df, group_column, workers) {
+  groups <- df |>
+    group_by(.data[[group_column]]) |>
+    nest()
+
+  old_plan <- future::plan("list")
+  on.exit(future::plan(old_plan), add = TRUE)
+  workers <- min(workers, nrow(groups))
+  if (workers <= 1L) {
+    future::plan(future::sequential)
+  } else {
+    future::plan(future::multisession, workers = workers)
+  }
+
+  # Map across all nested rows so each group can be scheduled independently.
+  groups$out <- furrr::future_map2(
+    groups$data,
+    groups[[group_column]],
+    analyse_group,
+    .options = furrr::furrr_options(
+      seed = TRUE,
+      scheduling = Inf,
+      packages = c("dplyr", "ggplot2", "lqmm", "purrr", "tidyr", "viridis")
+    )
+  )
+  groups
+}
+
 # Read and process data ------------
 df <- read_rds(here("data/inputs/df_unm_withfilters_v2026.rds"))
 
 # Run workflow ---------------------
+workers <- min(4L, parallelly::availableCores(omit = 1L))
 
 ## Apply workflow by biome -------------
-df_biome_analysis <- df |>
-  group_by(biome_major) |>
-  nest() |>
-
-  # apply workflow by biome
-  mutate(
-    out = purrr::map2(
-      data,
-      biome_major,
-      ~ analyse_group(df = .x, group_name = .y)
-    )
-  )
+df_biome_analysis <- analyse_groups(df, "biome_major", workers)
 
 ### Save results -------------
 # (includes fitted models and ggplot objects for each major biome)
@@ -67,18 +85,7 @@ write_rds(
 )
 
 ## Apply workflow by dataset ------------------------------------------------------
-df_dataset_analysis <- df |>
-  group_by(dataset_major) |>
-  nest() |>
-  
-  # apply workflow by biome
-  mutate(
-    out = purrr::map2(
-      data,
-      dataset_major,
-      ~ analyse_group(df = .x, group_name = .y)
-    )
-  )
+df_dataset_analysis <- analyse_groups(df, "dataset_major", workers)
 
 ### Save results -------------
 # (includes fitted models and ggplot objects for each major biome)
@@ -155,7 +162,7 @@ ggsave(
   here::here("manuscript/figures/coef_filters_biomes.pdf"),
   plot = gg_coef_filters,
   width = 10,
-  height = 8
+  height = 6
 )
 
 ### By QMD bin -----------------------
@@ -169,12 +176,11 @@ ggsave(
   here::here("manuscript/figures/gg_lqmm_byqmdbin_biomes.pdf"),
   plot = gg_lqmm_byqmdbin,
   width = 10,
-  height = 8
+  height = 6
 )
 
 ## Panels datasets ----------
-# df_dataset_analysis <- read_rds(here("data/df_dataset_analysis_ALTERNATIVEFILTERS.rds"))
-df_dataset_analysis <- read_rds(here("data/df_dataset_analysis.rds"))
+# df_dataset_analysis <- read_rds(here("data/df_dataset_analysis.rds"))
 
 gg_coef_filters <- cowplot::plot_grid(
   plotlist = purrr::map(df_dataset_analysis$out, "gg_coef_filters"),
@@ -185,8 +191,8 @@ gg_coef_filters <- cowplot::plot_grid(
 ggsave(
   here::here("manuscript/figures/coef_filters_datasets.pdf"),
   plot = gg_coef_filters,
-  width = 14,
-  height = 20
+  width = 12,
+  height = 15
 )
 
 # construct panel

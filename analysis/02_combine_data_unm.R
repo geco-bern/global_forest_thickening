@@ -109,7 +109,7 @@ df_pasoh <- readRDS(here::here("data/inputs/df_pasoh_v2026.rds"))
 df_mudumalai <- readRDS(here::here("data/inputs/df_mudumalai_v2026.rds"))
 
 ## Forest plots ----
-df_forestplots <- readRDS(here::here("data/inputs/df_forestplots_v2026.rds"))
+df_gem <- readRDS(here::here("data/inputs/df_gem_v2026.rds"))
 
 ## Australian plots ----
 df_aus <- readRDS(here::here("data/inputs/df_aus_v2026.rds"))
@@ -150,7 +150,7 @@ df_all <- bind_rows(
   df_wytham,
   df_pasoh,  # not included because QMD of all plots lie far outside the range of qmd of remaining plots (except Luquillo, which is also excluded)
   df_mudumalai,
-  df_forestplots,
+  df_gem,
   df_aus,
   df_rainfor
 )
@@ -195,7 +195,7 @@ df_all <- df_all |>
   # unite plotID and dataset to ensure there are not matches form different sources
   rename(plotIDD = plotID) |>
   unite(plotID, dataset, plotIDD, sep = "_", remove = FALSE) |>
-  select(-plotIDD) |>
+  dplyr::select(-plotIDD) |>
 
   # Remove repeated census rows within the retained source and subplot.
   distinct(country, plotID, year, .keep_all = TRUE)
@@ -300,7 +300,7 @@ df_unm <- df_unm |>
 df_unm <- fill_missing_biomes(df_unm)
 
 df_unm |> 
-  select(biome, biomeID) |> 
+  dplyr::select(biome, biomeID) |> 
   distinct()
 
 saveRDS(df_unm, file = here::here("data/inputs/df_unm_step_environment.rds"))
@@ -336,7 +336,7 @@ df_unm <- df_unm |>
   )
 
 df_unm |>
-  select(biome, biomeID, biome_major) |>
+  dplyr::select(biome, biomeID, biome_major) |>
   distinct()
 
 # Construct 'major dataset' ----
@@ -458,7 +458,7 @@ df_unm |>
     ),
     y = QMD
   )) +
-  geom_boxplot(outliers = FALSE) +
+  geom_boxplot(outliers = FALSE, fill = "grey70") +
   # geom_density() +
   tidytext::scale_x_reordered() +
   scale_y_log10() +
