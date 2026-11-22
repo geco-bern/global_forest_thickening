@@ -21,15 +21,19 @@ library(ggplot2)
 ## Load data -----------
 # note: always use (use_slopefilter = TRUE). Results are consistent for MI and
 # Ndep against alternative filter options, but not for other factors.
-df <- read_rds(here("data/inputs/df_unm_withfilters_v2026.rds"))
-  
+df <- read_rds(here("data/inputs/df_unm_withfilters_v2026.rds")) |>
+
   # mutate(across(any_of(c("dataset", "dataset_major")), harmonise_dataset_names)) |>
 
   # use only "old-growth" for global model
   filter(
     management_cat == 2 |
       (management_cat == 1 & management_since_census1_yrs >= 300)
-  )
+  ) |>
+
+  dplyr::filter(is.finite(QMD), QMD > 0, is.finite(density), density > 0) |>
+  dplyr::mutate(logDensity = log(density), logQMD = log(QMD))
+
 
 # # Downsample for even distribution.
 # # Perform a stratified random sampling, where strata are defined by all
@@ -207,7 +211,7 @@ modelsummary(
 )
 
 # Warning: this is not dynamic
-mod_lmer_env <- mod_lmer_env_complete
+mod_lmer_env <- mod_lmer_env_nosoil # mod_lmer_env_complete
 
 ## Visualise fixed effects -----------------------------------------------------
 tl <- attr(terms(mod_lmer_env), "term.labels")

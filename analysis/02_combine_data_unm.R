@@ -232,7 +232,7 @@ df_unm <- df_all |>
 
   # Filter by minimum 3 censi
   group_by(dataset, plotID) |>
-  mutate(n_census_unm = n()) |>
+  mutate(n_census_unm = n_distinct(year[!is.na(QMD)], na.rm = TRUE)) |>
   filter(n_census_unm >= 3) |>
 
   # Beni: since we don't remove disturbed and bad-slope anymore, also don't remove non-declining densities
@@ -466,6 +466,7 @@ df_unm |>
   labs(x = NULL, y = "QMD (cm)") +
   theme_classic() +
   coord_flip()
+
 
 # /////////////////////////////////////////////////////////////////////
 # Legacy code --------------

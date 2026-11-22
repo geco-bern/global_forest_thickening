@@ -40,7 +40,9 @@ Increasing carbon storage capacity across global forest biomes}
 
 \section{Data compilation}
 
-We compiled repeated forest inventories from multiple observational plot networks (referred to as `constituent datasets', Tab. \ref{tab:datasets}) and harmonised them into a consistent dataset (Sec. \ref{sec:harmonisation}). These variables were either obtained directly or calculated from the source data, depending on the variables available and their level of aggregation (Sec. \ref{sec:constituentdatasets}). An overview of the global spatial coverage and record lengths is given in Sec.~\ref{sec:datacoverage}. Patterns of the negative size-density relationship are shown for each constituent dataset in Figs. \ref{fig:dataset-logn-logqmd1} and \ref{fig:dataset-logn-logqmd2}.
+We compiled repeated forest inventories from multiple observational plot networks (referred to as `constituent datasets', Tab. \ref{tab:datasets}) and harmonised them into a consistent dataset (Sec. \ref{sec:harmonisation}). Required variables (Sec. \ref{sec:harmonisation}) were either obtained directly or calculated from the source data, depending on the variables available and their level of aggregation (Sec. \ref{sec:constituentdatasets}). Constituent datasets contributed by co-authors were either large forest observation sites containing multiple (sub-) plots (ForestGEO sites luquillo, scbi, wytham, serc, pasoh, and mudumalai), a network of sites that form part of forest inventories administered by public administration (e.g., nfi\_spain, nfi\_norway, nfi\_sweden, fia\_us, aus\_plots, nfi\_switzerland), a network of commonly managed sites for long-term forest observations and research (rainfor, gem, nfr\_swi, inrae\_lessem, efm\_swi, fep\_gre\_stand), or a set of sites, each with multiple plots, united under common research programmes (EuFoRIa sites, see Tab. \ref{tab:datasets}), and individual sites (uholka). The names of datasets given here in brackets refer to 'Abbreviations' described in Tab. \ref{tab:datasets} and used in figures.
+
+Data from constituent datasets were harmonised (Sec. \ref{sec:harmonisation} and \ref{sec:managementharmonisation}) and combined with a set of data selection criteria applied across data from all constituent datasets (Sec. \ref{sec:dataselection}). An overview of the global spatial coverage and record lengths is given in Sec.~\ref{sec:datacoverage}. Patterns of the negative size-density relationship are shown for each constituent dataset in Figs. \ref{fig:dataset-logn-logqmd1} and \ref{fig:dataset-logn-logqmd2}.
 
 \subsection{Harmonisation of plot-level variables}
 \label{sec:harmonisation}
@@ -142,37 +144,37 @@ Abbreviation & \textit{N} & Input level & Long name & Data owner/provider/refere
   nfi\_spain & 29229 & Species & Spanish National Forest Inventory & Paloma Ruiz-Benito; Veronica Cruz-Alonso;\par Restricted data & C3 for all plots: prior history unrecorded; $t$ missing. \\
   nfi\_norway & 26591 & Stand & Norwegian National Forest Inventory & Norwegian National Forest Inventory, NIBIO – Norwegian Institute of Bioeconomy Research;\par Oliver Moen-Snoksrud; Johannes Breidenbach\par Restricted data;\par \citet{breidenbach20foreco} & C3 for all plots: prior history unknown; $t$ missing. \\
   nfi\_sweeden & 22569 & Stand & Swedish National Forest Inventory & Julian Tijerin-Triviño;\par Restricted data & C1 for all plots; $t$ from plot-specific first-census stand age (proxy); missing ages remain missing. \\
-  bnp & 10884 & Stand & Berchtesgaden National Park & Michael Maroschek; Rupert Seidl;\par Restricted data & C2 for all plots (provider instruction); $t$ also derived per plot from last-management year. \\
+  bnp & 10884 & Stand & Berchtesgaden National Park (EuFoRIa) & Michael Maroschek; Rupert Seidl;\par Restricted data & C2 for all plots (provider instruction); $t$ also derived per plot from last-management year. \\
   fia\_us & 6008 & Tree & Forest Inventory and Analysis, US & Open data; rFIA R package \citep{rfia} & Plot-specific: C1 from treatment dates or stand age; C2 interpreted from baseline old-growth indicators; C3 if history unknown. $t$ missing for C2/C3. \\
   aus\_plots & 7893 & Stand & Contains: Queensland Native Forest Permanent Plots; FCNSW Native Forest Permanent Growth Plot; Victorian Forest Monitoring Program & Queensland Herbarium and Biodiversity Science (John Nelder); Forestry Corporation of New South Wales (Mike Sutton); Sustainable Timber Tasmania (Shaun Suitor); Department of Energy, Environment and Climate Action, Victoria (Andrew Clark); David Forrester; Michael Ngugi; \par Restricted data \par CSIRO North Queensland rainforest plots: \citet{bradford17data} &
   C1 for documented prior intervention. C2 for selected Queensland rainforest plots, NSW plots in mapped old growth, and plots meeting protected-area criteria. C3 where prior history was unresolved.
   \\
-  luquillo & 1176 & Tree & Luquillo & Jess Zimmerman;\par \url{https://forestgeo.si.edu} & C2 for all plots (processing interpretation); $t$ missing. \\
+  luquillo & 1176 & Tree & Luquillo (ForestGEO) & Jess Zimmerman;\par ForestGEO & C2 for all plots (processing interpretation); $t$ missing. \\
   nfi\_switzerland & 6804 & Stand & Swiss National Forest Inventory &  Swiss Federal Institute for Forest, Snow and Landscape Research WSL, Birmensdorf; Brigitte Rohner; \citet{wsl24nfi} (restricted data extract) \citet{abegg23nfi} (published data) & C1 for all plots; $t$ from provider-reported years since intervention at the first census; missing values and the 999 marker retained. \\
-  scbi & 1773 & Tree & Smithsonian Conservation Biology Institute & Kristina J. Anderson-Teixeira; William J. McShea; Norman A. Bourg;\par \url{https://forestgeo.si.edu} & C1 for all plots; fixed $t=53$ yr (compilation assignment). \\
-  wuls & 1416 & Tree & Białowieża National Park & Bogdan Brzeziecki;\par Restricted data & C2 for all plots; $t$ missing. \\
-  wytham & 1796 & Tree & Wytham Woods & Yadvinder Malhi;\par \url{https://forestgeo.si.edu} & C2 for all plots (processing interpretation); $t$ missing. \\
-  serc & 300 & Tree & Smithsonian Environmental Research Center & Sean McMahon;\par \url{https://forestgeo.si.edu} & C2 for all plots (processing interpretation); $t$ missing. \\
-  pasoh & 748 & Tree & Pasoh & Musalmah Nasardin;\par \url{https://forestgeo.si.edu} & C2 for all plots (processing interpretation); $t$ missing. \\
-  forestplots & 1593 & Tree & Global Ecosystems Monitoring (GEM): Gabon and Ghana & Yadvinder Malhi;\par Restricted data & Plot-specific: C2 from old-growth descriptions; C1 from reported logging intervals (50, 60, 20+ or 10+ yr); C3 where prior history was undated. Malaysia was processed but failed the three-census requirement. \\
+  scbi & 1773 & Tree & Smithsonian Conservation Biology Institute (ForestGEO) & Kristina J. Anderson-Teixeira; William J. McShea; Norman A. Bourg;\par ForestGEO & C1 for all plots; fixed $t=53$ yr (compilation assignment). \\
+  wuls & 1416 & Tree & Białowieża National Park (EuFoRIa) & Bogdan Brzeziecki;\par Restricted data & C2 for all plots; $t$ missing. \\
+  wytham & 1796 & Tree & Wytham Woods (ForestGEO) & Yadvinder Malhi;\par ForestGEO & C2 for all plots (processing interpretation); $t$ missing. \\
+  serc & 300 & Tree & Smithsonian Environmental Research Center (ForestGEO) & Sean McMahon;\par ForestGEO & C2 for all plots (processing interpretation); $t$ missing. \\
+  pasoh & 748 & Tree & Pasoh (ForestGEO) & Musalmah Nasardin;\par ForestGEO & C2 for all plots (processing interpretation); $t$ missing. \\
+  gem & 1593 & Tree & Global Ecosystems Monitoring (GEM): Gabon and Ghana & Yadvinder Malhi;\par Restricted data & Plot-specific: C2 from old-growth descriptions; C1 from reported logging intervals (50, 60, 20+ or 10+ yr); C3 where prior history was undated. Malaysia was processed but failed the three-census requirement. \\
   rainfor & 1017 & Stand & Amazon Forest Inventory Network (RAINFOR) & \citet{esquivelmuelbert25data}; \citet{esquivelmuelbert25natplants};  \citet{esquivelmuelbert20natcomm}; \citet{esquivelmuelbert20data}; \citet{sullivan25natcomm}; \citet{sullivan25data};  \citet{sullivan20science}; \citet{sullivan20data}; \citet{brienen_long-term_2015}; \citet{brienen14data}; \citet{bennett23natcc}; \citet{bennett23data} & C2 for all plots, interpreted from published old-growth/intact-forest descriptions; $t$ missing. \\
-  nfr\_swi & 723 & Stand & Swiss Natural Forest Reserves & Martina Hobi; Harald Bugmann;\par Restricted data & C1 for all plots; $t$ calculated per plot from supplied first-measurement and intervention dates. \\
-  fvabw & 624 & Species & Forest Research Institute Baden-Württemberg & Yannek Käber; Lucia Seebach;\par Restricted data & C3 for all plots: reserve status did not establish primary-forest history; $t$ missing. \\
-  unito & 48 & Tree & University of Turin & Renzo Motta;\par Restricted data & C2 for all plots; $t$ missing. \\
+  nfr\_swi & 723 & Stand & Swiss Natural Forest Reserves (EuFoRIa) & Martina Hobi; Harald Bugmann;\par Restricted data & C1 for all plots; $t$ calculated per plot from supplied first-measurement and intervention dates. \\
+  fvabw & 624 & Species & Forest Research Institute Baden-Württemberg (EuFoRIa) & Yannek Käber; Lucia Seebach;\par Restricted data & C3 for all plots: reserve status did not establish primary-forest history; $t$ missing. \\
+  unito & 48 & Tree & University of Turin (EuFoRIa) & Renzo Motta;\par Restricted data & C2 for all plots; $t$ missing. \\
   uholka & 200 & Tree & Uholka-Shyrokyi Luh & Jonas Stillhard;\par Restricted data & C2 for all plots (provider description: primary, never managed); no interval derived. \\
-  mudumalai & 126 & Stand & Mudumalai & Raman Sukumar;\par Restricted data & C2 for all plots (processing interpretation); $t$ missing. \\
-  lwf & 114 & Tree & Bavarian Institute of Forestry & Markus Blaschke;\par Restricted data & C3 for all plots: prior history unrecorded; $t$ missing. \\
-  nwfva & 84 & Tree & Northwest German Forest Research Institute (NW-FVA) & Peter Meyer;\par Restricted data & Plot-specific: C1 where last-management year gives an interval; C3 where $t$ is missing. \\
-  unitbv & 75 & Tree & Transilvania University of Brasov & Any Mary Petritan; Ion Cătălin Petritan;\par Transilvania University of Brasov; Restricted data; \par\cite{petritan15} & C2 for all plots; no recorded interval; $t$ missing. \\
-  tuzvo & 63 & Tree & Technical University in Zvolen & Stanislav Kucbel; Peter Jaloviar;\par Restricted data & C2 for all plots; no recorded interval; $t$ missing. \\
-  iberbas & 62 & Tree & Institute of Biodiversity and Ecosystem Research, Bulgarian Academy of Sciences & Tzvetan Zlatanov; Restricted data & C1 for all plots; fixed $t=70$ yr (compilation assignment). \\
+  mudumalai & 126 & Stand & Mudumalai (ForestGEO) & Raman Sukumar;\par Restricted data;\par ForestGEO & C2 for all plots (processing interpretation); $t$ missing. \\
+  lwf & 114 & Tree & Bavarian Institute of Forestry (EuFoRIa) & Markus Blaschke;\par Restricted data & C3 for all plots: prior history unrecorded; $t$ missing. \\
+  nwfva & 84 & Tree & Northwest German Forest Research Institute (EuFoRIa) & Peter Meyer;\par Restricted data & Plot-specific: C1 where last-management year gives an interval; C3 where $t$ is missing. \\
+  unitbv & 75 & Tree & Transilvania University of Brasov (EuFoRIa) & Any Mary Petritan; Ion Cătălin Petritan;\par Transilvania University of Brasov; Restricted data; \par\cite{petritan15} & C2 for all plots; no recorded interval; $t$ missing. \\
+  tuzvo & 63 & Tree & Technical University in Zvolen (EuFoRIa) & Stanislav Kucbel; Peter Jaloviar;\par Restricted data & C2 for all plots; no recorded interval; $t$ missing. \\
+  iberbas & 62 & Tree & Institute of Biodiversity and Ecosystem Research, Bulgarian Academy of Sciences (EuFoRIa) & Tzvetan Zlatanov; Restricted data & C1 for all plots; fixed $t=70$ yr (compilation assignment). \\
   efm\_swi & 232 & Stand & Experiemental Forest Management plots & David Forrester; Jonas Glattorn;\par Restricted data & C1 for all plots; $t$ calculated per plot from supplied first-measurement and intervention dates. \\
   inrae\_lessem & 48 & Tree & French plots & Georges Kunstler;\par \citep{fuhr17} & C1 for all plots; plot-specific $t$ supplied in metadata alongside first-year and last-harvest information. \\
   fep\_gre\_stand & 48 & Stand & Greek plots & Gavriil Spyroglou; Nikolaos Fyllas;\par Restricted data & C1 for all plots; $t$ from provider-supplied years since management at the first census, held constant thereafter; missing baseline values remain missing. \\
-  czu & 24 & Stand & Czech University of Life Sciences Prague & Miroslav Svoboda;\par Restricted data & C1 for all plots; fixed $t=69$ yr (compilation assignment). \\
-  ul & 39 & Tree & University of Ljubljana, Slovenia & Thomas A. Nagel;\par Restricted data & C2 for all plots (provider description: old forest without management); $t$ missing. \\
-  urk & 12 & Stand & Roztocze National Park, Poland & Srdjan Keren;\par Restricted data & C2 for all plots; no interval calculated from the supplied management year. \\
-  nbw & 15 & Tree & Bavarian Forest National Park, Germany & Marco Heurich; Isabelle Klein;\par Restricted data & C1 for retained plots; $t$ from first census and latest pre-census management year. Within-monitoring interventions excluded. \\
+  czu & 24 & Stand & Czech University of Life Sciences Prague (EuFoRIa) & Miroslav Svoboda;\par Restricted data & C1 for all plots; fixed $t=69$ yr (compilation assignment). \\
+  ul & 39 & Tree & University of Ljubljana, Slovenia (EuFoRIa) & Thomas A. Nagel;\par Restricted data & C2 for all plots (provider description: old forest without management); $t$ missing. \\
+  urk & 12 & Stand & Roztocze National Park, Poland (EuFoRIa) & Srdjan Keren;\par Restricted data & C2 for all plots; no interval calculated from the supplied management year. \\
+  nbw & 15 & Tree & Bavarian Forest National Park, Germany (EuFoRIa) & Marco Heurich; Isabelle Klein;\par Restricted data & C1 for retained plots; $t$ from first census and latest pre-census management year. Within-monitoring interventions excluded. \\
 \end{longtable}
 \endgroup
 
@@ -344,22 +346,16 @@ For Mudumalai (\texttt{mudumalai}), the source contained stand-level counts and 
 \label{sec:gem}
 GEM forest plot data were obtained from Gabon, Ghana, and Malaysia as tree-level census records. Only data from parent plots, classified as `forest' (from provided metadata) were retained. This excluded the Ghanaian savanna plots KOG-04--KOG-06. Analysis units were defined by the supplied `T1' subplots (\texttt{T1} subplot IDs). Each subplot was assigned 0.04 ha, except ANK-03, $40\times240/25=384$~m$^2$ (0.0384 ha) was assigned. All subplots inherited their parent plot's geographic coordinates. For few individual trees where neither the basal area nor the diameter was available, we imputed values from the mean of the respective parent plot.
 
-Management history was interpreted from metadata (\texttt{Anthropogenic.Effects}). Old-growth descriptions gave \texttt{management\_cat = 2} for the Gabon and Malaysia plots and Ghanaian ANK plots. For Ghanaian BOB-01--BOB-04, reported logging histories gave category 1 and \texttt{management\_since\_census1\_yrs} of 50, 60, 20 and 10 yr, respectively. The latter two were lower bounds. Logging around 2016 in BOB-05 and BOB-06 fell within monitoring and gave \texttt{management = 1}. Recurring-fire descriptions for KOG-02 and KOG-03 did not establish an elapsed interval and gave category 3 with a missing interval. Other plots received \texttt{management = 0}. Undated histories did not independently verify absence of intervention during monitoring. After combining the contributions as \texttt{forestplots}, the common selection retained data from Gabon and Ghana. Both Malaysian parent plots (DAN-04 and DAN-05) had only two censuses and therefore failed the three-census requirement.
+Management history was interpreted from metadata (\texttt{Anthropogenic.Effects}). Old-growth descriptions gave \texttt{management\_cat = 2} for the Gabon and Malaysia plots and Ghanaian ANK plots. For Ghanaian BOB-01--BOB-04, reported logging histories gave category 1 and \texttt{management\_since\_census1\_yrs} of 50, 60, 20 and 10 yr, respectively. The latter two were lower bounds. Logging around 2016 in BOB-05 and BOB-06 fell within monitoring and gave \texttt{management = 1}. Recurring-fire descriptions for KOG-02 and KOG-03 did not establish an elapsed interval and gave category 3 with a missing interval. Other plots received \texttt{management = 0}. After combining the contributions as \texttt{gem}, the common selection retained only data from Gabon and Ghana. Both Malaysian parent plots (DAN-04 and DAN-05) had only two censuses and therefore failed the three-census requirement.
 
 \subsubsection{Australian forest plots}
-For the Australian compilation (\texttt{aus\_plots}), \texttt{TreesPerHectareAHC1\_2} and \texttt{BasalAreaAHC1\_2\_m2perha} supplied stand density and basal area. QMD was recalculated from these totals. Plot area, dominant species and coordinates were retained from the source summaries.
+For \texttt{aus\_plots}, we recalculated QMD from stand density (\texttt{TreesPerHectareAHC1\_2}) and basal area (\texttt{BasalAreaAHC1\_2\_m2perha}) and retained the supplied plot area, dominant species and coordinates. Positive \texttt{TreesPerHectareThinned} after the first census or a recorded management year at or after the first census year gave \texttt{management = 1} for the whole plot. Dated earlier interventions gave category 1, with the interval measured from the latest intervention year to the first census year. Documented plot histories took precedence over spatial evidence. Unresolved histories received category 3. Categories and intervals were constant across censuses, with intervals missing for categories 2 and 3.
 
-Plots received \texttt{management = 1} for all censuses if any record had a positive \texttt{TreesPerHectareThinned} value after the first census or a recorded management year at or after the calendar year of the first census. For plots with a dated pre-census intervention, we assigned category 1 and calculated elapsed years from the latest intervention year before the first census year. Where prior history was unresolved, we assigned category 3.
+In Queensland, we matched 0.45--0.60~ha CSIRO plots to sites listed by \citet{graham06rainforest} within 250~m and with the same first census year. Category 2 included EP3, EP18, EP19, EP29, EP30, EP31, EP34, EP35, EP40, EP41 and EP44, plus the Cape Tribulation canopy crane plot, identified by location, area and 2005 stem density \citep{laidlaw07australecol}. EP9 and EP38 received category 1 with a 20-yr lower bound on the interval from selective logging to plot establishment \citep{bauman22nature}. Regrowth or uncertain felling histories put EP2, EP4, EP33 and EP37 in category 3.
 
-We matched CSIRO plots of 0.45--0.60~ha to Queensland rainforest sites within 250~m of the locations published by \href{https://rainforest-crc.jcu.edu.au/publications/permanent_plots_full.pdf}{Graham (2006)} and required agreement on the first census year. We assigned category 2 to 11 CSIRO rainforest plots (EP3, EP18, EP19, EP29, EP30, EP31, EP34, EP35, EP40, EP41, and EP44) and to the Cape Tribulation canopy crane plot, identified from its location, area and 2005 stem density (\href{https://doi.org/10.1111/j.1442-9993.2007.01739.x}{Laidlaw et al.}, 2007). EP9 and EP38 received category 1 with an elapsed interval of 20 yr, a lower bound on time since selective logging at establishment (\href{https://doi.org/10.1038/s41586-022-04737-7}{Bauman et al.}, 2022). EP2, EP4, EP33, and EP37 received category 3 because the field histories describe regrowth or uncertain prior felling.
+Elsewhere, we used mapped tenure from the Collaborative Australian Protected Areas Database (CAPAD) 2024 \citep{commonwealth25capad} as a proxy for minimal use. Category 2 included national, nature and conservation parks in the Northern Territory and Western Australia, and national and regional parks, nature reserves and state conservation areas (including relevant Community Conservation Area zones) in New South Wales. It also included Forestry Corporation of New South Wales (FCNSW) growth plots \citep{nsw09rfa} intersecting the High Conservation Value Old Growth layer \citep{nswepaoldgrowth}. The FCNSW harvest-history layer \citep{fcnsw23harvest} can reflect compartment-scale operations, so intersections did not establish plot-level intervention dates.
 
-For New South Wales, the Northern Territory, Western Australia, Victoria, and Tasmania, we intersected plot coordinates with terrestrial protected-area boundaries from the \href{https://www.dcceew.gov.au/environment/land/nrs/science/capad/2024}{Collaborative Australian Protected Areas Database (CAPAD) 2024, Commonwealth of Australia 2025}. In the Northern Territory and Western Australia, we assigned category 2 to plots within mapped national, nature or conservation parks. In New South Wales, category 2 included plots in mapped national parks, regional parks, nature reserves and state conservation areas, including relevant zones of Community Conservation Areas. We used mapped park tenure as a proxy for minimal use.
-
-We also assigned category 2 to plots intersecting the NSW EPA \href{https://mapprod2.environment.nsw.gov.au/arcgis/rest/services/IFOA/Coastal_IFOA_ESAonly/MapServer/11}{High Conservation Value Old Growth layer}. All matched plots were from the \href{https://www.epa.nsw.gov.au/sites/default/files/09200draftrfa.pdf}{Forestry Corporation of New South Wales (FCNSW) growth-plot network}. The \href{https://services2.arcgis.com/iCBB4zKDwkw2iwDD/arcgis/rest/services/HFDHarvestHistory/FeatureServer}{FCNSW harvest-history layer} sometimes represents operations at compartment scale, so intersections could not establish an intervention date for a plot.
-
-In Victoria and Tasmania, we required formal IUCN category II protection, with both the original and most recent CAPAD gazettal years preceding the first census year, and no recorded management year or positive thinning. The Victorian Forest Monitoring Program samples public forests across tenures (\href{https://doi.org/10.1071/WF24135}{Nguyen et al.}, 2025), so we also excluded locations intersecting harvest seasons that started by the last census year in the \href{https://biod-gis.mapshare.vic.gov.au/arcgis/rest/services/NatureKit/ReferenceMaps/MapServer/28}{Victorian Logging History layer} from category 2. No retained Tasmanian plot met the baseline protection rule. The parcels intersecting the eight retained Tasmanian plots in present-day national parks had proclamation dates after their first censuses in the \href{https://services.thelist.tas.gov.au/arcgis/rest/services/Public/OpenDataWFS/MapServer/38}{LIST Public Land Classification}. The Tasmanian data licence requested unmanaged plots and years since management where available, and published growth trials include unthinned regrowth controls (\href{https://doi.org/10.1080/00049158.2007.10675017}{La Sala}, 2007).
-
-Documented plot-level histories took precedence over spatial evidence. Plots with unresolved histories received category 3. Category and elapsed interval were assigned at plot level and held constant across censuses. The interval was missing for categories 2 and 3.
+In Victoria and Tasmania, category 2 required IUCN category II protection, with both the original and most recent CAPAD gazettal years before the first census year and no recorded management year or positive thinning. Victorian plots intersecting harvest seasons that started by the last census year were excluded from category 2 \citep{victorianlogginghistory}. No retained Tasmanian plot met the baseline protection rule. LIST records \citep{tasmania11publicland} showed that the parcels containing the eight retained plots in present-day national parks were proclaimed after their first censuses.
 
 % \input{dataset_figures/aus_plots.tex}
 
@@ -372,42 +368,17 @@ Plots were assigned \texttt{management = 0} and \texttt{management\_cat = 2}. Fo
 
 % \input{dataset_figures/rainfor.tex}
 
-\subsubsection{Processed datasets excluded from the combined analysis}
-\label{sec:excludedcompilations}
-Barro Colorado Island and Palanan were processed into \texttt{df\_bci} and \texttt{df\_palanam}, but these objects were omitted when combining datasets. Barro Colorado Island (\texttt{bci}) was excluded because management history could not be resolved sufficiently. Palanan (\texttt{palanan}) was excluded following review of its density--diameter pattern and the possibility of disturbance effects. The separate multi-site ForestPlots.net contribution (\texttt{multiplots}) was excluded because permission for its inclusion had not been obtained. This exclusion did not apply to the GEM contributions from Gabon, Ghana and Malaysia described in Sec.~\ref{sec:gem}. Luquillo and Pasoh were included in the combined dataset and subjected to the common selection criteria rather than excluded as whole datasets.
-
-\subsection{Density--diameter relationships by constituent dataset}
-Figs.~\ref{fig:dataset-logn-logqmd1} and \ref{fig:dataset-logn-logqmd2} show the stand-level outputs for the 32 constituent datasets after common selection: exclusion of plots with initial QMD below 10 cm, retention of \texttt{management = 0} observations, and at least three retained censuses per plot. The additional management-history subsets were not applied to these panels.
-
-\clearpage
-% Map with biome areas and forest plot locations as circles
-\begin{figure}
-  \label{fig:dataset-logn-logqmd1}
-\centering
-\includegraphics[width=\textwidth]{../figures/logn_logqmd_1.pdf}
-\caption{Natural-log density versus natural-log QMD by constituent dataset (part 1 of 2). Axis ranges vary among panels, and opacity decreases with dataset size.}
-\end{figure}
 \clearpage
 
-\begin{figure}
-  \label{fig:dataset-logn-logqmd2}
-\centering
-\includegraphics[width=\textwidth]{../figures/logn_logqmd_2.pdf}
-\caption{Natural-log density versus natural-log QMD by constituent dataset (part 2 of 2). Panels continue Fig.~\ref{fig:dataset-logn-logqmd1}.}
-\end{figure}
-
-\clearpage
-
-\subsection{Data coverage}
+\section{Data coverage}
 \label{sec:datacoverage}
 
-% Map with biome areas and forest plot locations as circles
-\begin{figure}
-  \label{fig:sitepoints}
-\centering
-\includegraphics[width=\textwidth]{../figures/gg_sitepoints.pdf}
-\caption{Locations of forest plots (red circles) and the major forest biomes used in this study.}
-\end{figure}
+Tables~\ref{tab:coverage-dataset} and \ref{tab:coverage-biome} summarise coverage by constituent dataset and major biome. Observations count distinct plot--year inventories, and plots count distinct plot identifiers. The first and last years and the mean census span refer to the harmonised dataset (Table~\ref{tab:datasets}). Census span is the interval between a plot's first and last available years, averaged across plots. Mean plot area gives each plot equal weight after averaging its positive recorded areas across censuses. A dash indicates that no usable plot areas were available.
+
+The 30-year, 100-year, and Old-growth columns count plots in the management-history subsets. The 30-year and 100-year subsets include plots classified as old-growth and plots with recorded management at least 30 and 100 years before the first census, respectively. The Old-growth subset includes plots classified as old-growth and plots with recorded management at least 300 years before the first census.
+
+\input{../tables/coverage_by_dataset.tex}
+\input{../tables/coverage_by_biome.tex}
 
 % \begin{figure}
 % \centering
@@ -418,8 +389,44 @@ Figs.~\ref{fig:dataset-logn-logqmd1} and \ref{fig:dataset-logn-logqmd2} show the
 \begin{figure}
 \centering
 \includegraphics[width=0.9\textwidth]{../figures/fig_hist_year.pdf}
-\caption{Distribution of forest census data over time, grouped by biome (a-d). Dataset names are explained in Tab. \ref{tab:datasets}.}
+\caption{Distribution of forest census data over time, grouped by biome (a-d) and colored by constituent datasets (Tab. \ref{tab:datasets}).}
 \end{figure}
+
+% Map with biome areas and forest plot locations as circles
+% Created in analysis/04_compile_global_drivers.R
+\begin{figure}
+  \label{fig:sitepoints}
+\centering
+\includegraphics[width=\textwidth]{../figures/gg_combined.pdf}
+\caption{Locations of forest plots (red circles) and the major forest biomes used in this study. Panel (a) shows locations of all forest plots, (b) shows locations of forest plots classified as old-growth.}
+\end{figure}
+
+
+\clearpage
+
+\section{Supporting results}
+
+\subsection{Negative density-size relationship by constituent dataset}
+
+Figs.~\ref{fig:dataset-logn-logqmd1} and \ref{fig:dataset-logn-logqmd2} show the stand-level outputs for the 32 constituent datasets after common selection: exclusion of plots with initial QMD below 10 cm, retention of \texttt{management = 0} observations, and at least three retained censuses per plot. The additional management-history subsets were not applied to these panels.
+
+\clearpage
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{../figures/logn_logqmd_1.pdf}
+\caption{Natural-log density versus natural-log QMD by constituent dataset (part 1 of 2). Axis ranges vary among panels, and opacity decreases with dataset size.}
+\label{fig:dataset-logn-logqmd1}
+\end{figure}
+\clearpage
+
+\begin{figure}
+\centering
+\includegraphics[width=\textwidth]{../figures/logn_logqmd_2.pdf}
+\caption{Natural-log density versus natural-log QMD by constituent dataset (part 2 of 2). Panels continue Fig.~\ref{fig:dataset-logn-logqmd1}.}
+\label{fig:dataset-logn-logqmd2}
+\end{figure}
+
+\clearpage
 
 \clearpage
 

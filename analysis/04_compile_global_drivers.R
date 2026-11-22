@@ -101,13 +101,15 @@ biomes_raster_forest_major <- subst(
 )
 names(biomes_raster_forest_major) <- "biome_major"
 
-# write to file as NetCDF
-terra::writeCDF(
-  biomes_raster_forest_major,
-  filename = here("data/biomes_raster_forest_major_0.5deg.nc"),
-  overwrite = TRUE,
-  varname = "biome"
-)
+write_rds(biomes_raster_forest_major, here("data/biomes_raster_forest_major.rds"))
+
+# # write to file as NetCDF
+# terra::writeCDF(
+#   biomes_raster_forest_major,
+#   filename = here("data/biomes_raster_forest_major_0.5deg.nc"),
+#   overwrite = TRUE,
+#   varname = "biome"
+# )
 
 df_grid <- as.data.frame(biomes_raster_forest, xy = TRUE, na.rm = FALSE) |>
   as_tibble() |>
@@ -347,69 +349,61 @@ write_rds(
 #   scale_fill_viridis_c()
 
 # Map sites --------------------------------------------------------------------
-# get coastline
-coast <- rnaturalearth::ne_coastline(scale = 110, returnclass = "sf")
+df <- read_rds(here("data/inputs/df_unm_v2026.rds"))
 
-df_plots <- read_rds(here("data/inputs/df_unm_v2026.rds")) |>
+df_plots <- df |>
   distinct(plotID, lat, lon)
 
-# df_plots |>
-#   filter(dataset %in% "lwf")
-#
-# data_unm_euforia <- df_plots |>
-#   filter(dataset %in% c(
-#     "bnp", "czu", "forst", "iberbas", "incds", "lwf", "nbw", "uholka",
-#     "nfr", "nwfva", "tuzvo", "ul", "unito", "urk", "wuls"
-#   )) |>
-#   distinct(plotID, dataset, lat, lon)
+df_plots_oldgrowth <- df |>
+  filter(management_cat == 2) |> 
+  distinct(plotID, lat, lon)
 
-# # Keep only the first occurrence of each name
-# df_labels <- data_unm_euforia %>%
-#   group_by(dataset) %>%
-#   slice(1) %>%
-#   ungroup()
 
 ## Site density ----------------------------------------------------------------
-library(rnaturalearth)
-world <- ne_countries(scale = "medium", returnclass = "sf")
+map_sitedensity <- function(df) {
 
-gg_sitedensity <- ggplot() +
-  # world country outlines
-  geom_sf(data = world, fill = "gray95", color = "gray70", size = 0.2) +
+  countries <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
 
-  # hex bin layer: count of points per hex
-  stat_bin_hex(
-    data = df_plots,
-    mapping = aes(x = lon, y = lat),
-    bins = 60,
-    color = NA,
-    alpha = 0.9
-  ) +
+  ggplot() +
+    # world country outlines
+    geom_sf(data = countries, fill = "gray95", color = "gray70", size = 0.2) +
 
-  # color (count) scale
-  scale_fill_viridis_c(
-    name = "Sites\ncount",
-    option = "D",
-    trans = "sqrt",
-    na.value = "transparent"
-  ) +
+    # hex bin layer: count of points per hex
+    stat_bin_hex(
+      data = df,
+      mapping = aes(x = lon, y = lat),
+      bins = 60,
+      color = NA,
+      alpha = 0.9
+    ) +
 
-  # coordinate system (preserves lat/lon aspect)
-  coord_sf(
-    ylim = c(-60, 85),
-    expand = FALSE # to draw map strictly bounded by the specified extent
-  ) +
+    # color (count) scale
+    scale_fill_viridis_c(
+      name = "Sites\ncount",
+      option = "D",
+      trans = "sqrt",
+      na.value = "transparent"
+    ) +
 
-  # labels and theme
-  labs(
-    x = "",
-    y = ""
-  ) +
-  theme_minimal() +
-  theme(
-    panel.grid = element_line(color = "gray90", linewidth = 0.2),
-    legend.position = "right"
-  )
+    # coordinate system (preserves lat/lon aspect)
+    coord_sf(
+      ylim = c(-60, 85),
+      expand = FALSE # to draw map strictly bounded by the specified extent
+    ) +
+
+    # labels and theme
+    labs(
+      x = "",
+      y = ""
+    ) +
+    theme_minimal() +
+    theme(
+      panel.grid = element_line(color = "gray90", linewidth = 0.2),
+      legend.position = "right"
+    )
+}
+
+gg_sitedensity <- map_sitedensity(df_plots)
 
 ggsave(
   here("manuscript/figures/map_sitedensity.pdf"),
@@ -418,76 +412,98 @@ ggsave(
   height = 4
   )
 
+
 ## Site points -----------------------------------------------------------------
-land <- rnaturalearth::ne_countries(
-  scale = 110,
-  returnclass = "sf"
+map_sitepoints <- function(df, biomes_raster) {
+
+  countries <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
+  coast <- rnaturalearth::ne_coastline(scale = "medium", returnclass = "sf")
+
+  gg_sitepoints <- ggplot() +
+    # Grey continent interiors beneath the biome raster
+    geom_sf(
+      data = countries,
+      fill = "#eceee9",
+      colour = NA
+    ) +
+    tidyterra::geom_spatraster(
+      data = biomes_raster
+    ) +
+    # Coastline outlines above the raster
+    geom_sf(
+      data = coast,
+      colour = "#7b8279",
+      linewidth = .09,
+      fill = NA
+    ) +
+    scale_fill_manual(
+      values = c(
+        "Boreal Forests/Taiga" = "dodgerblue4",
+        "Mediterranean Forests" = "orangered3",
+        "Temperate Forests" = "darkgreen",
+        "Tropical & Subtropical Broadleaf Forests" = "springgreen3"
+      ),
+      na.value = "transparent",
+      breaks = ~ .x[!is.na(.x)],
+      name = ""
+    ) +
+    geom_point(
+      aes(lon, lat),
+      data = df,
+      color = "red",
+      fill = "white",
+      alpha = 0.7,
+      shape = 21,
+      size = 1.2
+    ) +
+    coord_sf(
+      crs = sf::st_crs(4326),
+      xlim = c(-180, 180),
+      ylim = c(-60, 85),
+      expand = FALSE
+    ) +
+    labs(x = "", y = "") +
+    theme_minimal() +
+    theme(
+      panel.grid = element_line(color = "gray90", linewidth = 0.2),
+      panel.background = element_rect(fill = "white", colour = NA),
+      plot.background = element_rect(fill = "white", colour = NA),
+      legend.position = "bottom",
+      legend.text = element_text(size = 8)
+    )
+}
+
+# biomes_raster_forest_major <- read_rds(here("data/biomes_raster_forest_major.rds"))
+
+gg_sitepoints <- map_sitepoints(
+  df_plots,
+  biomes_raster_forest_major
 )
 
-# biomes_raster_forest_major <- terra::rast(
-#   here("data/biomes_raster_forest_major_0.5deg.nc")
-# )
-
-gg_sitepoints <- ggplot() +
-  # Grey continent interiors beneath the biome raster
-  geom_sf(
-    data = land,
-    fill = "#eceee9",
-    colour = NA
-  ) +
-  tidyterra::geom_spatraster(
-    data = biomes_raster_forest_major
-  ) +
-  # Coastline outlines above the raster
-  geom_sf(
-    data = coast,
-    colour = "#7b8279",
-    linewidth = .09,
-    fill = NA
-  ) +
-  scale_fill_manual(
-    values = c(
-      "Boreal Forests/Taiga" = "dodgerblue4",
-      "Mediterranean Forests" = "orangered3",
-      "Temperate Forests" = "darkgreen",
-      "Tropical & Subtropical Broadleaf Forests" = "springgreen3"
-    ),
-    na.value = "transparent",
-    breaks = ~ .x[!is.na(.x)],
-    name = ""
-  ) +
-  geom_point(
-    aes(lon, lat),
-    data = df_plots,
-    color = "red",
-    fill = "white",
-    alpha = 0.7,
-    shape = 21,
-    size = 1.2
-  ) +
-  coord_sf(
-    crs = sf::st_crs(4326),
-    xlim = c(-180, 180),
-    ylim = c(-60, 85),
-    expand = FALSE
-  ) +
-  labs(x = "", y = "") +
-  theme_minimal() +
-  theme(
-    panel.grid = element_line(color = "gray90", linewidth = 0.2),
-    panel.background = element_rect(fill = "white", colour = NA),
-    plot.background = element_rect(fill = "white", colour = NA),
-    legend.position = "bottom",
-    legend.text = element_text(size = 8)
-  )
-
-gg_sitepoints
+gg_sitepoints_oldgrowth <- map_sitepoints(
+  df_plots_oldgrowth,
+  biomes_raster_forest_major
+)
 
 ggsave(
   here("manuscript/figures/gg_sitepoints.pdf"),
   plot = gg_sitepoints,
   width = 10,
   height = 5
+)
+
+gg_combined <- cowplot::plot_grid(
+  gg_sitepoints,
+  gg_sitepoints_oldgrowth,
+  nrow = 1,
+  labels = letters[1:2]
+)
+
+ggsave(
+  here("manuscript/figures/gg_combined.pdf"),
+  plot = gg_combined,
+  width = 14,
+  height = 4
 )
 
 ## Plot plots in biomes --------------------------------------------------------

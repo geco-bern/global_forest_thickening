@@ -1,3 +1,26 @@
+# Filter stages shared by the coefficient figure and the SI coverage tables.
+coefficient_filter_subsets <- function(df) {
+  list(
+    orig = df,
+    no_badqmd = dplyr::filter(df, !badqmdbin),
+    no_mgmt_30 = dplyr::filter(
+      df,
+      management_cat == 2 |
+        (management_cat == 1 & management_since_census1_yrs >= 30)
+    ),
+    no_mgmt_100 = dplyr::filter(
+      df,
+      management_cat == 2 |
+        (management_cat == 1 & management_since_census1_yrs >= 100)
+    ),
+    oldgrowth = dplyr::filter(
+      df,
+      management_cat == 2 |
+        (management_cat == 1 & management_since_census1_yrs >= 300)
+    )
+  )
+}
+
 analyse_group <- function(
   df,
   group_name,
@@ -14,63 +37,7 @@ analyse_group <- function(
   # Plot-level slopes and pooled 90th-quantile slope, using all group data.
   slope_analysis <- analyse_plot_slopes(df, group_name)
 
-  # Define filter stages --------------
-  list_df_filtered <- list(
-    # all data
-    "orig" = df,
-
-    # # no disturbance-affecte plots
-    # "no_disturbance" = df |>
-    #   filter(ndisturbed == 0),
-
-    # no data from years with shifted QMD distribution
-    "no_badqmd" = df |>
-      filter(!badqmdbin),
-
-    # # no data from plots with outlying self-thinning slope
-    # "no_badslope" = df |>
-    #   filter(
-    #     # ndisturbed == 0,
-    #     !badqmdbin,
-    #     !badslope
-    #   ),
-
-    # no data from plots without management history and management <30 years prior to first census
-    "no_mgmt_30" = df |>
-      filter(
-        # ndisturbed == 0,
-        # !badqmdbin,
-        # !badslope,
-
-        # recorded history and management > 30 years prior to first census OR pristine
-        (management_cat == 1 & management_since_census1_yrs >= 30) |
-          management_cat == 2
-      ),
-
-    # no data from plots without management history and management <100 years prior to first census
-    "no_mgmt_100" = df |>
-      filter(
-        # ndisturbed == 0,
-        # !badqmdbin,
-        # !badslope,
-
-        # recorded history and management > 30 years prior to first census OR pristine
-        (management_cat == 1 & management_since_census1_yrs >= 100) |
-          management_cat == 2
-      ),
-
-    # only old-growth
-    "oldgrowth" = df |>
-      filter(
-        # ndisturbed == 0,
-        # !badqmdbin,
-        # !badslope,
-
-        # Pristine/primary/old-growth/protected
-        management_cat == 2 |
-          (management_cat == 1 & management_since_census1_yrs >= 300)
-      )
-  )
+  list_df_filtered <- coefficient_filter_subsets(df)
 
   # Analyse sensitivity to filters ---------------
   # (year coefficient) subject filter levels
