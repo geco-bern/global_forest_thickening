@@ -21,7 +21,6 @@
 ## Loading ------------------------------------------------------------------
 library(tidyverse)
 library(here)
-
 library(segmented)
 library(lqmm)
 
@@ -436,10 +435,11 @@ ggsave(
   height = 10
 )
 
-### Longest-observation --------------------------------------------------------
+## Longest-observation --------------------------------------------------------
 
 # This figure requires the optional slope filter.
 if ("badslope" %in% names(df_unm_withfilters)) {
+
   gg_longplots_tropical <- plot_stl_longplots(
     df_unm_withfilters,
     biome_name = "Tropical & Subtropical Broadleaf Forests"

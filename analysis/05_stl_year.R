@@ -151,6 +151,50 @@ tmp <- df_biome_analysis |>
 
 knitr::kable(tmp)
 
+### Slopes --------------
+df_biome_analysis$out[[1]]$gg_slopes
+
+legend <- get_legend(
+  purrr::map(df_biome_analysis$out, "legend_slopes")[[1]] +
+    theme(legend.position = "right")
+)
+
+# need to overwrite title to nicely place label (letter)
+fig_slope_distribution <- cowplot::plot_grid(
+  purrr::map(df_biome_analysis$out, "gg_slopes")[[1]] +
+    labs(title = bquote(bold("a") ~ ~"Temperate Forests")),
+  purrr::map(df_biome_analysis$out, "gg_slopes")[[2]] +
+    labs(title = bquote(bold("b") ~ ~"Mediterranean Forests")),
+  purrr::map(df_biome_analysis$out, "gg_slopes")[[3]] +
+    labs(title = bquote(bold("c") ~ ~"Boreal Forests/Taiga")),
+  purrr::map(df_biome_analysis$out, "gg_slopes")[[4]] +
+    labs(
+      title = bquote(bold("d") ~ ~"Tropical & Subtropical Broadleaf Forests")
+    ),
+  ncol = 2
+)
+
+fig_slope_distribution <- cowplot::plot_grid(
+  fig_slope_distribution,
+  legend,
+  ncol = 2,
+  rel_widths = c(1, 0.15)
+)
+
+ggsave(
+  filename = here("manuscript/figures/fig_slope_distribution.pdf"),
+  plot = fig_slope_distribution,
+  width = 11,
+  height = 8
+)
+
+ggsave(
+  filename = here("manuscript/figures/fig1_lqmm_onlystl_v2026.pdf"),
+  plot = fig1_lqmm_onlystl,
+  width = 11,
+  height = 8
+)
+
 ### Sensitivity to filters -----------------------
 gg_coef_filters <- cowplot::plot_grid(
   plotlist = purrr::map(df_biome_analysis$out, "gg_coef_filters"),

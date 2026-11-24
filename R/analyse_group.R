@@ -156,6 +156,7 @@ analyse_group <- function(
       fit_qr = slope_analysis$fit_qr,
       slope_qr = slope_analysis$slope_qr,
       gg_slopes = slope_analysis$gg_slopes,
+      legend_slopes = slope_analysis$legend_slopes,
       fit_lqmm = fit_lqmm_orig,
       boot_results = boot_results,
       df_boot = df_boot,
@@ -213,30 +214,54 @@ analyse_plot_slopes <- function(df, group_name) {
 
   slope_qr <- if (is.null(fit_qr)) NA_real_ else unname(stats::coef(fit_qr)["logQMD"])
 
-  gg_slopes <- df_slopes |>
-    dplyr::filter(is.finite(slope_lin)) |>
+  plot_slopes <- dplyr::filter(df_slopes, is.finite(slope_lin))
+  slopes <- c(
+    "Overall quantile regression" = slope_qr,
+    "Median of plot-specific slopes" = stats::median(plot_slopes$slope_lin)
+  )
+  slope_lines <- tibble::tibble(slope = unname(slopes), method = names(slopes)) |>
+    dplyr::filter(is.finite(slope))
+  subtitle <- paste(
+    names(slopes), "=", ifelse(is.finite(slopes), sprintf("%.3f", slopes), "unavailable"),
+    collapse = "\n"
+  )
+  x_limits <- stats::quantile(plot_slopes$slope_lin, c(0.10, 0.90)) + c(-10, 10)
+
+  gg_slopes <- plot_slopes |>
     ggplot2::ggplot(ggplot2::aes(x = slope_lin)) +
     ggplot2::geom_histogram(bins = 30, colour = "black", fill = "grey70") +
-    ggplot2::labs(x = "Slope", y = "Count", title = group_name) +
-    ggplot2::theme_classic() +
-    ggplot2::xlim(
-      quantile(df_slopes$slope_lin, c(0.10, 0.90), na.rm = TRUE) + c(-10, 10)
-    )
+    ggplot2::labs(x = "Slope", y = "Count", title = group_name, subtitle = subtitle) +
+    ggplot2::theme_classic()
 
-    if (is.finite(slope_qr)) {
-      gg_slopes <- gg_slopes +
-        ggplot2::geom_vline(
-          xintercept = slope_qr,
-          colour = "red",
-          linewidth = 0.7
-        )
-    }
+  if (nrow(slope_lines) > 0L) {
+    x_limits <- range(x_limits, slope_lines$slope, na.rm = TRUE)
+    gg_slopes <- gg_slopes +
+      ggplot2::geom_vline(
+        data = slope_lines,
+        mapping = ggplot2::aes(xintercept = slope, linetype = method),
+        colour = "red",
+        linewidth = 0.7,
+        show.legend = TRUE
+      ) +
+      ggplot2::scale_linetype_manual(
+        name = NULL,
+        limits = names(slopes),
+        values = stats::setNames(c("solid", "dashed"), names(slopes))
+      )
+  }
+  
+  legend_slopes <- if (nrow(slope_lines) > 0L) cowplot::get_legend(gg_slopes) else NULL
+
+  gg_slopes <- gg_slopes +
+    ggplot2::xlim(x_limits) +
+    ggplot2::theme(legend.position = "none")
 
   list(
     df_slopes = df_slopes,
     fit_qr = fit_qr,
     slope_qr = slope_qr,
-    gg_slopes = gg_slopes
+    gg_slopes = gg_slopes,
+    legend_slopes = legend_slopes
   )
 }
 

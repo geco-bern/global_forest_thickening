@@ -21,8 +21,16 @@ stopifnot(nrow(r$df_slopes) == 2L, all(r$df_slopes$nobs == 8L),
           isTRUE(all.equal(r$slope_qr, unname(coef(quantreg::rq(
             log(density) ~ log(QMD), tau = 0.9, data = df))[2]))))
 built <- ggplot_build(r$gg_slopes)
+median_slope <- median(r$df_slopes$slope_lin)
+subtitle <- get_labs(r$gg_slopes)$subtitle
 stopifnot(sum(built$data[[1]]$count) == 2,
-          all(built$data[[2]]$xintercept == r$slope_qr))
+          identical(built$data[[2]]$xintercept, c(r$slope_qr, median_slope)),
+          identical(built$data[[2]]$linetype, c("solid", "dashed")),
+          all(built$data[[2]]$colour == "red"),
+          grepl(sprintf("Overall quantile regression = %.3f", r$slope_qr), subtitle, fixed = TRUE),
+          grepl(sprintf("Median of plot-specific slopes = %.3f", median_slope), subtitle, fixed = TRUE),
+          inherits(r$legend_slopes, "gtable"),
+          identical(r$gg_slopes$theme$legend.position, "none"))
 
 # Invalid raw values and stale log columns cannot alter either fit.
 bad <- df[1:4, ] |> mutate(QMD = c(NA, 0, -1, Inf))
@@ -46,7 +54,8 @@ stopifnot(nrow(e$df_slopes) == 5L,
           filter(e$df_slopes, plotID == "invalid")$nobs == 0L)
 empty <- analyse_plot_slopes(df[FALSE, ], "Empty")
 stopifnot(nrow(empty$df_slopes) == 0L, is.null(empty$fit_qr),
-          is.na(empty$slope_qr), length(ggplot_build(empty$gg_slopes)$data) == 1L)
+          is.na(empty$slope_qr), length(ggplot_build(empty$gg_slopes)$data) == 1L,
+          is.null(empty$legend_slopes))
 
 # Exercise analyse_group's wiring without rerunning the unrelated LQMM fits.
 get_breaks <- function(...) NULL
@@ -56,9 +65,10 @@ extract_coef <- function(...) tibble(term = "year", estimate = NA_real_)
 plot_filtereffects <- function(...) ggplot()
 calc_lqmm_byqmdbin <- function(d) list(df = d)
 plot_lqmm_byqmdbin <- function(...) ggplot()
-out <- analyse_group(mutate(df, management_cat = 2L,
+out <- analyse_group(mutate(df, badqmdbin = FALSE, management_cat = 2L,
                             management_since_census1_yrs = NA_real_), "Example")
 stopifnot(identical(out$df_slopes, r$df_slopes),
           isTRUE(all.equal(out$slope_qr, r$slope_qr)),
-          inherits(out$fit_qr, "rq"), inherits(out$gg_slopes, "ggplot"))
-cat("Plot slopes, pooled quantile fit, histogram line, invalid/sparse data and analyse_group outputs passed.\n")
+          inherits(out$fit_qr, "rq"), inherits(out$gg_slopes, "ggplot"),
+          inherits(out$legend_slopes, "gtable"))
+cat("Plot slopes, reference lines, subtitle, legend, sparse data and analyse_group outputs passed.\n")
