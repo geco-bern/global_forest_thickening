@@ -38,7 +38,7 @@ source(here("R/analyse_group.R"))
 # - management_since_census1_yrs (before called years_last_management)
 # - management_cat = 1,2 or 3.
 # - management = 0 (indicating no management between census)
-# 
+#
 # Among management_cat:
 # 1. Recorded history
 #    The time since the last management before the first census is known and recorded.
@@ -50,8 +50,7 @@ source(here("R/analyse_group.R"))
 #    The time since the last management before the first census is unknown. The forest may have a history of substantial past wood harvesting and/or visible signs of forest use before the first census.
 
 # read data created by 02_combine_data_unm.R
-df_harmonized <- readRDS(here::here("data/inputs/df_unm_v2026.rds"))
-df_unm <- df_harmonized
+df_unm <- readRDS(here::here("data/inputs/df_unm_v2026.rds"))
  
 ## By forest plot --------------------------------------------------------------
 
@@ -149,12 +148,18 @@ df_unm_withfilters <- df_unm
 write_rds(df_unm_withfilters, here("data/inputs/df_unm_withfilters_v2026.rds"))
 
 # Data coverage tables for SI ---------------------------------------
+df_unm_withfilters <- read_rds(here("data/inputs/df_unm_withfilters_v2026.rds")) |> 
+  tidyr::drop_na(QMD, density)
+
 coverage_filter_subsets <- coefficient_filter_subsets(df_unm_withfilters)[
   c("no_mgmt_30", "no_mgmt_100", "oldgrowth")
 ]
 
-summarise_coverage <- function(group_column, data = df_harmonized,
-                               subsets = coverage_filter_subsets) {
+summarise_coverage <- function(
+  group_column,
+  data = df_unm_withfilters,
+  subsets = coverage_filter_subsets
+) {
   coverage <- data |>
     group_by(.data[[group_column]], plotID) |>
     summarise(
@@ -189,7 +194,7 @@ summarise_coverage <- function(group_column, data = df_harmonized,
     relocate(mean_period, .after = last_year)
 }
 
-mean_plot_areas <- df_harmonized |>
+mean_plot_areas <- df_unm_withfilters |>
   filter(is.finite(plotsize), plotsize > 0) |>
   group_by(dataset, plotID) |>
   summarise(plot_area_ha = mean(plotsize), .groups = "drop_last") |>
@@ -197,17 +202,24 @@ mean_plot_areas <- df_harmonized |>
 
 df_coverage_dataset <- summarise_coverage("dataset") |>
   left_join(mean_plot_areas, by = "dataset")
+
 df_coverage_biome <- bind_rows(
   summarise_coverage("biome_major"),
   summarise_coverage(
     "biome_major",
-    data = mutate(df_harmonized, biome_major = "Total"),
+    data = mutate(df_unm_withfilters, biome_major = "Total"),
     subsets = map(coverage_filter_subsets, \(subset) mutate(subset, biome_major = "Total"))
   )
 )
 
-write_coverage_table <- function(coverage, group_label, caption, label, filename,
-                                 bold_last_row = FALSE) {
+write_coverage_table <- function(
+  coverage,
+  group_label,
+  caption,
+  label,
+  filename,
+  bold_last_row = FALSE
+) {
   display <- coverage |>
     mutate(
       across(
@@ -221,8 +233,15 @@ write_coverage_table <- function(coverage, group_label, caption, label, filename
     )
 
   headings <- c(
-    group_label, "Obs.", "Plots", "30 yr", "100 yr",
-    "Old-growth", "First", "Last", "Span (yr)"
+    group_label,
+    "Obs.",
+    "Plots",
+    "30 yr",
+    "100 yr",
+    "Old-growth",
+    "First",
+    "Last",
+    "Span (yr)"
   )
   if ("mean_plot_area_ha" %in% names(display)) {
     headings <- c(headings, "Area (ha)")
@@ -267,7 +286,7 @@ write_coverage_table(
 
 # Figures for SI -----------------
 ## Length of repeated observations ----------------------------------
-df_len <- df_unm |>
+df_len <- df_unm_withfilters |>
   group_by(plotID, biome_major) |>
   summarise(start = min(year), end = max(year)) |>
   mutate(len = end - start)
@@ -359,25 +378,25 @@ plot_hist_year_biome <- function(df, biome_name, xmin) {
 }
 
 gg_hist_year_tropical <- plot_hist_year_biome(
-  df_unm,
+  df_unm_withfilters,
   "Tropical & Subtropical Broadleaf Forests",
   xmin = 1970
 )
 
 gg_hist_year_temperate <- plot_hist_year_biome(
-  df_unm,
+  df_unm_withfilters,
   "Temperate Forests",
   xmin = 1960
 )
 
 gg_hist_year_boreal <- plot_hist_year_biome(
-  df_unm,
+  df_unm_withfilters,
   "Boreal Forests/Taiga",
   xmin = 1980
 )
 
 gg_hist_year_mediterranean <- plot_hist_year_biome(
-  df_unm,
+  df_unm_withfilters,
   "Mediterranean Forests",
   xmin = 1980
 )
@@ -461,10 +480,8 @@ if ("badslope" %in% names(df_unm_withfilters)) {
 }
 
 # Numbers for main text ------
-df <- read_rds(here("data/inputs/df_unm_withfilters_v2026.rds"))
-
-n_observations <- nrow(unique(df[c("plotID", "year")]))
-n_plots <- length(unique(df$plotID))
+n_observations <- nrow(unique(df_unm_withfilters[c("plotID", "year")]))
+n_plots <- length(unique(df_unm_withfilters$plotID))
 
 # with text from the article:
 # data size
@@ -478,17 +495,17 @@ cat(sprintf(
   formatC(n_plots, format = "d", big.mark = ",")
 ))
 
-n_obs_availableinfo <- df |>
+n_obs_availableinfo <- df_unm_withfilters |>
   distinct(plotID, management_cat) |>
   filter(management_cat %in% c(1,2)) |>
   nrow()
 
-n_sites_oldgrowth <- df |>
+n_sites_oldgrowth <- df_unm_withfilters |>
   distinct(plotID, management_cat) |>
   filter(management_cat == 2) |>
   nrow()
 
-n_obs_oldgrowth <- df |> 
+n_obs_oldgrowth <- df_unm_withfilters |> 
   distinct(plotID, year, management_cat) |> 
   filter(management_cat == 2) |> 
   nrow()
@@ -505,8 +522,8 @@ cat(sprintf(
 ))
 
 # years covered
-firstyear <- min(df$year)
-lastyear <- max(df$year)
+firstyear <- min(df_unm_withfilters$year)
+lastyear <- max(df_unm_withfilters$year)
 
 cat(sprintf(
   paste0(
