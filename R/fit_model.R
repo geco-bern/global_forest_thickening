@@ -1,48 +1,89 @@
 # Fit the same model after learning predictor scaling from its training sample.
-fit_model <- function(df, lqmm = TRUE, control = list(), min_rows = 30L) {
-
+fit_model <- function(
+  df,
+  lqmm = TRUE,
+  control = list(),
+  min_rows = 30L,
+  include_year = TRUE
+) {
   # Count usable model inputs, rather than rows that will be lost to missing
   # values or produce non-finite logarithms. A skipped fit returns NULL.
-  df <- as.data.frame(df)[, c("density", "QMD", "year", "plotID")]
+  year_var <- if (include_year) "year"
+  df <- as.data.frame(df)[, c("density", "QMD", year_var, "plotID")]
 
-  usable <- is.finite(df$density) & df$density > 0 &
-    is.finite(df$QMD) & df$QMD > 0 & is.finite(df$year) & !is.na(df$plotID)
+  usable <- is.finite(df$density) &
+    df$density > 0 &
+    is.finite(df$QMD) &
+    df$QMD > 0 &
+    !is.na(df$plotID)
+  if (include_year) {
+    usable <- usable & is.finite(df$year)
+  }
 
   df <- df[usable, , drop = FALSE]
 
   if (nrow(df) < min_rows) {
-    warning(sprintf("Skipping model: only %d usable rows (minimum %d).",
-                    nrow(df), min_rows), call. = FALSE)
+    warning(
+      sprintf(
+        "Skipping model: only %d usable rows (minimum %d).",
+        nrow(df),
+        min_rows
+      ),
+      call. = FALSE
+    )
     return(NULL)
   }
 
-  if (length(unique(df$QMD)) < 2L || length(unique(df$year)) < 2L) {
-    warning("Skipping model: QMD and year must both vary.", call. = FALSE)
+  if (
+    length(unique(df$QMD)) < 2L ||
+      (include_year && length(unique(df$year)) < 2L)
+  ) {
+    warning(
+      if (include_year) {
+        "Skipping model: QMD and year must both vary."
+      } else {
+        "Skipping model: QMD must vary."
+      },
+      call. = FALSE
+    )
     return(NULL)
   }
-  
+
   if (length(unique(df$plotID)) < 2L) {
-    warning("Skipping mixed model: at least two plots are required.", call. = FALSE)
+    warning(
+      "Skipping mixed model: at least two plots are required.",
+      call. = FALSE
+    )
     return(NULL)
   }
 
   set.seed(123)
   df$logDensity <- log(df$density)
   df$logQMD <- log(df$QMD)
-  df <- df[, c("logDensity", "logQMD", "year", "plotID")]
+  predictors <- c("logQMD", year_var)
+  scaled_predictors <- paste0(predictors, "_sc")
+  df <- df[, c("logDensity", predictors, "plotID")]
 
-  rec <- recipes::recipe(logDensity ~ logQMD + year + plotID, data = df) |>
+  rec <- recipes::recipe(
+    stats::reformulate(c(predictors, "plotID"), "logDensity"),
+    data = df
+  ) |>
     recipes::update_role(plotID, new_role = "id") |>
-    recipes::step_normalize(logQMD, year, id = "normalize_predictors") |>
-    recipes::step_rename(logQMD_sc = logQMD, year_sc = year, id = "rename_predictors") |>
+    recipes::step_normalize(
+      !!!rlang::syms(predictors),
+      id = "normalize_predictors"
+    ) |>
+    recipes::step_rename(
+      !!!stats::setNames(rlang::syms(predictors), scaled_predictors),
+      id = "rename_predictors"
+    ) |>
     recipes::prep(training = df, retain = FALSE)
 
   df_scaled <- recipes::bake(rec, new_data = df)
-  
-  fixed_formula <- logDensity ~ logQMD_sc + year_sc
 
-  if (lqmm){
+  fixed_formula <- stats::reformulate(scaled_predictors, "logDensity")
 
+  if (lqmm) {
     control <- utils::modifyList(
       list(LP_max_iter = 500, LP_tol_ll = 1e-05, startQR = TRUE),
       control
@@ -56,9 +97,7 @@ fit_model <- function(df, lqmm = TRUE, control = list(), min_rows = 30L) {
       type = "normal",
       control = do.call(lqmm::lqmmControl, control)
     )
-
   } else {
-    
     fit <- lme4::lmer(
       stats::update(fixed_formula, . ~ . + (1 | plotID)),
       data = df_scaled,

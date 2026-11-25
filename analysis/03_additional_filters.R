@@ -438,46 +438,43 @@ ggsave(
 ## Longest-observation --------------------------------------------------------
 
 # This figure requires the optional slope filter.
-if ("badslope" %in% names(df_unm_withfilters)) {
+gg_longplots_tropical <- plot_stl_longplots(
+  df_unm_withfilters,
+  biome_name = "Tropical & Subtropical Broadleaf Forests"
+)
 
-  gg_longplots_tropical <- plot_stl_longplots(
-    df_unm_withfilters,
-    biome_name = "Tropical & Subtropical Broadleaf Forests"
-  )
+gg_longplots_temperate <- plot_stl_longplots(
+  df_unm_withfilters,
+  biome_name = "Temperate Forests"
+)
 
-  gg_longplots_temperate <- plot_stl_longplots(
-    df_unm_withfilters,
-    biome_name = "Temperate Forests"
-  )
+gg_longplots_boreal <- plot_stl_longplots(
+  df_unm_withfilters,
+  biome_name = "Boreal Forests/Taiga"
+)
 
-  gg_longplots_boreal <- plot_stl_longplots(
-    df_unm_withfilters,
-    biome_name = "Boreal Forests/Taiga"
-  )
+gg_longplots_mediterranean <- plot_stl_longplots(
+  df_unm_withfilters,
+  biome_name = "Mediterranean Forests"
+)
 
-  gg_longplots_mediterranean <- plot_stl_longplots(
-    df_unm_withfilters,
-    biome_name = "Mediterranean Forests"
-  )
+fig_stl_longplots <- cowplot::plot_grid(
+  gg_longplots_tropical,
+  gg_longplots_temperate,
+  gg_longplots_boreal,
+  gg_longplots_mediterranean,
+  ncol = 2,
+  labels = letters[1:4]
+)
 
-  fig_stl_longplots <- cowplot::plot_grid(
-    gg_longplots_tropical,
-    gg_longplots_temperate,
-    gg_longplots_boreal,
-    gg_longplots_mediterranean,
-    ncol = 2,
-    labels = letters[1:4]
-  )
+fig_stl_longplots
 
-  fig_stl_longplots
-
-  ggsave(
-    filename = here("manuscript/figures/stl_longplots.pdf"),
-    plot = fig_stl_longplots,
-    width = 9,
-    height = 7
-  )
-}
+ggsave(
+  filename = here("manuscript/figures/stl_longplots.pdf"),
+  plot = fig_stl_longplots,
+  width = 9,
+  height = 7
+)
 
 # Numbers for main text ------
 n_observations <- nrow(unique(df_unm_withfilters[c("plotID", "year")]))

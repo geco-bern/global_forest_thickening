@@ -34,7 +34,7 @@ analyse_group <- function(
   breaks <- get_breaks(df$year)
   gg_fdisturbed <- plot_disturbed(df, group_name, breaks)
 
-  # Plot-level slopes and pooled 90th-quantile slope, using all group data.
+  # Plot-level slopes and the overall 90th-quantile mixed-model slope.
   slope_analysis <- analyse_plot_slopes(df, group_name)
 
   list_df_filtered <- coefficient_filter_subsets(df)
@@ -200,19 +200,22 @@ analyse_plot_slopes <- function(df, group_name) {
     dplyr::left_join(per_plot, by = "plotID") |>
     dplyr::mutate(nobs = dplyr::coalesce(nobs, 0L))
 
-  fit_qr <- NULL
-  if (nrow(valid) >= 3L && dplyr::n_distinct(valid$logQMD) >= 2L) {
-    fit_qr <- tryCatch(
-      quantreg::rq(logN ~ logQMD, tau = 0.9, data = valid),
-      error = function(e) {
-        warning("Pooled quantile regression failed for ", group_name, ": ",
-                conditionMessage(e), call. = FALSE)
-        NULL
-      }
-    )
-  }
+  fit_qr <- tryCatch(
+    fit_model(df, lqmm = TRUE, include_year = FALSE),
+    error = function(e) {
+      warning(
+        "Slope LQMM failed for ",
+        group_name,
+        ": ",
+        conditionMessage(e),
+        call. = FALSE
+      )
+      NULL
+    }
+  )
 
-  slope_qr <- if (is.null(fit_qr)) NA_real_ else unname(stats::coef(fit_qr)["logQMD"])
+  # Match the unscaled log-log slopes from the plot-specific regressions.
+  slope_qr <- if (is.null(fit_qr)) NA_real_ else coef_original_units(fit_qr)[["logQMD"]]
 
   plot_slopes <- dplyr::filter(df_slopes, is.finite(slope_lin))
   slopes <- c(
@@ -249,7 +252,7 @@ analyse_plot_slopes <- function(df, group_name) {
         values = stats::setNames(c("solid", "dashed"), names(slopes))
       )
   }
-  
+
   legend_slopes <- if (nrow(slope_lines) > 0L) cowplot::get_legend(gg_slopes) else NULL
 
   gg_slopes <- gg_slopes +

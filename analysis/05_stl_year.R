@@ -100,29 +100,22 @@ write_rds(
 # df_biome_analysis <- read_rds(here("data/df_biome_analysis.rds"))
 
 ### Classic LQMM logN-logQMD plot -----------------------
-legend <- get_legend(
-  purrr::map(df_biome_analysis$out, "gg_lqmm_orig")[[1]] +
-    theme(legend.position = "right")
-)
+plots <- purrr::map(df_biome_analysis$out, "gg_lqmm_orig")
 
-# need to overwrite title to nicely place label (letter)
 fig1_lqmm_onlystl <- cowplot::plot_grid(
-  purrr::map(df_biome_analysis$out, "gg_lqmm_orig")[[1]] +
-    labs(title = bquote(bold("a") ~ ~"Temperate Forests")),
-  purrr::map(df_biome_analysis$out, "gg_lqmm_orig")[[2]] +
-    labs(title = bquote(bold("b") ~ ~"Mediterranean Forests")),
-  purrr::map(df_biome_analysis$out, "gg_lqmm_orig")[[3]] +
-    labs(title = bquote(bold("c") ~ ~"Boreal Forests/Taiga")),
-  purrr::map(df_biome_analysis$out, "gg_lqmm_orig")[[4]] +
-    labs(title = bquote(bold("d") ~ ~"Tropical & Subtropical Broadleaf Forests")),
+  plots[[1]] + labs(title = bquote(bold("a") ~ ~"Temperate Forests")),
+  plots[[2]] + labs(title = bquote(bold("b") ~ ~"Mediterranean Forests")),
+  plots[[3]] + labs(title = bquote(bold("c") ~ ~"Boreal Forests/Taiga")),
+  plots[[4]] +
+    labs(
+      title = bquote(bold("d") ~ ~"Tropical & Subtropical Broadleaf Forests")
+    ) +
+    theme(
+      legend.position = "inside",
+      legend.position.inside = c(0.98, 0.98),
+      legend.justification.inside = c(1, 1)
+    ),
   ncol = 2
-)
-
-fig1_lqmm_onlystl <- cowplot::plot_grid(
-  fig1_lqmm_onlystl,
-  legend,
-  ncol = 2,
-  rel_widths = c(1, 0.15)
 )
 
 ggsave(
@@ -152,33 +145,34 @@ tmp <- df_biome_analysis |>
 knitr::kable(tmp)
 
 ### Slopes --------------
-df_biome_analysis$out[[1]]$gg_slopes
+plots <- purrr::map(df_biome_analysis$out, "gg_slopes")
 
-legend <- get_legend(
-  purrr::map(df_biome_analysis$out, "legend_slopes")[[1]] +
-    theme(legend.position = "right")
-)
-
-# need to overwrite title to nicely place label (letter)
 fig_slope_distribution <- cowplot::plot_grid(
-  purrr::map(df_biome_analysis$out, "gg_slopes")[[1]] +
-    labs(title = bquote(bold("a") ~ ~"Temperate Forests")),
-  purrr::map(df_biome_analysis$out, "gg_slopes")[[2]] +
-    labs(title = bquote(bold("b") ~ ~"Mediterranean Forests")),
-  purrr::map(df_biome_analysis$out, "gg_slopes")[[3]] +
-    labs(title = bquote(bold("c") ~ ~"Boreal Forests/Taiga")),
-  purrr::map(df_biome_analysis$out, "gg_slopes")[[4]] +
+  plots[[1]] + labs(title = bquote(bold("a") ~ ~"Temperate Forests")),
+  plots[[2]] + labs(title = bquote(bold("b") ~ ~"Mediterranean Forests")),
+  plots[[3]] + labs(title = bquote(bold("c") ~ ~"Boreal Forests/Taiga")),
+  plots[[4]] +
     labs(
       title = bquote(bold("d") ~ ~"Tropical & Subtropical Broadleaf Forests")
+    ) +
+    scale_linetype_manual(
+      name = NULL,
+      values = c(
+        "Overall quantile regression" = "solid",
+        "Median of plot-specific slopes" = "dashed"
+      ),
+      breaks = c(
+        "Overall quantile regression",
+        "Median of plot-specific slopes"
+      ),
+      labels = c("Overall", "Median across plots")
+    ) +
+    theme(
+      legend.position = "inside",
+      legend.position.inside = c(0.98, 0.98),
+      legend.justification.inside = c(1, 1)
     ),
   ncol = 2
-)
-
-fig_slope_distribution <- cowplot::plot_grid(
-  fig_slope_distribution,
-  legend,
-  ncol = 2,
-  rel_widths = c(1, 0.15)
 )
 
 ggsave(
@@ -1010,8 +1004,7 @@ left_panel <- cowplot::plot_grid(
 # Publication figures, tables, and numbers  ----------------------------------------------
 
 # Extract plot objects
-
-df_biome_analysis <- read_rds(here("data/df_biome_analysis.rds"))
+# df_biome_analysis <- read_rds(here("data/df_biome_analysis.rds"))
 
 df_plots <- df_biome_analysis |> 
   dplyr::select(biome_major, out) |> 
