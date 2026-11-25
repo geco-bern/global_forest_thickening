@@ -492,18 +492,29 @@ ggsave(
   height = 5
 )
 
-gg_combined <- cowplot::plot_grid(
-  gg_sitepoints,
-  gg_sitepoints_oldgrowth,
-  nrow = 1,
+biome_legend <- cowplot::get_legend(gg_sitepoints_oldgrowth)
+
+gg_maps <- cowplot::plot_grid(
+  gg_sitepoints + theme(legend.position = "none"),
+  gg_sitepoints_oldgrowth + theme(legend.position = "none"),
+  ncol = 1,
+  align = "v",
+  axis = "lr",
   labels = letters[1:2]
+)
+
+gg_combined <- cowplot::plot_grid(
+  gg_maps,
+  biome_legend,
+  ncol = 1,
+  rel_heights = c(1, 0.07)
 )
 
 ggsave(
   here("manuscript/figures/gg_combined.pdf"),
   plot = gg_combined,
-  width = 14,
-  height = 4
+  width = 8,
+  height = 7.25
 )
 
 ## Plot plots in biomes --------------------------------------------------------
